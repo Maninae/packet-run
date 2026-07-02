@@ -27,7 +27,7 @@ async function impactNotice(e) {
       flashPrompt('cloak', 'The sniffer watched your sealed fragments pass — and read nothing.');
     } else {
       sfx.static();
-      flashPrompt('sniffer', 'The sniffer touched one of your fragments — something\'s scrambled.');
+      flashPrompt('sniffer', 'The sniffer meddled with one of your fragments — something\'s scrambled.');
     }
     await delay(1000);
     return;

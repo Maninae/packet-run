@@ -72,15 +72,22 @@
       <tr><td>Duplicate &amp; Retransmit</td>
         <td>Redundancy and retransmission — how reliability is <em>built</em>, not assumed</td></tr>
       <tr><td>Checksum &amp; Repair vs the Static</td>
-        <td>Error detection and correction — receivers checksum everything</td></tr>
+        <td>Error detection — receivers checksum every packet and drop what fails;
+          retransmission fills the gap. The game's Repair stands in for restoring the
+          bits, which real systems do by retransmitting — or sometimes with forward
+          error correction</td></tr>
       <tr><td>The birthday message vs the live call</td>
-        <td>TCP vs UDP by feel: every-piece-matters vs keep-it-moving (named only after Act 5)</td></tr>
+        <td>TCP vs UDP by feel: every-piece-matters vs keep-it-moving (named only after Act 5).
+          Strictly: UDP just doesn't promise delivery — the calling <em>app</em> decides whether
+          to skip late frames, and that choice was your kid's all along</td></tr>
       <tr><td>The address book beat</td>
         <td>DNS lookups, and why caching makes the second visit faster</td></tr>
       <tr><td>The jammed pipe's send-rate choice</td>
         <td>Congestion control — slow start and backing off, by feel</td></tr>
       <tr><td>The Encryption Cloak</td>
-        <td>Encryption in transit: visible on the wire but unreadable — it never hides the route</td></tr>
+        <td>Encryption in transit: visible on the wire but unreadable — it never hides the route.
+          (The game's sniffer also tampers; strictly, a watcher who alters data is an
+          <em>on-path attacker</em> — real packet sniffers just watch)</td></tr>
       <tr><td>The cache waystation shortcut</td>
         <td>CDNs — a copy served from somewhere closer</td></tr>
       <tr><td>The swarm that starves a pipe</td>

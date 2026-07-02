@@ -36,7 +36,7 @@ function describeRoad(run, key) {
   if (road.hazard.kind === 'sniffer') {
     return run.belt.includes('cloak')
       ? `${hops} hops, a sniffer listening — your Cloak seals you`
-      : `${hops} hops, a sniffer listening — it can tamper with bits`;
+      : `${hops} hops, a sniffer on the wire — one that meddles with bits`;
   }
   if (road.hazard.kind === 'trench') {
     return `${hops} hops through the deep-sea cable — a huge pipe, and big pipes can snap`;
@@ -45,7 +45,7 @@ function describeRoad(run, key) {
     return `${hops} hops by satellite — the long way up always costs a beat`;
   }
   if (road.hazard.kind === 'ddos') {
-    return `${hops} hops through a FLOODED pipe — slow going, nothing lost`;
+    return `${hops} hops through a FLOODED pipe — slow going; only what squeezes through gets through`;
   }
   if (road.hazard.kind === 'offline') {
     return `${hops} hops past a router that keeps power-cycling — a beat lost while it reboots`;

@@ -145,6 +145,8 @@ export function showWin({ run, actUp = null, reveal = false, recipient = null, o
         <strong>A secret, from one engineer to another:</strong>
         <p>Your careful every-piece style has a real name — engineers call it <strong>TCP</strong>.
         The keep-it-moving call style? That's <strong>UDP</strong>. You didn't learn them. You played them.</p>
+        <p>One tiny thing engineers would add: UDP itself doesn't skip — it just doesn't promise.
+        Apps like calls choose to keep moving. That choice was yours.</p>
       </div>` : ''}
       ${body}
       ${wasteLine(run)}
