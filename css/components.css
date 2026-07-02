@@ -1,30 +1,82 @@
-/* components.css — reusable UI pieces. Portrait-first: this layout is designed
-   for a 6" phone screen; desktop derives from it (design/06, 08). */
+/* components.css — reusable UI pieces. Portrait-first: designed for a 6" phone
+   screen; desktop derives from it (design/06, 08). Rows:
+   meters / map (flex) / prompt / party / belt. */
 
 #game {
   display: grid;
-  grid-template-rows: auto 1fr auto; /* meters / map+live / belt */
+  grid-template-rows: auto minmax(0, 1fr) auto auto auto;
   height: 100dvh;
-  max-width: 480px;                  /* portrait column even on desktop, for now */
+  max-width: 480px;
   margin: 0 auto;
+  background: var(--bg);
+  overflow: hidden;
 }
+
+/* grid tracks must never exceed the viewport — rows shrink, not overflow */
+#game > * { min-width: 0; }
+
+/* wider than a phone: give the column a soft card edge */
+@media (min-width: 520px) {
+  #game {
+    border-left: var(--stroke-w) solid var(--wire);
+    border-right: var(--stroke-w) solid var(--wire);
+  }
+}
+
+/* ---------- meters header ---------- */
 
 #meters {
   display: flex;
-  gap: var(--space);
-  padding: var(--space);
+  align-items: center;
+  gap: 10px;
+  padding: calc(var(--space) * 1.25) calc(var(--space) * 1.5);
 }
 
 .meter {
-  flex: 1;
-  height: 20px;
-  border: var(--stroke-w) solid var(--wire);
-  border-radius: var(--radius);
-  background: var(--surface);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.meter svg { flex: none; }
+
+.meter .pips {
+  display: flex;
+  gap: 2px;
+}
+
+.meter .pip {
+  width: 7px;
+  height: 15px;
+  border-radius: 2.5px;
+  background: var(--surface-2);
+  border: 1px solid var(--wire);
+}
+
+.meter .pip.full { border-color: transparent; }
+#meter-bandwidth .pip.full { background: var(--bw); }
+#meter-deadline .pip.full { background: var(--deadline); }
+.meter .pip.spent { background: var(--surface); }
+
+.seed-chip {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--ink-faint);
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+
+/* ---------- map stage ---------- */
+
+#stage {
+  position: relative;
+  min-height: 0;
 }
 
 #map-layer, #live-layer {
-  grid-row: 2;
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
 }
@@ -33,31 +85,159 @@
 
 .legend-chip {
   position: absolute;
-  top: calc(var(--space) * 6);
+  top: var(--space);
   right: var(--space);
   min-width: var(--touch-min);
   min-height: var(--touch-min);
-  border: var(--stroke-w) solid var(--wire);
+  border: var(--stroke-w) solid var(--wire-lit);
   border-radius: 50%;
-  background: var(--surface);
+  background: var(--surface-2);
   color: var(--ink-soft);
-  font-size: 18px;
+  font-size: 20px;
+  font-weight: 800;
 }
+
+/* ---------- prompt strip ---------- */
+
+#prompt {
+  min-height: 58px;
+  display: flex;
+  align-items: center;
+  gap: var(--space);
+  margin: 0 calc(var(--space) * 1.5);
+  padding: var(--space) calc(var(--space) * 1.5);
+  background: var(--surface);
+  border: var(--stroke-w) solid var(--wire);
+  border-radius: var(--radius);
+  font-size: 15px;
+  line-height: 1.35;
+  color: var(--ink);
+}
+
+#prompt .prompt-icon { flex: none; }
+
+#prompt strong { color: var(--hazard); font-weight: 700; }
+
+/* ---------- party row ---------- */
+
+#party {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space);
+  padding: calc(var(--space) * 1.25) calc(var(--space) * 1.5);
+}
+
+.pip-avatar {
+  width: var(--touch-min);
+  height: var(--touch-min);
+  flex: none;
+}
+
+.fragment-chip {
+  width: var(--touch-min);
+  height: var(--touch-min);
+  border-radius: var(--radius-sm);
+  border: var(--stroke-w) solid var(--fragment);
+  background: color-mix(in srgb, var(--fragment) 16%, var(--surface));
+  color: var(--ink);
+  font-size: 16px;
+  font-weight: 800;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.fragment-chip.lost {
+  border-style: dashed;
+  border-color: var(--fragment-lost);
+  background: transparent;
+  color: var(--fragment-lost);
+}
+
+.fragment-chip.threatened {
+  border-color: var(--hazard);
+  box-shadow: 0 0 10px var(--hazard-soft);
+}
+
+.fragment-chip.targetable {
+  border-color: var(--road-pick);
+  box-shadow: 0 0 12px rgba(123, 216, 143, 0.35);
+  transform: translateY(-2px);
+}
+
+.fragment-chip .copy-badge {
+  position: absolute;
+  top: -7px;
+  right: -7px;
+  width: 18px;
+  height: 18px;
+  border-radius: 6px;
+  background: var(--copy);
+  border: var(--stroke-w) solid var(--bg);
+  color: var(--bg);
+  font-size: 11px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ---------- belt ---------- */
 
 #belt {
   display: flex;
   gap: var(--space);
-  padding: var(--space);
+  padding: var(--space) calc(var(--space) * 1.5)
+           max(var(--space), env(safe-area-inset-bottom));
   justify-content: center;
+  align-items: stretch;
 }
 
-#belt button {
-  min-width: var(--touch-min);
-  min-height: var(--touch-min);
-  border: var(--stroke-w) solid var(--wire);
+.tool-btn {
+  min-width: 76px;
+  min-height: 60px;
+  border: var(--stroke-w) solid var(--wire-lit);
   border-radius: var(--radius);
   background: var(--surface);
   color: var(--ink);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
 }
 
-#belt button:disabled { opacity: 0.4; } /* unaffordable = greyed (build card #11) */
+.tool-btn .cost {
+  display: flex;
+  gap: 5px;
+  font-size: 10px;
+  color: var(--ink-soft);
+  font-weight: 600;
+}
+
+.tool-btn .cost span { display: flex; align-items: center; gap: 2px; }
+
+.tool-btn:disabled { opacity: 0.35; }        /* unaffordable = greyed (build card #11) */
+.tool-btn.armed {
+  border-color: var(--road-pick);
+  box-shadow: 0 0 12px rgba(123, 216, 143, 0.3);
+}
+
+.go-btn {
+  min-width: 108px;
+  min-height: 60px;
+  border: none;
+  border-radius: var(--radius);
+  background: var(--road-pick);
+  color: #0b2013;
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.go-btn:disabled { opacity: 0.35; }

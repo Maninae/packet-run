@@ -1,25 +1,50 @@
 /* base.css — design tokens (source of truth for the look; design/08-art.md).
-   Placeholder values: real palette work happens with the portrait mock (Gate 1). */
+   Act 1 "Home & Neighborhood" palette family: meadow-at-dusk — saturated,
+   glowy characters on a deep green night (Kurzgesagt register, not babyish).
+   Hazards share ONE hue family (amber) everywhere — color is pedagogy. */
 
 :root {
-  /* Act 1 "Home & Neighborhood" placeholder family — meadow register */
-  --bg: #101418;
-  --surface: #1a2129;
-  --ink: #eef3f6;
-  --ink-soft: #9fb0bc;
+  /* Act 1 palette */
+  --bg: #0e1613;
+  --bg-deep: #0a100d;
+  --surface: #17241e;
+  --surface-2: #1e3028;
+  --ink: #eefcf3;
+  --ink-soft: #9dbcaa;
+  --ink-faint: #5d7a6b;
 
-  --pip: #ffd166;          /* Pip the message-spark */
-  --fragment: #6ecbff;     /* fragment bodies */
-  --fragment-corrupt: #e05a7a;
-  --wire: #33414d;
-  --hazard: #e0955a;       /* one hue family for hazards, everywhere */
+  --pip: #ffd166;            /* Pip the message-spark */
+  --pip-glow: rgba(255, 209, 102, 0.45);
+  --fragment: #6ee7ff;       /* fragment bodies */
+  --fragment-glow: rgba(110, 231, 255, 0.4);
+  --fragment-lost: #3a5a66;
+  --copy: #b58cff;           /* duplicate = translucent twin, violet */
+
+  --wire: #2e4438;
+  --wire-lit: #57806a;
+  --road-pick: #7bd88f;      /* highlighted / chosen road */
+
+  --hazard: #f4a259;         /* hazard hue family: storm, drizzle, gust */
+  --hazard-soft: rgba(244, 162, 89, 0.18);
+  --danger: #e05a7a;         /* loss, corruption */
   --safe: #7bd88f;
+  --star: #ffd166;
 
-  --stroke-w: 2px;         /* 2px rounded stroke, everywhere */
-  --radius: 10px;
+  --bw: #7bd88f;             /* bandwidth meter = energy green */
+  --deadline: #f4a259;       /* deadline meter = warm clock amber */
+
+  --fog: rgba(158, 187, 172, 0.14);
+  --fog-edge: rgba(158, 187, 172, 0.05);
+
+  --stroke-w: 2px;           /* 2px rounded stroke, everywhere */
+  --radius: 12px;
+  --radius-sm: 8px;
   --space: 8px;
 
-  --touch-min: 44px;       /* minimum touch target (design/06) */
+  --touch-min: 44px;         /* minimum touch target (design/06) */
+
+  --font: ui-rounded, "SF Pro Rounded", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
 }
 
 * { box-sizing: border-box; }
@@ -27,9 +52,17 @@
 html, body {
   margin: 0;
   height: 100%;
-  background: var(--bg);
+  background: var(--bg-deep);
   color: var(--ink);
-  font-family: system-ui, -apple-system, sans-serif;
+  font-family: var(--font);
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior: none;
+}
+
+button {
+  font-family: var(--font);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
 
 @media (prefers-reduced-motion: reduce) {

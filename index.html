@@ -2,23 +2,33 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Packet Run</title>
   <link rel="stylesheet" href="css/base.css">
   <link rel="stylesheet" href="css/components.css">
 </head>
 <body>
-  <!-- Portrait-first shell (design/08-art.md): map + party + belt + meters on a 6" screen.
-       Gate 1: the static portrait mock must be approved before game logic lands here. -->
+  <!-- Portrait-first shell (design/08-art.md): meters / map / prompt / party / belt
+       on a 6" screen. Desktop derives from this column, never vice versa. -->
   <main id="game">
     <header id="meters">
-      <div id="meter-bandwidth" class="meter" aria-label="Bandwidth"></div>
-      <div id="meter-deadline" class="meter" aria-label="Deadline"></div>
+      <div id="meter-bandwidth" class="meter" role="status" aria-label="Bandwidth"></div>
+      <div id="meter-deadline" class="meter" role="status" aria-label="Deadline"></div>
+      <span id="seed-chip" class="seed-chip" aria-label="Run seed"></span>
     </header>
-    <section id="map-layer" aria-label="Region map"><!-- SVG map (js/map.js) --></section>
-    <canvas id="live-layer" aria-hidden="true"><!-- Pip + fragments (js/party.js) --></canvas>
-    <button id="glyph-legend" class="legend-chip" aria-label="Glyph legend">?</button>
-    <footer id="belt" aria-label="Toolbelt"><!-- icon buttons (js/tools.js) --></footer>
+
+    <section id="stage" aria-label="Region map">
+      <svg id="map-layer" xmlns="http://www.w3.org/2000/svg" role="img"
+           aria-label="Map of the region: two roads from home to the dock"></svg>
+      <canvas id="live-layer" aria-hidden="true"></canvas>
+      <button id="glyph-legend" class="legend-chip" aria-label="What do the map symbols mean?">?</button>
+    </section>
+
+    <section id="prompt" aria-live="polite"><!-- forecast captions & beat text --></section>
+
+    <section id="party" aria-label="Your party"><!-- Pip + fragment chips (js/party.js) --></section>
+
+    <footer id="belt" aria-label="Toolbelt"><!-- tool buttons (js/tools.js) --></footer>
   </main>
   <script type="module" src="js/main.js"></script>
 </body>
