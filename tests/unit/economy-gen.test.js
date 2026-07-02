@@ -15,11 +15,30 @@ const N = 1500;
 // Play a whole run under a road-choice temperament + insurance rule.
 // Insurance happens right after each junction; anything lost gets
 // retransmitted at the first legal moment (the human response beat).
-function play(seed, { pickRoad, insure }) {
-  const run = createRun({ seed, map: generateMap(seed) });
+function play(seed, { pickRoad, insure, avoidStatic }) {
+  const map = generateMap(seed);
+  const hasStatic = map.segments.some((s) =>
+    Object.values(s.roads).some((r) => r.hazard?.kind === 'static'));
+  const run = createRun({ seed, map });
   while (run.phase !== 'done') {
+    if (run.phase === 'reward') {
+      // temperaments that will CROSS a static zone kit up; the guardian
+      // routes around the uninsurable instead
+      const legal = legalActions(run);
+      const kit = hasStatic && !avoidStatic && legal.find((a) =>
+        a.kind === 'tool' && (a.tool === 'checksum' || a.tool === 'repair') && !a.replace);
+      act(run, kit || legal.find((a) => a.kind === 'bandwidth'));
+      continue;
+    }
     if (run.phase === 'junction') {
-      const road = pickRoad(run);
+      let road = pickRoad(run);
+      if (avoidStatic) {
+        const roads = segmentRoads(run);
+        const other = road === 'short' ? 'long' : 'short';
+        if (roads[road].hazard?.kind === 'static' && roads[other].hazard?.kind !== 'static') {
+          road = other;
+        }
+      }
       act(run, { type: 'choose-road', road });
       const hazard = segmentRoads(run)[road].hazard;
       if (hazard?.threatens && insure(run, hazard)) {
@@ -44,10 +63,12 @@ function play(seed, { pickRoad, insure }) {
 }
 
 const POLICIES = {
-  // pays for certainty: quickest roads, every named threat insured
+  // pays for certainty: quickest roads, every named threat insured,
+  // and routes AROUND the Static (corruption can't be insured)
   guardian: {
     pickRoad: () => 'short',
     insure: () => true,
+    avoidStatic: true,
   },
   // cheap and brave: quickest roads, rescue instead of insure
   daredevil: {
@@ -74,9 +95,10 @@ const POLICIES = {
   },
 };
 
-// a static zone weighs like one threatened fragment (~3 BW to answer)
+// a static zone weighs a bit over one fragment: fixable only with the kit
 function threatWeight(road) {
   if (!road.hazard) return 0;
+  if (road.hazard.kind === 'static') return 1.5;
   return road.hazard.threatens?.length ?? 1;
 }
 

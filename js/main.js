@@ -3,7 +3,7 @@
 // resulting events into beats (animate the hop, flash the notices, re-render)
 // and routes taps back into engine actions.
 
-import { EASY, MAP_1A } from './config.js';
+import { EASY, MAP_1A, BELT } from './config.js';
 import { createRun, legalActions, act, segmentRoads, roadDef } from './engine.js';
 import { generateMap } from './generator.js';
 import { randomSeed } from './rng.js';
@@ -11,7 +11,7 @@ import { logRun, deriveAutopsy } from './autopsy.js';
 import { renderMap } from './map.js';
 import { renderParty, renderPartyRow, animateHop, startIdle, stopIdle } from './party.js';
 import { renderMeters, setPrompt, flashPrompt, renderBelt, wireLegend, wireMute } from './hud.js';
-import { showStart, showWin, showLoss } from './screens.js';
+import { showStart, showWin, showLoss, showReward } from './screens.js';
 import { unlockAudio, sfx } from './sound.js';
 
 const $ = (sel) => document.querySelector(sel);
@@ -41,16 +41,6 @@ const TOOLTIPS = {
   retransmit: '<strong>Retransmit</strong>: a fragment got lost? Ask home to send it again. Costs 2 energy and a tick of the clock.',
   repair: '<strong>Repair</strong>: fix the scrambled fragment the Checksum found. Costs 2 energy.',
 };
-
-// Checksum enters the belt only on maps the Static haunts (vocabulary gating:
-// the tutorial region keeps its two-tool simplicity — design/03 curriculum)
-function beltToolsFor(map) {
-  const hasStatic = map.segments.some((s) =>
-    Object.values(s.roads).some((r) => r.hazard?.kind === 'static'));
-  return hasStatic
-    ? ['duplicate', 'retransmit', 'checksum', 'repair']
-    : ['duplicate', 'retransmit'];
-}
 
 const names = (ids) => ids.map((n) => `<strong>#${n}</strong>`).join(' and ');
 
@@ -105,6 +95,9 @@ function computePrompt() {
       `A ${hazard.kind} on the ${scary} road is eyeing ${names(hazard.threatens)}. Tap a road to look closer.`];
   }
   if (run.phase === 'done') return ['bolt', ''];
+  if (run.phase === 'reward') {
+    return ['bolt', 'A relay station! Pick one reward for your belt.'];
+  }
 
   const def = roadDef(run);
   const hazard = def.hazard;
@@ -205,7 +198,7 @@ function renderAll() {
     onChipTap,
   });
   renderBelt({
-    tools: beltToolsFor(run.map),
+    tools: run.belt,
     legal: busy ? [] : legalActions(run),
     armed,
     canGo: !busy && (run.phase === 'node' || (run.phase === 'junction' && pendingRoad !== null)),
@@ -231,11 +224,11 @@ function onRoadTap(road) {
 
 function onArm(tool) {
   if (busy) return;
-  if (tool === 'checksum') {
-    // a scan, not a targeted verb: fires on the whole party immediately
-    if (legalActions(run).some((a) => a.type === 'checksum')) {
+  if (tool === 'checksum' || tool === 'reroute') {
+    // untargeted verbs fire immediately (checksum scans; reroute recalls all)
+    if (legalActions(run).some((a) => a.type === tool)) {
       armed = null;
-      dispatch({ type: 'checksum' });
+      dispatch({ type: tool });
     }
     return;
   }
@@ -377,6 +370,22 @@ async function animateBatch(batch) {
       case 'wait':
         sfx.bloop();
         break;
+      case 'reroute':
+        sfx.whoosh();
+        flashPrompt('bolt', 'You told home to try a different road — the party reappears at the junction.');
+        await delay(900);
+        break;
+      case 'reward-taken':
+        if (e.kind === 'tool') {
+          sfx.chime();
+          flashPrompt('bolt', `<strong>${e.tool[0].toUpperCase()}${e.tool.slice(1)}</strong> joins your belt${e.replaced ? ` — ${e.replaced} swapped out` : ''}.`);
+          await delay(800);
+        } else {
+          sfx.chime();
+          flashPrompt('bolt', `<strong>+${e.amount} energy</strong> banked.`);
+          await delay(600);
+        }
+        break;
       case 'copies-discarded':
         flashPrompt('copy',
           `The dock keeps one of each number — spare ${names(e.fragments)} not needed.`);
@@ -407,6 +416,18 @@ async function dispatch(action) {
   await animateBatch(run.events.slice(start));
   busy = false;
   renderAll();
+  if (run.phase === 'reward') {
+    showReward({
+      options: run.rewardOptions,
+      belt: run.belt,
+      beltFull: run.belt.length >= BELT.slots,
+      onTake: (pick) => {
+        $('#overlay').replaceChildren();
+        dispatch({ type: 'take-reward', ...pick });
+      },
+    });
+    return;
+  }
   if (run.phase === 'done') {
     logRun(run); // every run, win or lose (design/06)
     const handlers = {

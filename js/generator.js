@@ -74,6 +74,11 @@ export function generateMap(seed, { segments = GEN.segments } = {}) {
     () => Math.floor(rng() * TEMPLATES.length));
   const stormy = picks.filter((p) => TEMPLATES[p].short.hazard === 'storm').length;
   if (stormy === segments) picks[1] = 1; // swap the middle for the tempo segment
+  // never open with the Static: a reward beat (where Checksum can be picked)
+  // must precede any corruption zone
+  while (TEMPLATES[picks[0]].short.hazard === 'static') {
+    picks[0] = (picks[0] + 1) % TEMPLATES.length;
+  }
 
   const built = [];
   for (let i = 0; i < segments; i++) {

@@ -39,8 +39,10 @@ const go = { type: 'onward' };
 const road = (r) => ({ type: 'choose-road', road: r });
 
 // rng order on a static impact: corruptPick. (No gust on static zones.)
+// The kit is belt-gated since 1b-v: these tests carry Checksum + Repair.
 function intoStatic(rngValues) {
   const run = createRun({ seed: 'C1', rng: rngOf(rngValues), map: STATIC_MAP });
+  run.belt.push('checksum', 'repair');
   act(run, road('short'));
   act(run, go); // impact crossing into x1
   return run;

@@ -15,6 +15,18 @@ export const TOOLS = {
   duplicate: { bw: 3, deadline: 0 },  // preemptive, targeted; one copy per fragment; no copying copies
   checksum: { bw: 1, deadline: 0 },   // scan the party: reveals which fragment is scrambled
   repair: { bw: 2, deadline: 0 },     // fix one REVEALED scrambled fragment
+  reroute: { bw: 0, deadline: 1 },    // sender reissue: rematerialize at the segment junction
+};
+
+// The loadout layer (design/03: 3 slots → 5 by late campaign; 4 fits the
+// K=3 1b maps — the corruption counter needs Checksum AND Repair, and two
+// reward beats must be able to build it). Rewards at mid-map junctions:
+// two unowned tools + an energy top-up (pick 1 of 3).
+export const BELT = {
+  slots: 4,
+  start: ['duplicate', 'retransmit'],
+  rewardPool: ['checksum', 'repair', 'buffer', 'reroute'],
+  resourceReward: { bw: 3 },
 };
 
 // Map schema (v2, Phase 1b): a run map = stacked SEGMENTS, each a 2-road

@@ -48,13 +48,15 @@ test('rapids: straggler chips show lag; waiting brings them back', async () => {
   await page.context().close();
 });
 
-test('pressing on loses stragglers — the prompt says so and Retransmit lights up', async () => {
+test('pressing on loses stragglers — recoverable after the reward beat', async () => {
   const seed = rapidsSeed();
   const page = await app.page(VIEWPORTS.portrait, { reducedMotion: 'reduce' });
   await intoRapids(page, seed);
-  await page.locator('#go:enabled').click(); // press on
+  await page.locator('#go:enabled').click(); // press on → segment end → reward
   const run = await page.evaluate(() => window.packetRun.run);
   assert.ok(run.fragments.some((f) => f.status === 'lost'));
+  await page.locator('[data-reward-kind="bandwidth"]').first().click();
+  // at the next junction, the rescue verb is live (tools work at junctions)
   assert.ok(await page.locator('#tool-retransmit:enabled').count(), 'rescue available');
   await page.context().close();
 });

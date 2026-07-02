@@ -10,7 +10,7 @@
 // rng is injectable for tests/simulation; defaults to the seeded PRNG.
 // Consumption order is documented in encounters.js — keep it stable.
 
-import { RUN, MAP_1A } from './config.js';
+import { RUN, MAP_1A, BELT } from './config.js';
 import { seededRng } from './rng.js';
 import {
   duplicateLegal, applyDuplicate, retransmitLegal, applyRetransmit,
@@ -40,7 +40,9 @@ export function createRun({ seed, rng, mods = null, map = MAP_1A }) {
     stepIndex: 0,           // index into the chosen road's node list
     impactResolved: false,  // per segment — resets at each junction
     waitsUsed: 0,           // per rapids window (max 2 — design/04)
-    passives: new Set(),    // always-on machinery ('buffer', …) — belt 1b-v
+    belt: [...BELT.start],  // actives AND passives share the 3 slots (design/03)
+    passives: new Set(),    // extra always-on machinery (test/meta injection)
+    rewardOptions: null,    // pick-1-of-3, offered at mid-map junctions
     lastImpact: null,       // { kind, impactNode } — autopsy's killer
     fogCost: null,          // revealed at the last road's penultimate node
     outcome: null,          // 'rendered' | 'failed'
@@ -62,8 +64,25 @@ export function roadDef(run) {
   return segmentRoads(run)[run.road];
 }
 
+const onBelt = (run, tool) => run.belt.includes(tool);
+
 export function legalActions(run) {
   if (run.phase === 'done') return [];
+  if (run.phase === 'reward') {
+    const actions = [];
+    run.rewardOptions.forEach((option, index) => {
+      if (option.kind !== 'tool') {
+        actions.push({ type: 'take-reward', index, kind: option.kind });
+      } else if (run.belt.length < BELT.slots) {
+        actions.push({ type: 'take-reward', index, kind: 'tool', tool: option.tool });
+      } else {
+        for (const replace of run.belt) {
+          actions.push({ type: 'take-reward', index, kind: 'tool', tool: option.tool, replace });
+        }
+      }
+    });
+    return actions;
+  }
   // tools stay available at junction beats too (mid-map junctions: rescue or
   // insure BEFORE committing to a road) — only movement needs a chosen road
   const actions = [];
@@ -73,16 +92,25 @@ export function legalActions(run) {
     }
   }
   for (const f of run.fragments) {
-    if (duplicateLegal(run, f)) actions.push({ type: 'duplicate', fragment: f.id });
+    if (onBelt(run, 'duplicate') && duplicateLegal(run, f)) {
+      actions.push({ type: 'duplicate', fragment: f.id });
+    }
   }
   for (const f of run.fragments) {
-    if (retransmitLegal(run, f)) actions.push({ type: 'retransmit', fragment: f.id });
+    if (onBelt(run, 'retransmit') && retransmitLegal(run, f)) {
+      actions.push({ type: 'retransmit', fragment: f.id });
+    }
   }
-  if (checksumLegal(run)) actions.push({ type: 'checksum' });
+  if (onBelt(run, 'checksum') && checksumLegal(run)) actions.push({ type: 'checksum' });
   for (const f of run.fragments) {
-    if (repairLegal(run, f)) actions.push({ type: 'repair', fragment: f.id });
+    if (onBelt(run, 'repair') && repairLegal(run, f)) {
+      actions.push({ type: 'repair', fragment: f.id });
+    }
   }
   if (run.phase === 'node') {
+    if (onBelt(run, 'reroute') && run.stepIndex > 0 && run.deadline >= 1) {
+      actions.push({ type: 'reroute' });
+    }
     if (run.fragments.some((f) => f.status === 'straggler') && run.waitsUsed < 2) {
       actions.push({ type: 'wait' });
     }
@@ -95,7 +123,9 @@ function isLegal(run, action) {
   return legalActions(run).some((a) =>
     a.type === action.type &&
     (a.road ?? null) === (action.road ?? null) &&
-    (a.fragment ?? null) === (action.fragment ?? null));
+    (a.fragment ?? null) === (action.fragment ?? null) &&
+    (a.index ?? null) === (action.index ?? null) &&
+    (a.replace ?? null) === (action.replace ?? null));
 }
 
 function fail(run, reason, killerConcept) {
@@ -129,10 +159,62 @@ function arriveAtDock(run) {
   run.events.push({ type: 'render', delivered, stars: run.stars });
 }
 
+// Pick-1-of-3 (design/03): two tools you don't own + an energy top-up.
+// Draws burn the run's rng — order is part of the seed's story.
+function drawRewards(run) {
+  const pool = BELT.rewardPool.filter((t) => !run.belt.includes(t));
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(run.rng() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  const options = pool.slice(0, 2).map((tool) => ({ kind: 'tool', tool }));
+  while (options.length < 2) options.push({ kind: 'bandwidth', amount: BELT.resourceReward.bw });
+  options.push({ kind: 'bandwidth', amount: BELT.resourceReward.bw });
+  return options;
+}
+
+function takeReward(run, action) {
+  const option = run.rewardOptions[action.index];
+  if (option.kind === 'tool') {
+    if (action.replace) run.belt = run.belt.filter((t) => t !== action.replace);
+    run.belt.push(option.tool);
+    run.events.push({ type: 'reward-taken', kind: 'tool', tool: option.tool, replaced: action.replace ?? null });
+  } else {
+    run.bandwidth += option.amount;
+    run.events.push({ type: 'reward-taken', kind: 'bandwidth', amount: option.amount, bandwidth: run.bandwidth });
+  }
+  run.rewardOptions = null;
+  run.phase = 'junction';
+}
+
+// Re-route (design/03, /07): a SENDER REISSUE — the party fades and
+// rematerializes at the segment's junction; it never walks backwards.
+// The hazard window resets: whatever road you take next plays fresh.
+function reroute(run) {
+  run.deadline -= 1;
+  run.events.push({ type: 'reroute', deadline: run.deadline });
+  if (run.deadline < 0) {
+    fail(run, 'deadline', 'latency');
+    return;
+  }
+  for (const f of run.fragments) {
+    if (f.status === 'straggler') {
+      f.status = 'with-party'; // reissued together
+      delete f.lag;
+    }
+  }
+  run.node = roadDef(run).nodes[0];
+  run.stepIndex = 0;
+  run.road = null;
+  run.impactResolved = false;
+  run.waitsUsed = 0;
+  run.phase = 'junction';
+}
+
 // Waiting at rapids: 1 Deadline per beat (Buffer passive: two beats for the
 // price of one). Lag counts down; caught-up stragglers rejoin.
 function waitBeat(run) {
-  const buffered = run.passives.has('buffer');
+  const buffered = run.passives.has('buffer') || run.belt.includes('buffer');
   const cost = buffered ? run.waitsUsed % 2 : 1;
   run.waitsUsed += 1;
   run.deadline -= cost;
@@ -211,13 +293,15 @@ function onward(run) {
   if (finalHop) {
     arriveAtDock(run);
   } else if (to === def.nodes.at(-1)) {
-    // end of segment: the next junction opens; tool windows reset
+    // end of segment: reward beat, then the next junction; tool windows reset
     run.segment += 1;
     run.stepIndex = 0;
     run.road = null;
     run.impactResolved = false;
-    run.phase = 'junction';
     run.events.push({ type: 'junction-reached', segment: run.segment, node: to });
+    run.rewardOptions = drawRewards(run);
+    run.phase = 'reward';
+    run.events.push({ type: 'reward-offered', options: run.rewardOptions });
   }
 }
 
@@ -245,6 +329,12 @@ export function act(run, action) {
       break;
     case 'wait':
       waitBeat(run);
+      break;
+    case 'reroute':
+      reroute(run);
+      break;
+    case 'take-reward':
+      takeReward(run, action);
       break;
     case 'onward':
       onward(run);

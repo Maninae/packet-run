@@ -4,7 +4,8 @@
 import { RUN } from './config.js';
 import {
   boltIcon, clockIcon, copyIcon, retransmitIcon, stormIcon, drizzleIcon,
-  staticIcon, checksumIcon, repairIcon, speakerIcon,
+  staticIcon, checksumIcon, repairIcon, rerouteIcon, bufferIcon, rapidsIcon,
+  speakerIcon,
 } from './icons.js';
 import { isMuted, toggleMute } from './sound.js';
 
@@ -51,7 +52,7 @@ export function flashPrompt(icon, html) {
 // The belt is icon-first (design/06): icon + cost badges; the tool's name and
 // tooltip land in the prompt when armed. Disabled state comes from the
 // engine's legal actions (unaffordable/no-target = greyed, build card #11).
-const BELT_TOOLS = {
+export const BELT_TOOLS = {
   duplicate: {
     label: 'Duplicate', icon: () => copyIcon(22, 'var(--copy)'),
     costs: () => `<span>${boltIcon(11)}3</span>`,
@@ -68,11 +69,28 @@ const BELT_TOOLS = {
     label: 'Repair', icon: () => repairIcon(22),
     costs: () => `<span>${boltIcon(11)}2</span>`,
   },
+  reroute: {
+    label: 'Re-route', icon: () => rerouteIcon(22),
+    costs: () => `<span>${clockIcon(11)}1</span>`,
+  },
+  buffer: {
+    label: 'Buffer', icon: () => bufferIcon(22),
+    costs: () => `<span>on</span>`,
+    passive: true,
+  },
 };
+
+export { rapidsIcon }; // re-exported for the prompt icon map
 
 export function renderBelt({ tools, legal, armed, canGo, onArm, onGo, onWait }) {
   const buttons = tools.map((name) => {
     const tool = BELT_TOOLS[name];
+    if (tool.passive) {
+      return `<button class="tool-btn passive" id="tool-${name}" disabled
+        aria-label="${tool.label} — always on" title="${tool.label} — always on">
+        ${tool.icon()}<span class="cost">${tool.costs()}</span>
+      </button>`;
+    }
     const enabled = legal.some((a) => a.type === name);
     return `<button class="tool-btn ${armed === name ? 'armed' : ''}" id="tool-${name}"
       aria-label="${tool.label}" title="${tool.label}" ${enabled ? '' : 'disabled'}>
@@ -85,11 +103,21 @@ export function renderBelt({ tools, legal, armed, canGo, onArm, onGo, onWait }) 
   $('#belt').innerHTML =
     `${buttons}${waitBtn}<button class="go-btn" id="go" ${canGo ? '' : 'disabled'}>Onward</button>`;
   for (const name of tools) {
-    $(`#tool-${name}`).addEventListener('click', () => onArm(name));
+    if (!BELT_TOOLS[name].passive) {
+      $(`#tool-${name}`).addEventListener('click', () => onArm(name));
+    }
   }
   if (canWait) $('#wait').addEventListener('click', onWait);
   $('#go').addEventListener('click', onGo);
 }
+
+export const REWARD_CARDS = {
+  checksum: { icon: () => checksumIcon(26), name: 'Checksum', line: 'Find a scrambled fragment.' },
+  repair: { icon: () => repairIcon(26), name: 'Repair', line: 'Fix a scrambled fragment.' },
+  buffer: { icon: () => bufferIcon(26), name: 'Buffer', line: 'Waiting for stragglers costs half.' },
+  reroute: { icon: () => rerouteIcon(26), name: 'Re-route', line: 'Go back and try the other road.' },
+  bandwidth: { icon: () => boltIcon(26), name: '+3 Energy', line: 'A top-up, right now.' },
+};
 
 export function wireMute() {
   const btn = document.querySelector('#mute');

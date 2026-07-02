@@ -73,6 +73,9 @@ test('engine walks a generated map: junction per segment, tools reset each storm
     const canDup = legalActions(run).some((a) => a.type === 'duplicate');
     assert.ok(canDup || run.bandwidth < 3, `segment ${segment}: preemptive play available`);
     while (run.phase === 'node') act(run, { type: 'onward' });
+    if (run.phase === 'reward') {
+      act(run, legalActions(run).find((a) => a.kind === 'bandwidth'));
+    }
   }
   assert.equal(run.phase, 'done');
   assert.ok(['rendered', 'failed'].includes(run.outcome));
@@ -83,9 +86,13 @@ test('fog fires exactly once, at the end of the run', () => {
     const map = generateMap(`fog-${i}`);
     const run = createRun({ seed: `fog-${i}`, map });
     while (run.phase !== 'done') {
-      const a = legalActions(run)[0].type === 'choose-road'
-        ? { type: 'choose-road', road: 'short' } : { type: 'onward' };
-      act(run, a);
+      if (run.phase === 'reward') {
+        act(run, legalActions(run).find((a) => a.kind === 'bandwidth'));
+      } else if (run.phase === 'junction') {
+        act(run, { type: 'choose-road', road: 'short' });
+      } else {
+        act(run, { type: 'onward' });
+      }
     }
     const fogs = run.events.filter((e) => e.type === 'fog-reveal');
     assert.equal(fogs.length, 1, 'exactly one fog reveal');

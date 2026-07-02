@@ -3,6 +3,7 @@
 // Kid-facing copy: ≤2 short sentences per beat, 6th-grade level (design/06).
 
 import { pipAvatar } from './icons.js';
+import { REWARD_CARDS, BELT_TOOLS } from './hud.js';
 
 const $ = (sel) => document.querySelector(sel);
 
@@ -113,6 +114,44 @@ const CONCEPT_NAMES = {
 
 // The loss autopsy card (design/06): what killed → which concept → which tool
 // might have saved you → the real-internet line → hint retry.
+// Pick-1-of-3 at a mid-map junction (design/03). When the belt is full,
+// tapping a tool card opens the swap row: tap what it replaces.
+export function showReward({ options, belt, beltFull, onTake }) {
+  $('#overlay').innerHTML = `
+    <div class="screen reward-screen">
+      <h2>A relay station!</h2>
+      <p>Pick one for your belt.</p>
+      <div class="reward-cards">${options.map((o, i) => {
+        const card = REWARD_CARDS[o.kind === 'tool' ? o.tool : 'bandwidth'];
+        return `<button class="reward-card" data-index="${i}"
+          data-reward-kind="${o.kind}" ${o.kind === 'tool' ? `data-tool="${o.tool}"` : ''}>
+          ${card.icon()}<strong>${card.name}</strong><span>${card.line}</span>
+        </button>`;
+      }).join('')}</div>
+      <div class="swap-row" hidden>
+        <p>Your belt is full — tap what it replaces:</p>
+        <div class="btn-row swap-choices"></div>
+      </div>
+    </div>`;
+  for (const cardEl of document.querySelectorAll('.reward-card')) {
+    cardEl.addEventListener('click', () => {
+      const index = Number(cardEl.dataset.index);
+      if (cardEl.dataset.rewardKind !== 'tool' || !beltFull) {
+        onTake({ index });
+        return;
+      }
+      const row = $('.swap-row');
+      row.hidden = false;
+      const choices = $('.swap-choices');
+      choices.innerHTML = belt.map((t) =>
+        `<button class="ghost-btn" data-replace="${t}">${BELT_TOOLS[t].label}</button>`).join('');
+      for (const b of choices.querySelectorAll('button')) {
+        b.addEventListener('click', () => onTake({ index, replace: b.dataset.replace }));
+      }
+    });
+  }
+}
+
 export function showLoss({ run, autopsy, onNewRun, onSameSeed, onHint }) {
   $('#overlay').innerHTML = `
     <div class="screen loss-screen">

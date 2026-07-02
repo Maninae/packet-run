@@ -34,6 +34,24 @@ export function drizzleIcon(size = 18) {
   </svg>`;
 }
 
+export function rerouteIcon(size = 20, color = 'var(--safe)') {
+  return `<svg width="${size}" height="${size}" viewBox="0 0 20 20" aria-hidden="true">
+    <path d="M4 16 V8 a4 4 0 0 1 4-4 h6" fill="none" stroke="${color}"
+          stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M11.5 1 14.5 4 11.5 7" fill="none" stroke="${color}" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M15.5 12 v1.5 a3 3 0 0 1-3 3 H9" fill="none" stroke="${color}"
+          stroke-width="1.6" stroke-linecap="round" opacity="0.55"/>
+  </svg>`;
+}
+
+export function bufferIcon(size = 20, color = 'var(--fragment)') {
+  return `<svg width="${size}" height="${size}" viewBox="0 0 20 20" aria-hidden="true">
+    <path d="M3 4 h14 M5.5 4 l3 5 v6 l3 2 v-8 l3-5" fill="none" stroke="${color}"
+          stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>`;
+}
+
 export function rapidsIcon(size = 18) {
   return `<svg width="${size}" height="${size}" viewBox="0 0 20 20" aria-hidden="true">
     <path d="M2.5 7 q2.5-2.5 5 0 t5 0 t5 0" fill="none" stroke="var(--fragment)"
