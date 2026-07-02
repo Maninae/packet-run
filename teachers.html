@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Packet Run — for grown-ups</title>
+  <meta name="description" content="What Packet Run teaches, how it stays truthful, and how to use it with kids ages 9–12.">
+  <link rel="stylesheet" href="css/base.css">
+  <style>
+    /* one calm page for adults; the game's tokens, a document's rhythm */
+    body { overflow: auto; }
+    .page {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 32px 20px 64px;
+      color: var(--ink);
+      font-size: 15px;
+      line-height: 1.65;
+    }
+    .page h1 { font-size: 26px; margin: 0 0 4px; }
+    .page h2 { font-size: 18px; margin: 32px 0 8px; color: var(--road-pick); }
+    .page p { margin: 8px 0; color: var(--ink-soft); }
+    .page strong { color: var(--ink); }
+    .page table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 12px 0;
+      font-size: 13.5px;
+    }
+    .page th, .page td {
+      text-align: left;
+      padding: 7px 10px;
+      border-bottom: 1px solid var(--wire);
+      vertical-align: top;
+    }
+    .page th { color: var(--ink-faint); font-weight: 700; }
+    .page td:first-child { color: var(--ink); white-space: nowrap; }
+    .page ul { margin: 8px 0; padding-left: 20px; color: var(--ink-soft); }
+    .page li { margin: 5px 0; }
+    .back {
+      display: inline-block;
+      margin-bottom: 20px;
+      color: var(--road-pick);
+      text-decoration: none;
+      font-weight: 700;
+    }
+    .commitment {
+      border-left: 3px solid var(--road-pick);
+      padding-left: 14px;
+      margin: 10px 0;
+    }
+  </style>
+</head>
+<body class="act-1">
+  <main class="page">
+    <a class="back" href="index.html">← back to the game</a>
+    <h1>Packet Run, for grown-ups</h1>
+    <p>A short roguelite where your child plays the spirit of a message —
+      five packet-fragments crossing the internet to reach someone they love.
+      One run takes 5–10 minutes on a phone. Everything below is what's
+      really going on under the story.</p>
+
+    <h2>What it actually teaches</h2>
+    <table>
+      <tr><th>In the game</th><th>On the real internet</th></tr>
+      <tr><td>The message splits into 5 fragments</td>
+        <td>Packet switching — data travels as independent packets</td></tr>
+      <tr><td>Fragments race and arrive shuffled</td>
+        <td>Packets take different routes and arrive out of order</td></tr>
+      <tr><td>The Deadline clock</td>
+        <td>Latency budgets — late data can be as bad as lost data</td></tr>
+      <tr><td>Duplicate &amp; Retransmit</td>
+        <td>Redundancy and retransmission — how reliability is <em>built</em>, not assumed</td></tr>
+      <tr><td>Checksum &amp; Repair vs the Static</td>
+        <td>Error detection and correction — receivers checksum everything</td></tr>
+      <tr><td>The birthday message vs the live call</td>
+        <td>TCP vs UDP by feel: every-piece-matters vs keep-it-moving (named only after Act 5)</td></tr>
+      <tr><td>The address book beat</td>
+        <td>DNS lookups, and why caching makes the second visit faster</td></tr>
+      <tr><td>The jammed pipe's send-rate choice</td>
+        <td>Congestion control — slow start and backing off, by feel</td></tr>
+      <tr><td>The Encryption Cloak</td>
+        <td>Encryption in transit: visible on the wire but unreadable — it never hides the route</td></tr>
+      <tr><td>The cache waystation shortcut</td>
+        <td>CDNs — a copy served from somewhere closer</td></tr>
+      <tr><td>The swarm that starves a pipe</td>
+        <td>DDoS — floods exhaust shared capacity; rate-limiting is triage</td></tr>
+      <tr><td>The Far Reaches' sparse grid</td>
+        <td>The digital divide — underinvestment in infrastructure, never a fault of the people there</td></tr>
+    </table>
+
+    <h2>The accuracy promise</h2>
+    <p>The design rule is: <strong>never teach a falsehood</strong>. Simplify,
+      dramatize, personify — but never plant an idea that has to be unlearned
+      later. Some commitments that shaped the game:</p>
+    <div class="commitment"><p>Fragments never travel as an in-order convoy —
+      the racing, shuffled arrival <em>is</em> the lesson.</p></div>
+    <div class="commitment"><p>Packets never walk backwards. What looks like a
+      retreat is the sender reissuing — because that's what really happens.</p></div>
+    <div class="commitment"><p>Encryption makes data unreadable, not invisible.
+      The sniffer still sees sealed fragments pass; it just learns nothing.</p></div>
+    <div class="commitment"><p>Losses end with an honest autopsy: what struck,
+      which idea beat you, which tool answers it, and one line about how the
+      real internet handles the same problem.</p></div>
+
+    <h2>Using it together</h2>
+    <ul>
+      <li><strong>Let them lose.</strong> The loss screen teaches more than the
+        win screen — ask "what got you?" and they'll explain packet loss to you.</li>
+      <li><strong>Ask about the two payloads.</strong> "Why do you skip
+        fragments on a call but never for the message?" is the whole
+        TCP/UDP distinction, in their own words.</li>
+      <li><strong>Play the daily run against each other.</strong> Same seed,
+        same map — different choices. Compare lines.</li>
+      <li><strong>Watch for the Act 5 reveal.</strong> After the final boss the
+        game names TCP and UDP — the vocabulary lands on top of felt
+        experience, not instead of it.</li>
+    </ul>
+
+    <h2>Privacy</h2>
+    <p>No accounts, no tracking, no analytics, no ads, nothing leaves the
+      device. Progress (wins, settings, run history) lives in the browser's
+      local storage only. Share cards are plain text your child chooses to
+      copy — they contain a map seed, never personal data.</p>
+  </main>
+</body>
+</html>

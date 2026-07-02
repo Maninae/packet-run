@@ -12,6 +12,7 @@ import { renderMap } from './map.js';
 import { renderParty, renderPartyRow, animateHop, startIdle, stopIdle } from './party.js';
 import { renderMeters, setPrompt, flashPrompt, renderBelt, wireLegend, wireMute } from './hud.js';
 import { showStart, showWin, showLoss, showReward, showEvent } from './screens.js';
+import { buildShareCard, copyShareCard } from './share.js';
 import { computePrompt, hazardOf, scaryRoad } from './prompts.js';
 import { playNotices } from './notices.js';
 import { unlockAudio, sfx } from './sound.js';
@@ -347,7 +348,16 @@ async function dispatch(action) {
       // the Act-5 naming ceremony (design/06): TCP/UDP, revealed exactly once
       const reveal = actFor().id === 5 && !localStorage.getItem('packet-run-reveal');
       if (reveal) localStorage.setItem('packet-run-reveal', '1');
-      showWin({ run, actUp, reveal, recipient: recipientFor(actFor().id), ...handlers });
+      showWin({
+        run, actUp, reveal, recipient: recipientFor(actFor().id),
+        onShare: async () => {
+          const card = buildShareCard(run, actFor(),
+            `${window.location.origin}${window.location.pathname}`);
+          await copyShareCard(card);
+          return card;
+        },
+        ...handlers,
+      });
     } else {
       const autopsy = deriveAutopsy(run);
       await delay(500);
@@ -368,7 +378,13 @@ async function dispatch(action) {
 // Wins climb the act ladder (a biome every 3 wins) until Phase 4's campaign.
 const pinnedMap = new URLSearchParams(window.location.search).get('map');
 
-const actFor = () => ACTS[Math.min(ACTS.length - 1, Math.floor(winsCount() / 3))];
+// a shared challenge link pins the act (?act=N) so the friend replays the
+// SAME map — otherwise the ladder follows wins
+const pinnedAct = Number(new URLSearchParams(window.location.search).get('act')) || null;
+
+const actFor = () => pinnedAct
+  ? ACTS[Math.max(0, Math.min(ACTS.length - 1, pinnedAct - 1))]
+  : ACTS[Math.min(ACTS.length - 1, Math.floor(winsCount() / 3))];
 
 // the run's sky: seeded per run; protected/gentle runs keep clear skies
 // (showing a storm front while silently softening it would be a false read)

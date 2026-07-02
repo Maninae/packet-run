@@ -81,7 +81,7 @@ export function showStart({ seed, showPicker, payload = 'tcp-file', gentle, upti
         </label>
         <button class="ghost-btn daily-btn" id="daily">Today's run</button>
       </div>
-      <span class="seed-note">SEED · ${seed}</span>
+      <span class="seed-note">SEED · ${seed} · <a class="grownups-link" href="teachers.html">for grown-ups</a></span>
     </div>`;
   for (const btn of document.querySelectorAll('#overlay [data-payload]')) {
     btn.addEventListener('click', () => {
@@ -120,7 +120,7 @@ function callFrames(run) {
   }).join('')}</div>`;
 }
 
-export function showWin({ run, actUp = null, reveal = false, recipient = null, onNewRun, onSameSeed }) {
+export function showWin({ run, actUp = null, reveal = false, recipient = null, onNewRun, onSameSeed, onShare = null }) {
   const lines = recipient?.message ?? MESSAGE_LINES;
   const slack = run.deadline;
   const isCall = run.payload === 'udp-call';
@@ -151,11 +151,21 @@ export function showWin({ run, actUp = null, reveal = false, recipient = null, o
       <div class="btn-row">
         <button class="primary-btn new-run">New run</button>
         <button class="ghost-btn same-seed">Same seed</button>
+        ${onShare ? '<button class="ghost-btn share-btn" id="share">Share</button>' : ''}
       </div>
+      <pre class="share-card" id="share-card" hidden></pre>
       <span class="seed-note">SEED · ${run.seed}</span>
     </div>`;
   $('#overlay .new-run').addEventListener('click', onNewRun);
   $('#overlay .same-seed').addEventListener('click', onSameSeed);
+  if (onShare) {
+    $('#share').addEventListener('click', async () => {
+      const card = $('#share-card');
+      card.textContent = await onShare();
+      card.hidden = false;
+      $('#share').textContent = 'Copied!';
+    });
+  }
 }
 
 // What killed the run, honestly and without moralizing. Attribution matches

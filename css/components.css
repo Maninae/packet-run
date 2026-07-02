@@ -499,6 +499,24 @@ body.dueling #prompt { border-color: var(--fragment-corrupt); }
   .message-card .win-line { opacity: 1; transform: none; }
 }
 
+.grownups-link { color: var(--ink-faint); }
+
+.share-card {
+  margin: 8px auto 0;
+  padding: 10px 14px;
+  border: var(--stroke-w) solid var(--wire-lit);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--ink-soft);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.6;
+  text-align: left;
+  white-space: pre-wrap;
+  word-break: break-all;
+  max-width: 340px;
+}
+
 .reveal-card {
   margin: 8px 0;
   padding: 12px 16px;
