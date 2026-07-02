@@ -169,6 +169,8 @@ test('acts climb with wins: biome class, act chip, and gated hazards', async () 
   await page.goto(`${app.origin}/?seed=ACT2A&payload=file`);
   assert.equal(await page.evaluate(() => document.body.className), 'act-2');
   assert.match(await page.locator('#act-chip').textContent(), /Act 2 · Backbone City/);
+  assert.match(await page.locator('#map-layer').textContent(), /Ava's new place/,
+    'act 2 delivers to a person, not a placeholder');
   let run = await page.evaluate(() => window.packetRun.run);
   const kinds = run.map.segments.flatMap((s) =>
     Object.values(s.roads).map((r) => r.hazard?.kind).filter(Boolean));

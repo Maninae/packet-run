@@ -106,7 +106,7 @@ async function impactNotice(e) {
   }
 }
 
-export async function playNotices(run, batch) {
+export async function playNotices(run, batch, { recipient } = {}) {
   for (const e of batch) {
     switch (e.type) {
       case 'impact':
@@ -223,7 +223,7 @@ export async function playNotices(run, batch) {
         sfx.chime();
         localStorage.setItem('packet-run-dns', '8');
         flashPrompt('bolt',
-          `Found it — Grandma's is at <strong>${e.address}</strong>! Your device will remember for a while.`);
+          `Found it — ${recipient?.dockLabel ?? "Grandma's"} is at <strong>${e.address}</strong>! Your device will remember for a while.`);
         await delay(1100);
         break;
       case 'reward-taken':
@@ -258,6 +258,12 @@ export async function playNotices(run, batch) {
         await delay(800);
         break;
       }
+      case 'pouch-found':
+        sfx.chime();
+        localStorage.setItem('packet-run-pouch', JSON.stringify(run.pouch));
+        flashPrompt('bolt', 'A Signal Boost for your pouch — thanks, traveler.');
+        await delay(800);
+        break;
       case 'copies-discarded':
         flashPrompt('copy',
           `The dock keeps one of each number — spare ${names(e.fragments)} not needed.`);

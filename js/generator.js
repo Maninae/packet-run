@@ -161,7 +161,7 @@ export function generateMap(seed, { segments = GEN.segments, act = 3 } = {}) {
     if (candidates.length) {
       road.event = {
         node: candidates[Math.floor(rng() * candidates.length)],
-        card: Math.floor(rng() * 3),
+        card: Math.floor(rng() * 4),
       };
     }
   }

@@ -151,7 +151,54 @@ export const EVENTS = [
       { label: 'Push through (it might hiccup)', effects: { risk: { p: 0.25, straggle: 1 } } },
     ],
   },
+  {
+    title: 'A traveler’s cache',
+    text: 'Someone left a Signal Boost tucked under this node, with a note: “for whoever needs it.”',
+    options: [
+      { label: 'Take it (needs pouch space)', effects: { pouchItem: 'boost' } },
+      { label: 'Leave it for the next traveler', effects: {} },
+    ],
+  },
 ];
+
+// Every act delivers to a PERSON (Phase 5, design/06). The message is five
+// lines — one per fragment. The campaign ends where it began: Grandma,
+// with the Static in between.
+export const RECIPIENTS = [
+  {
+    name: 'Grandma', dockLabel: "Grandma's",
+    message: ['Dear Grandma,', 'HAPPY BIRTHDAY!!', 'I miss you so much.',
+      'I baked you a cake — save me a slice?', 'Love, me'],
+    winLine: 'Grandma reads it twice and laughs out loud.',
+  },
+  {
+    name: 'Ava', dockLabel: "Ava's new place",
+    message: ['AVA!!', 'How is the new apartment??', 'Does your window really face the train?',
+      'Game night at yours on Friday?', 'Bring the robot cat.'],
+    winLine: 'Ava replies before you even close the app: YES. FRIDAY.',
+  },
+  {
+    name: 'Kenji', dockLabel: "Kenji's, across the ocean",
+    message: ['Hi Kenji!', 'Your paper crane arrived — a little squished.', 'I put it on my shelf anyway.',
+      'Here is a photo of the storm we had!', 'Write back soon. — your pen pal'],
+    winLine: 'It is already tomorrow where Kenji lives. He reads it at breakfast.',
+  },
+  {
+    name: 'Auntie Rosa', dockLabel: "Auntie Rosa's station",
+    message: ['Auntie Rosa!', 'Mom says you fixed the village antenna AGAIN.', 'You are basically a superhero.',
+      'Send the empanada recipe? The REAL one.', 'Miss you. — your favorite niece'],
+    winLine: 'Rosa gets it on the mesh her neighbors built. She sends the recipe back.',
+  },
+  {
+    name: 'Grandma', dockLabel: "Grandma's",
+    message: ['Dear Grandma,', 'This one traveled the WHOLE internet to reach you.', 'Storms, floods, a thing called the Static.',
+      'Nothing stops a message with somewhere to be.', 'Love always, me'],
+    winLine: 'Through every storm and all that noise — she got it. She always does.',
+  },
+];
+
+export const recipientFor = (actId) =>
+  RECIPIENTS[Math.max(0, Math.min(RECIPIENTS.length - 1, actId - 1))];
 
 // The pouch (design/03): up to 3 one-shot consumables — game-flavor mercy,
 // never on the belt. Bought with Uptime between runs; found at Events later.

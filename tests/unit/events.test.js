@@ -33,8 +33,8 @@ const EVENT_MAP = (card) => ({
   ],
 });
 
-test('the event pool: three cards, each with two priced choices, kid-sized copy', () => {
-  assert.equal(EVENTS.length, 3);
+test('the event pool: four cards, each with two priced choices, kid-sized copy', () => {
+  assert.equal(EVENTS.length, 4);
   for (const card of EVENTS) {
     assert.ok(card.title && card.text);
     assert.equal(card.options.length, 2);

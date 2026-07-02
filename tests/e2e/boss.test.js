@@ -114,5 +114,9 @@ test('the Static duel: brace the surges, burst the repairs, render the message',
   assert.equal(run.outcome, 'rendered', 'the message survived the Static');
   assert.ok(run.events.some((e) => e.type === 'duel-won'));
   await page.locator('.win-screen').waitFor({ timeout: 8000 });
+  const text = await page.locator('.win-screen').textContent();
+  assert.match(text, /TCP/, 'the Act-5 naming ceremony fires on the first act-5 win');
+  assert.match(text, /UDP/);
+  assert.match(text, /she got it/i, "act 5 delivers to Grandma — the campaign ends where it began");
   await page.context().close();
 });

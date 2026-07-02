@@ -3,7 +3,7 @@
 // resulting events into beats (animate the hop, flash the notices, re-render)
 // and routes taps back into engine actions.
 
-import { EASY, MAP_1A, BELT, ACTS, EVENTS, WEATHER, weatherFor, POUCH } from './config.js';
+import { EASY, MAP_1A, BELT, ACTS, EVENTS, WEATHER, weatherFor, POUCH, recipientFor } from './config.js';
 import { createRun, legalActions, act, segmentRoads, roadDef } from './engine.js';
 import { generateMap } from './generator.js';
 import { randomSeed } from './rng.js';
@@ -65,6 +65,7 @@ window.packetRun = {
 function scene() {
   const atJunction = run.phase === 'junction';
   return {
+    dockLabel: recipientFor(actFor().id).dockLabel,
     map: run.map,
     segment: run.segment,
     takenRoads: run.events.filter((e) => e.type === 'road-chosen').map((e) => e.road),
@@ -145,7 +146,7 @@ function renderAll() {
     onWait: () => { if (!busy) dispatch({ type: 'wait' }); },
     onSend: (rate) => { if (!busy) dispatch({ type: 'send', rate }); },
   });
-  const [icon, html] = computePrompt(run, { armed, hintText, pendingRoad });
+  const [icon, html] = computePrompt(run, { armed, hintText, pendingRoad, recipient: recipientFor(actFor().id) });
   if (html) setPrompt(icon, html);
 }
 
@@ -284,7 +285,7 @@ async function animateBatch(batch) {
     renderParty($('#live-layer'), { map: run.map, nodeId: hop.to, fragments: run.fragments });
   }
 
-  await playNotices(run, batch);
+  await playNotices(run, batch, { recipient: recipientFor(actFor().id) });
 }
 
 // The payoff beat: fragments slot in BY NUMBER, one rising note each —
@@ -343,7 +344,10 @@ async function dispatch(action) {
       const wins = winsCount();
       const actUp = (wins % 3 === 0 && wins / 3 < ACTS.length)
         ? ACTS[wins / 3] : null;
-      showWin({ run, actUp, ...handlers });
+      // the Act-5 naming ceremony (design/06): TCP/UDP, revealed exactly once
+      const reveal = actFor().id === 5 && !localStorage.getItem('packet-run-reveal');
+      if (reveal) localStorage.setItem('packet-run-reveal', '1');
+      showWin({ run, actUp, reveal, recipient: recipientFor(actFor().id), ...handlers });
     } else {
       const autopsy = deriveAutopsy(run);
       await delay(500);
@@ -430,6 +434,7 @@ function openStartScreen() {
     uptime: uptimeBalance(),
     pouch: pouchStored(),
     shop: winsCount() > 0 ? POUCH : null, // the shop opens once wins can fund it
+    recipient: recipientFor(actFor().id),
     onBuy: (item) => {
       const price = POUCH[item].price;
       if (uptimeBalance() < price || pouchStored().length >= 3) return;

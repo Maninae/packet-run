@@ -82,14 +82,15 @@ const JUNCTION_HOOKS = {
   satellite: (road) => ['satellite', `The ${road} road goes up and over by satellite. Tap a road to look closer.`],
 };
 
-export function computePrompt(run, { armed, hintText, pendingRoad }) {
+export function computePrompt(run, { armed, hintText, pendingRoad, recipient }) {
+  const who = recipient?.dockLabel ?? "Grandma's";
   if (armed?.startsWith('pouch:')) {
     const item = run.pouch[Number(armed.split(':')[1])];
     return ['bolt', `${item === 'spare' ? 'Spare Fragment: tap a LOST fragment to bring it back.' : 'Priority Stamp: tap a fragment to shield it from the next sweep.'}`];
   }
   if (armed) return ['copy', `${TOOLTIPS[armed]}<br>Tap a fragment below.`];
   if (run.phase === 'dns') {
-    return ['bolt', `Where does Grandma's live? Ask the address book — it costs a tick.`];
+    return ['bolt', `Where does ${who} live? Ask the address book — it costs a tick.`];
   }
   if (run.phase === 'junction') {
     if (hintText && !pendingRoad) return ['storm', `Hint: ${hintText}`];
@@ -189,10 +190,10 @@ export function computePrompt(run, { armed, hintText, pendingRoad }) {
   }
   const returning = run.fragments.filter((f) => f.status === 'returning').map((f) => f.id);
   if (returning.length) {
-    return ['retransmit', `${names(returning)} is catching up. Onward to Grandma's!`];
+    return ['retransmit', `${names(returning)} is catching up. Onward to ${who}!`];
   }
   if (run.fogCost !== null && run.fogCost > 0) {
     return ['clock', `Mud on the last stretch — it'll cost <strong>+${run.fogCost}</strong>. Onward!`];
   }
-  return ['bolt', `Everyone's together. Onward to Grandma's!`];
+  return ['bolt', `Everyone's together. Onward to ${who}!`];
 }

@@ -318,12 +318,13 @@ export function renderMap(svg, scene) {
     else if (node.kind === 'pickup') drawRelay(svg, node);
     else if (node.kind === 'junction') drawJunctionNode(svg, node);
     else drawWaypoint(svg, node);
-    if (node.label) {
+    const label = node.kind === 'dock' && scene.dockLabel ? scene.dockLabel : node.label;
+    if (label) {
       svg.append(Object.assign(el('text', {
         x: node.x, y: node.y + (node.kind === 'dock' ? 34 : 36),
         'text-anchor': 'middle', 'font-size': 12, 'font-weight': 700,
         fill: 'var(--ink-soft)', 'font-family': 'var(--font)',
-      }), { textContent: node.label }));
+      }), { textContent: label }));
     }
   }
 

@@ -44,7 +44,8 @@ function starsSVG(stars) {
 
 // After the first win, the kid picks what they're sending — two payloads,
 // two strategies. TCP/UDP are never named here (vocab rule, design/06).
-export function showStart({ seed, showPicker, payload = 'tcp-file', gentle, uptime = 0, pouch = [], shop = null, onPlay, onGentle, onDaily, onBuy }) {
+export function showStart({ seed, showPicker, payload = 'tcp-file', gentle, uptime = 0, pouch = [], shop = null, recipient = null, onPlay, onGentle, onDaily, onBuy }) {
+  const who = recipient?.name ?? 'Grandma';
   const picker = showPicker
     ? `<div class="reward-cards payload-cards">
         <button class="reward-card" data-payload="tcp-file">
@@ -61,9 +62,9 @@ export function showStart({ seed, showPicker, payload = 'tcp-file', gentle, upti
     <div class="screen start-screen">
       <div class="float">${pipAvatar(72)}</div>
       <h1>Packet Run</h1>
-      <p><strong>${showPicker ? 'What are we sending Grandma today?' : "Grandma's birthday message is ready to go."}</strong><br>
+      <p><strong>${showPicker ? `What are we sending ${who} today?` : `Your message for ${who} is ready to go.`}</strong><br>
       It travels as 5 fragments — you're Pip, their guide.
-      ${showPicker ? '' : 'Get all 5 across the internet before her bedtime.'}</p>
+      ${showPicker ? '' : 'Get all 5 across the internet before bedtime.'}</p>
       ${picker}
       ${shop ? `<div class="shop-row">
         <span class="seed-note">UPTIME ★ ${uptime} · pouch ${pouch.length}/3</span>
@@ -119,7 +120,8 @@ function callFrames(run) {
   }).join('')}</div>`;
 }
 
-export function showWin({ run, actUp = null, onNewRun, onSameSeed }) {
+export function showWin({ run, actUp = null, reveal = false, recipient = null, onNewRun, onSameSeed }) {
+  const lines = recipient?.message ?? MESSAGE_LINES;
   const slack = run.deadline;
   const isCall = run.payload === 'udp-call';
   const delivered = run.events.find((e) => e.type === 'render')?.delivered ?? 5;
@@ -127,7 +129,7 @@ export function showWin({ run, actUp = null, onNewRun, onSameSeed }) {
     ? `${callFrames(run)}
        <p class="stat-line">The call played — ${delivered}/5 frames, a little glitchy, all love.
          ${slack} tick${slack === 1 ? '' : 's'} to spare, ${run.bandwidth} energy left.</p>`
-    : `<div class="message-card">${MESSAGE_LINES.map((line, i) =>
+    : `<div class="message-card">${lines.map((line, i) =>
         `<div class="win-line" style="animation-delay:${0.15 + i * 0.4}s">${line}</div>`).join('')}
       </div>
       ${grandmaSVG()}
@@ -138,6 +140,12 @@ export function showWin({ run, actUp = null, onNewRun, onSameSeed }) {
       <h2>${isCall ? 'The call connected!' : 'It rendered!'}</h2>
       ${starsSVG(run.stars)}
       ${actUp ? `<p class="act-up"><strong>Act ${actUp.id} unlocked — ${actUp.name} awaits!</strong></p>` : ''}
+      ${recipient ? `<p class="stat-line recipient-line">${recipient.winLine}</p>` : ''}
+      ${reveal ? `<div class="reveal-card">
+        <strong>A secret, from one engineer to another:</strong>
+        <p>Your careful every-piece style has a real name — engineers call it <strong>TCP</strong>.
+        The keep-it-moving call style? That's <strong>UDP</strong>. You didn't learn them. You played them.</p>
+      </div>` : ''}
       ${body}
       ${wasteLine(run)}
       <div class="btn-row">

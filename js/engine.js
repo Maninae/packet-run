@@ -87,7 +87,8 @@ export function legalActions(run) {
     return EVENTS[run.eventCard].options
       .map((o, option) => ({ o, option }))
       .filter(({ o }) => (run.bandwidth + (o.effects.bw ?? 0) >= 0)
-        && (run.deadline + Math.min(0, o.effects.deadline ?? 0) >= 0))
+        && (run.deadline + Math.min(0, o.effects.deadline ?? 0) >= 0)
+        && !(o.effects.pouchItem && run.pouch.length >= 3))
       .map(({ option }) => ({ type: 'choose-event', option }));
   }
   if (run.phase === 'reward') {
@@ -570,6 +571,10 @@ function chooseEvent(run, action) {
 
   if (effects.bw) run.bandwidth += effects.bw;
   if (effects.deadline) run.deadline += effects.deadline;
+  if (effects.pouchItem) {
+    run.pouch.push(effects.pouchItem);
+    run.events.push({ type: 'pouch-found', item: effects.pouchItem });
+  }
   if (effects.risk && run.rng() < effects.risk.p) {
     const candidates = run.fragments.filter((f) => f.status === 'with-party');
     if (candidates.length) {
