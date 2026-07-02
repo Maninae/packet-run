@@ -1,6 +1,6 @@
 // v0 numbers — mirrors design/02-core-loop.md and the Phase 1a build card
 // (design/09-build-plan.md). Change BOTH together; EV-check the pricing
-// table on paper whenever any value changes.
+// table whenever any value changes (tests/unit/economy.test.js runs it).
 
 export const RUN = {
   partySize: 5,
@@ -15,10 +15,23 @@ export const TOOLS = {
   duplicate: { bw: 3, deadline: 0 },  // preemptive, targeted; one copy per fragment; no copying copies
 };
 
+// The hand-authored Phase 1a region. Node ids match js/map.js GEO coordinates.
+// hops = nodes.length − 1 (4 short / 7 long — the binding numbers).
+// Impact resolves crossing INTO impactNode; approach beat is the node before.
+// Fog is revealed at the penultimate node (a consequence, not a decision).
 export const MAP_1A = {
-  nodes: 8,
-  shortRoad: { hops: 4, hazard: 'storm', threatens: [2, 4], bwPickup: { node: 3, amount: 2 } },
-  longRoad: { hops: 7, hazard: 'drizzle', threatens: [3], bwPickup: { node: 4, amount: 2 } },
+  roads: {
+    short: {
+      nodes: ['src', 's1', 's2', 's3', 'dock'],
+      hazard: { kind: 'storm', impactNode: 's2', threatens: [2, 4] },
+      bwPickup: { node: 's3', amount: 2 }, // node 3 (build card #16), a relay tops you up
+    },
+    long: {
+      nodes: ['src', 'l1', 'l2', 'l3', 'l4', 'l5', 'l6', 'dock'],
+      hazard: { kind: 'drizzle', impactNode: 'l3', threatens: [3] },
+      bwPickup: { node: 'l4', amount: 2 }, // node 4 (build card #16)
+    },
+  },
 };
 
 export const HAZARDS = {
@@ -26,8 +39,7 @@ export const HAZARDS = {
 };
 
 export const FOG = {
-  // revealed at the penultimate node; a consequence, not a decision
-  revealAtNodesFromDock: 1,
+  // roll thresholds: 40% nothing / 40% slow (−1 Deadline) / 20% bad stretch (−2)
   outcomes: [
     { deadlineCost: 0, p: 0.4 },
     { deadlineCost: 1, p: 0.4 },

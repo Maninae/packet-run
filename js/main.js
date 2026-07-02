@@ -3,7 +3,7 @@
 // beat: meters, map with both roads' glyph chips, prompt, party, belt) with
 // mock-level interactivity (road tap → highlight). Engine wiring is Phase 1a.
 
-import { newRun } from './state.js';
+import { createRun } from './engine.js';
 import { renderMap } from './map.js';
 import { renderParty, renderPartyRow } from './party.js';
 import { boltIcon, clockIcon, copyIcon, retransmitIcon, stormIcon } from './icons.js';
@@ -11,7 +11,7 @@ import { boltIcon, clockIcon, copyIcon, retransmitIcon, stormIcon } from './icon
 const $ = (sel) => document.querySelector(sel);
 
 // Seeded runs from day one (design/09): seed shown in UI, shareable.
-const state = newRun('DEV1');
+const state = createRun({ seed: 'DEV1' });
 
 // --- meters ---
 function renderMeter(elm, icon, total, filled) {
