@@ -3,8 +3,8 @@
 // resulting events into beats (animate the hop, flash the notices, re-render)
 // and routes taps back into engine actions.
 
-import { MAP_1A, EASY } from './config.js';
-import { createRun, legalActions, act } from './engine.js';
+import { EASY } from './config.js';
+import { createRun, legalActions, act, segmentRoads, roadDef } from './engine.js';
 import { randomSeed } from './rng.js';
 import { logRun, deriveAutopsy } from './autopsy.js';
 import { renderMap } from './map.js';
@@ -43,28 +43,47 @@ const TOOLTIPS = {
 const names = (ids) => ids.map((n) => `<strong>#${n}</strong>`).join(' and ');
 
 function hazardOf(road) {
-  return MAP_1A.roads[road].hazard;
+  return segmentRoads(run)[road]?.hazard ?? null;
+}
+
+// junction read, derived from the current segment (works on any map)
+function describeRoad(key) {
+  const road = segmentRoads(run)[key];
+  const hops = road.nodes.length - 1;
+  if (!road.hazard) return `${hops} hops and quiet — the long way around`;
+  return `${hops} hops, a ${road.hazard.kind} eyeing ${names(road.hazard.threatens)}`;
+}
+
+function scaryRoad() {
+  const roads = segmentRoads(run);
+  const threat = (k) => roads[k].hazard?.threatens.length ?? 0;
+  return threat('short') >= threat('long') ? 'short' : 'long';
+}
+
+function iconFor(key) {
+  return hazardOf(key)?.kind === 'drizzle' ? 'drizzle' : 'storm';
 }
 
 function computePrompt() {
   if (armed) return ['copy', `${TOOLTIPS[armed]}<br>Tap a fragment below.`];
   if (run.phase === 'junction') {
     if (hintText && !pendingRoad) return ['storm', `Hint: ${hintText}`];
-    if (pendingRoad === 'short') {
-      return ['storm', `The short road: 4 hops, but the storm is eyeing ${names([2, 4])}. Tap again to take it.`];
+    if (pendingRoad) {
+      return [iconFor(pendingRoad),
+        `The ${pendingRoad} road: ${describeRoad(pendingRoad)}. Tap again to take it.`];
     }
-    if (pendingRoad === 'long') {
-      return ['drizzle', `The long road: 7 hops, only a drizzle eyeing ${names([3])}. Tap again to take it.`];
-    }
-    return ['storm', `The short road is quick, but a storm is eyeing ${names([2, 4])}. Tap a road to look closer.`];
+    const scary = scaryRoad();
+    const hazard = hazardOf(scary);
+    return [iconFor(scary),
+      `A ${hazard.kind} on the ${scary} road is eyeing ${names(hazard.threatens)}. Tap a road to look closer.`];
   }
   if (run.phase === 'done') return ['bolt', ''];
 
-  const hazard = hazardOf(run.road);
+  const def = roadDef(run);
+  const hazard = def.hazard;
   const lost = run.fragments.filter((f) => f.status === 'lost').map((f) => f.id);
-  if (!run.impactResolved) {
-    const roadNodes = MAP_1A.roads[run.road].nodes;
-    const approach = roadNodes[roadNodes.indexOf(hazard.impactNode) - 1];
+  if (!run.impactResolved && hazard) {
+    const approach = def.nodes[def.nodes.indexOf(hazard.impactNode) - 1];
     const icon = hazard.kind === 'storm' ? 'storm' : 'drizzle';
     if (run.node === approach) {
       return [icon, `The ${hazard.kind} is right ahead — it's eyeing ${names(hazard.threatens)}. Last chance for copies.`];
@@ -85,10 +104,19 @@ function computePrompt() {
 }
 
 function scene() {
+  const atJunction = run.phase === 'junction';
   return {
     chosenRoad: run.road,
     highlightRoad: pendingRoad,
-    showJunctionGlyphs: run.phase === 'junction',
+    showJunctionGlyphs: atJunction,
+    junctionGlyphs: atJunction
+      ? Object.entries(segmentRoads(run)).map(([road, def]) => ({
+          road,
+          kind: def.hazard?.kind ?? null,
+          threatens: def.hazard?.threatens ?? [],
+          hops: def.nodes.length - 1,
+        }))
+      : null,
     fogRevealed: run.fogCost !== null,
     fogCost: run.fogCost,
     dockFilled: run.outcome === 'rendered' ? 5 : 0,
@@ -98,8 +126,10 @@ function scene() {
 
 function threatenedSet() {
   if (run.impactResolved) return new Set();
-  const road = run.road ?? pendingRoad ?? 'short';
-  return new Set(hazardOf(road).threatens);
+  const road = (run.phase === 'junction' && !run.road && !pendingRoad)
+    ? scaryRoad()
+    : (run.road ?? pendingRoad ?? 'short');
+  return new Set(hazardOf(road)?.threatens ?? []);
 }
 
 function targetableSet() {

@@ -156,12 +156,19 @@ function drawGlyphChip(svg, { x, y, kind, threatens, hops, road, scene }) {
   const dots = Array.from({ length: hops }, (_, i) =>
     `<circle cx="${(i - (hops - 1) / 2) * 8}" cy="13" r="2.4" fill="var(--ink-soft)"/>`
   ).join('');
+  const icon = kind
+    ? `<g transform="translate(-28,-11)">${kind === 'storm' ? stormIcon(20) : drizzleIcon(20)}</g>`
+    : '';
+  const label = kind
+    ? `<text x="9" y="-1" text-anchor="middle" font-size="12" font-weight="800"
+         fill="var(--hazard)" font-family="var(--font)">${nums}</text>`
+    : `<text x="0" y="-1" text-anchor="middle" font-size="11" font-weight="700"
+         fill="var(--safe)" font-family="var(--font)">quiet</text>`;
   g.innerHTML = `
     <rect x="-37" y="-16" width="74" height="38" rx="10" fill="var(--surface)"
           stroke="var(--wire-lit)" stroke-width="2"/>
-    <g transform="translate(-28,-11)">${kind === 'storm' ? stormIcon(20) : drizzleIcon(20)}</g>
-    <text x="9" y="-1" text-anchor="middle" font-size="12" font-weight="800"
-          fill="var(--hazard)" font-family="var(--font)">${nums}</text>
+    ${icon}
+    ${label}
     ${dots}`;
   svg.append(g);
 }
@@ -243,7 +250,13 @@ export function renderMap(svg, scene) {
   drawSlowStretch(svg, scene);
 
   if (scene.showJunctionGlyphs) {
-    drawGlyphChip(svg, { x: 64, y: 480, kind: 'storm', threatens: [2, 4], hops: 4, road: 'short', scene });
-    drawGlyphChip(svg, { x: 322, y: 530, kind: 'drizzle', threatens: [3], hops: 7, road: 'long', scene });
+    const CHIP_POS = { short: { x: 64, y: 480 }, long: { x: 322, y: 530 } };
+    const glyphs = scene.junctionGlyphs ?? [
+      { road: 'short', kind: 'storm', threatens: [2, 4], hops: 4 },
+      { road: 'long', kind: 'drizzle', threatens: [3], hops: 7 },
+    ];
+    for (const glyph of glyphs) {
+      drawGlyphChip(svg, { ...CHIP_POS[glyph.road], ...glyph, scene });
+    }
   }
 }

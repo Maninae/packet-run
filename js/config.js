@@ -15,23 +15,44 @@ export const TOOLS = {
   duplicate: { bw: 3, deadline: 0 },  // preemptive, targeted; one copy per fragment; no copying copies
 };
 
-// The hand-authored Phase 1a region. Node ids match js/map.js GEO coordinates.
-// hops = nodes.length − 1 (4 short / 7 long — the binding numbers).
-// Impact resolves crossing INTO impactNode; approach beat is the node before.
-// Fog is revealed at the penultimate node (a consequence, not a decision).
+// Map schema (v2, Phase 1b): a run map = stacked SEGMENTS, each a 2-road
+// junction. Road keys keep the 1a dichotomy at every junction: 'short' =
+// quicker/riskier, 'long' = slower/milder. The last segment's roads end at
+// 'dock'; fog reveals at that road's second-to-last node (as in 1a).
+// Budgets and star thresholds ride on the map. hazard may be null (a road
+// priced purely in hops), but never on both roads of one junction.
+//
+// MAP_1A is the hand-authored Phase 1a region — still the default map and
+// the protected first run's tutorial region (design/06). Node ids match
+// js/map.js GEO coordinates. hops = nodes.length − 1 (4 short / 7 long).
 export const MAP_1A = {
-  roads: {
-    short: {
-      nodes: ['src', 's1', 's2', 's3', 'dock'],
-      hazard: { kind: 'storm', impactNode: 's2', threatens: [2, 4] },
-      bwPickup: { node: 's3', amount: 2 }, // node 3 (build card #16), a relay tops you up
+  id: 'act1-intro',
+  startBandwidth: 10,
+  startDeadline: 8,
+  stars: { threeStar: 9, twoStar: 8 },
+  segments: [{
+    roads: {
+      short: {
+        nodes: ['src', 's1', 's2', 's3', 'dock'],
+        hazard: { kind: 'storm', impactNode: 's2', threatens: [2, 4] },
+        bwPickup: { node: 's3', amount: 2 }, // node 3 (build card #16), a relay tops you up
+      },
+      long: {
+        nodes: ['src', 'l1', 'l2', 'l3', 'l4', 'l5', 'l6', 'dock'],
+        hazard: { kind: 'drizzle', impactNode: 'l3', threatens: [3] },
+        bwPickup: { node: 'l4', amount: 2 }, // node 4 (build card #16)
+      },
     },
-    long: {
-      nodes: ['src', 'l1', 'l2', 'l3', 'l4', 'l5', 'l6', 'dock'],
-      hazard: { kind: 'drizzle', impactNode: 'l3', threatens: [3] },
-      bwPickup: { node: 'l4', amount: 2 }, // node 4 (build card #16)
-    },
-  },
+  }],
+};
+
+// Generated-map budgets (Phase 1b, K=3 segments) — v0, tuned against the
+// generated-economy simulation in tests/unit (same method as the 1a table).
+export const GEN = {
+  segments: 3,
+  startBandwidth: 16,
+  startDeadline: 15,
+  stars: { threeStar: 13, twoStar: 11 },
 };
 
 export const HAZARDS = {

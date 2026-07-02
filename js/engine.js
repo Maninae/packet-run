@@ -1,37 +1,41 @@
-// engine.js — the Phase 1a run state machine. Headless by design: the UI,
-// the unit tests, the economy simulator, and agent playtesters all drive the
-// SAME engine through createRun / legalActions / act. No DOM access here.
+// engine.js — the run state machine. Headless by design: the UI, the unit
+// tests, the economy simulators, and agent playtesters all drive the SAME
+// engine through createRun / legalActions / act. No DOM access here.
 //
-// A run: junction (pick a road) → nodes (tool beats) → onward (hop: deadline
-// ticks, impacts resolve, pickups/fog/rejoins fire on arrival) → dock render
-// or failure. Fail-fast: the moment Deadline dips below zero, the run ends.
+// A run walks a MAP (config.js schema v2): per segment — junction (pick a
+// road) → nodes (tool beats) → onward (hop: deadline ticks, impacts resolve,
+// pickups/fog/rejoins fire on arrival) → next junction … until the dock
+// renders or the run fails. Fail-fast: Deadline below zero ends it there.
 //
 // rng is injectable for tests/simulation; defaults to the seeded PRNG.
 // Consumption order is documented in encounters.js — keep it stable.
 
-import { RUN, MAP_1A, STARS } from './config.js';
+import { RUN, MAP_1A } from './config.js';
 import { seededRng } from './rng.js';
 import { duplicateLegal, applyDuplicate, retransmitLegal, applyRetransmit } from './tools.js';
 import { resolveImpact, rollFog } from './encounters.js';
 
-export function createRun({ seed, rng, mods = null }) {
+export function createRun({ seed, rng, mods = null, map = MAP_1A }) {
   return {
     seed,
     rng: rng ?? seededRng(seed),
     mods, // difficulty overrides (config.EASY) — null = standard world
-    bandwidth: RUN.startBandwidth,
-    deadline: RUN.startDeadline,
+    map,
+    bandwidth: map.startBandwidth,
+    deadline: map.startDeadline,
     fragments: Array.from({ length: RUN.partySize }, (_, i) => ({
       id: i + 1,
       status: 'with-party', // 'with-party' | 'lost' | 'returning'
       hasCopy: false,
     })),
     phase: 'junction',      // 'junction' | 'node' | 'done'
-    road: null,             // 'short' | 'long'
-    node: 'src',
+    segment: 0,             // index into map.segments
+    road: null,             // 'short' | 'long' within the current segment
+    node: map.segments[0].roads.short.nodes[0],
     stepIndex: 0,           // index into the chosen road's node list
-    impactResolved: false,
-    fogCost: null,          // revealed at the penultimate node
+    impactResolved: false,  // per segment — resets at each junction
+    lastImpact: null,       // { kind, impactNode } — autopsy's killer
+    fogCost: null,          // revealed at the last road's penultimate node
     outcome: null,          // 'rendered' | 'failed'
     failure: null,          // { reason, killerConcept }
     stars: null,
@@ -39,14 +43,22 @@ export function createRun({ seed, rng, mods = null }) {
   };
 }
 
+export function currentSegment(run) {
+  return run.map.segments[run.segment];
+}
+
+export function segmentRoads(run) {
+  return currentSegment(run).roads;
+}
+
 export function roadDef(run) {
-  return MAP_1A.roads[run.road];
+  return segmentRoads(run)[run.road];
 }
 
 export function legalActions(run) {
   if (run.phase === 'done') return [];
   if (run.phase === 'junction') {
-    return Object.keys(MAP_1A.roads).map((road) => ({ type: 'choose-road', road }));
+    return Object.keys(segmentRoads(run)).map((road) => ({ type: 'choose-road', road }));
   }
   const actions = [];
   for (const f of run.fragments) {
@@ -85,9 +97,10 @@ function arriveAtDock(run) {
     fail(run, 'missing-fragments', 'packet-loss');
     return;
   }
+  const { threeStar, twoStar } = run.map.stars;
   run.phase = 'done';
   run.outcome = 'rendered';
-  run.stars = run.bandwidth >= STARS.threeStar ? 3 : run.bandwidth >= STARS.twoStar ? 2 : 1;
+  run.stars = run.bandwidth >= threeStar ? 3 : run.bandwidth >= twoStar ? 2 : 1;
   run.events.push({ type: 'render', delivered, stars: run.stars });
 }
 
@@ -107,7 +120,8 @@ function onward(run) {
   }
 
   // the world acts mid-wire: crossing into the impact node resolves the hazard
-  if (to === def.hazard.impactNode && !run.impactResolved) {
+  if (def.hazard && to === def.hazard.impactNode && !run.impactResolved) {
+    run.lastImpact = { kind: def.hazard.kind, impactNode: def.hazard.impactNode };
     resolveImpact(run, def.hazard, run.rng);
   }
 
@@ -120,18 +134,30 @@ function onward(run) {
     run.events.push({ type: 'rejoin', fragments: rejoined.map((f) => f.id) });
   }
 
-  if (def.bwPickup.node === to) {
+  if (def.bwPickup?.node === to) {
     run.bandwidth += def.bwPickup.amount;
     run.events.push({ type: 'pickup', amount: def.bwPickup.amount, bandwidth: run.bandwidth });
   }
 
-  const penultimate = def.nodes[def.nodes.length - 2];
-  if (to === penultimate && run.fogCost === null) {
+  // fog belongs to the run's final stretch: the LAST segment's chosen road,
+  // revealed at its second-to-last node (a consequence, not a decision)
+  const lastSegment = run.segment === run.map.segments.length - 1;
+  if (lastSegment && to === def.nodes.at(-2) && run.fogCost === null) {
     run.fogCost = rollFog(run, run.rng);
     run.events.push({ type: 'fog-reveal', cost: run.fogCost });
   }
 
-  if (finalHop) arriveAtDock(run);
+  if (finalHop) {
+    arriveAtDock(run);
+  } else if (to === def.nodes.at(-1)) {
+    // end of segment: the next junction opens; tool windows reset
+    run.segment += 1;
+    run.stepIndex = 0;
+    run.road = null;
+    run.impactResolved = false;
+    run.phase = 'junction';
+    run.events.push({ type: 'junction-reached', segment: run.segment, node: to });
+  }
 }
 
 export function act(run, action) {
@@ -142,7 +168,7 @@ export function act(run, action) {
     case 'choose-road':
       run.road = action.road;
       run.phase = 'node';
-      run.events.push({ type: 'road-chosen', road: action.road });
+      run.events.push({ type: 'road-chosen', road: action.road, segment: run.segment });
       break;
     case 'duplicate':
       applyDuplicate(run, run.fragments.find((f) => f.id === action.fragment));

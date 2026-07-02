@@ -4,7 +4,7 @@
 // powers the loss screen, balance tuning, and the headless simulator.
 // deriveAutopsy is pure; logRun is the only storage side effect.
 
-import { MAP_1A, TOOLS } from './config.js';
+import { TOOLS } from './config.js';
 
 const CONCEPT_LINES = {
   'packet-loss': 'Real senders insure important data with redundancy.',
@@ -63,9 +63,8 @@ export function deriveAutopsy(run) {
       suggestion: null, toolLine: null, conceptLine: null };
   }
 
-  const hazard = MAP_1A.roads[run.road].hazard;
   const killerNode = run.failure.reason === 'missing-fragments'
-    ? `${hazard.kind}-${hazard.impactNode}`
+    ? (run.lastImpact ? `${run.lastImpact.kind}-${run.lastImpact.impactNode}` : 'unknown')
     : (hops.at(-1)?.to ?? run.node);
   const suggestion = suggestFor(run);
   return {
