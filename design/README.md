@@ -17,6 +17,7 @@ A browser roguelite RPG for ages 9–12 (easy mode younger, depth for adults). Y
 | [07-accuracy.md](07-accuracy.md) | The accuracy spine — calibration, falsehood list, mechanics-level rules (dev-facing law) |
 | [08-art.md](08-art.md) | Drawn-in-code art system, Pip's visual language, biome palettes |
 | [09-build-plan.md](09-build-plan.md) | Phases with honest sizing, playtest cadence, post-v1 list, risks |
+| [10-bosses.md](10-bosses.md) | Paper specs (1b deliverable): The Static 4-beat duel, DDoS Swarm siege — built Phases 3–5 |
 
 ## Status
 
