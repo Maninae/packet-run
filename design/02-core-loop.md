@@ -89,6 +89,19 @@ Four distinct outcome profiles (★-safe, ★★-solid, ★★★-daring, ★★
 >
 > Fun gate: does the pricing table above feel like *choices* in the hand? If not at these numbers, tune; if not at any numbers, the loop has failed and we stop.
 
+## v0 numbers (Phase 1b) — generated 3-segment maps
+
+Multi-segment runs (map schema v2 in `js/config.js`; generator in `js/generator.js`) keep every 1a principle: each junction re-poses short-risky vs long-mild; deadline **scarcity is the point** (at Deadline 15 the sim proved reactive recovery strictly dominated insurance — the wrong lesson; 13 restores the trade).
+
+| Value | v0 | Note |
+|---|---|---|
+| Segments per run | 3 | template stitching from 3 archetypes (A storm-read / B tempo / C paid-risk); ≤2 storm segments per map so full insurance stays affordable |
+| Starting Bandwidth | 16 | pickups +2 ride template B/C roads; ≥1 guaranteed per map |
+| Starting Deadline | 13 | all-short ≈ 7 hops, all-long ≈ 10 — recovery must *cost* |
+| Delivery stars | ★★★ ≥13 · ★★ ≥10 | recovery lines can reach ★★; full insurance stays ★ |
+
+**Verified temperaments** (tests/unit/economy-gen.test.js, 1500 runs each — the executable EV-check): guardian (insure everything) 95% wins, always ★; daredevil (short + recover) 72%; wanderer (mild roads + recover) 76%, mostly ★★★ — the jackpot line; strategist (adaptive) ~100%, mid pay. No temperament dominates; both failure modes (loss, lag) occur in the wild.
+
 ## Loss and run end
 
 A failed render ends the run (permadeath-ish; meta unlocks persist — [03-toolbelt.md](03-toolbelt.md)). Every failure flows into the **loss autopsy** ([06-experience.md](06-experience.md)) — loss is a teaching beat, never a dead end. A lost *fragment* mid-run is content, not punishment: noticing the gap and re-sending IS the retransmission lesson.

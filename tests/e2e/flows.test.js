@@ -25,7 +25,7 @@ function replayLine(seed, { road, insure }) {
 async function playLineUI(page, seed, { road, insure }, origin) {
   // skip the protected first session — these runs must match unmodded replays
   await page.addInitScript(() => localStorage.setItem('packet-run-wins', '1'));
-  await page.goto(`${origin}/?seed=${seed}`);
+  await page.goto(`${origin}/?seed=${seed}&map=act1`); // pin the 1a region
   await page.getByRole('button', { name: /deliver/i }).click();
   await page.locator(`[data-road-chip="${road}"]`).click();
   await page.locator(`[data-road-chip="${road}"]`).click();
@@ -127,6 +127,35 @@ test('mute persists across reloads', async () => {
   await page.locator('#mute').click();
   await page.reload();
   assert.equal(await page.evaluate(() => localStorage.getItem('packet-run-muted')), '1');
+  await page.context().close();
+});
+
+test('a generated 3-segment map plays end to end through the UI', async () => {
+  const page = await app.page(VIEWPORTS.portrait, { reducedMotion: 'reduce' });
+  await page.addInitScript(() => localStorage.setItem('packet-run-wins', '1'));
+  await page.goto(`${app.origin}/?seed=GENMAP1`); // no map pin → generated
+  await page.getByRole('button', { name: /deliver/i }).click();
+
+  let junctions = 0;
+  for (let guard = 0; guard < 60; guard++) {
+    if (await page.locator('.win-screen, .loss-screen').count()) break;
+    const chip = page.locator('[data-road-chip="short"]');
+    if (await chip.count()) { junctions++; await chip.click(); await chip.click(); continue; }
+    if (await page.locator('#tool-retransmit:enabled').count()
+        && await page.locator('.fragment-chip.lost').count()) {
+      await page.locator('#tool-retransmit:enabled').click();
+      const target = page.locator('.fragment-chip.targetable').first();
+      if (await target.count()) { await target.click(); continue; }
+      await page.locator('#tool-retransmit').click();
+    }
+    const go = page.locator('#go:enabled');
+    if (await go.count()) { await go.click(); continue; }
+    await page.waitForTimeout(100);
+  }
+  assert.equal(junctions, 3, 'three junction choices on a 3-segment map');
+  const run = await page.evaluate(() => window.packetRun.run);
+  assert.equal(run.phase, 'done');
+  assert.equal(run.map.id, 'gen-GENMAP1');
   await page.context().close();
 });
 

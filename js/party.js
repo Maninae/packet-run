@@ -6,7 +6,7 @@
 //   2. DOM party row: one 44px chip per fragment — also the tap target for
 //      tool aiming on mobile (arm a tool, then tap the fragment).
 
-import { GEO, viewTransform } from './map.js';
+import { layoutMap, viewTransform } from './map.js';
 import { PIP_SPARK_D, pipAvatar, copyIcon } from './icons.js';
 
 const cssCache = {};
@@ -95,11 +95,11 @@ function setupCanvas(canvas) {
 // Draw the party standing at a node. `fragments` uses the engine shape:
 // [{ id, status: 'with-party' | 'lost' | 'returning', hasCopy }]
 // `now` drives a gentle idle bob — the party feels alive while you think.
-export function renderParty(canvas, { nodeId, fragments }, now = 0) {
+export function renderParty(canvas, { map, nodeId, fragments }, now = 0) {
   const { ctx, w, h, t } = setupCanvas(canvas);
   ctx.clearRect(0, 0, w, h);
 
-  const node = GEO.nodes[nodeId];
+  const node = layoutMap(map)[nodeId];
   const present = fragments.filter((f) => f.status === 'with-party');
 
   for (const f of present) {
@@ -140,9 +140,10 @@ export function stopIdle() {
 // design/07). Impact fates resolve mid-wire: 'swept' fragments flash and drop,
 // 'saved' ones flare violet as their copy absorbs the hit.
 // racers: [{ id, hasCopy, fate: 'arrives' | 'swept' | 'saved' }]
-export function animateHop(canvas, { from, to, racers }, { duration = 850 } = {}) {
-  const a = GEO.nodes[from];
-  const b = GEO.nodes[to];
+export function animateHop(canvas, { map, from, to, racers }, { duration = 850 } = {}) {
+  const nodes = layoutMap(map);
+  const a = nodes[from];
+  const b = nodes[to];
   const dx = b.x - a.x;
   const dy = b.y - a.y;
   const len = Math.hypot(dx, dy);

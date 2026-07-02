@@ -15,16 +15,24 @@ Browser roguelite RPG teaching networking foundations to ages 9–12. You play *
 index.html          shell (ES modules, type="module")
 css/base.css        design tokens: palette, stroke, spacing (source of truth for look)
 css/components.css  reusable UI pieces (belt bar, meters, glyph chips)
-js/config.js        ALL v0 numbers — mirrors design/02-core-loop.md; change BOTH together
-js/state.js         run state — the single coordinator object; helpers stay stateless
-js/map.js           SVG region map: nodes, roads, glyphs, fog
-js/party.js         Canvas live layer: Pip + fragments racing wires, juice
-js/tools.js         toolbelt: costs, effects, affordability
-js/encounters.js    hazard windows: approach → impact → response beats
-js/main.js          bootstrap + game loop wiring
+js/config.js        ALL v0 numbers + map schema v2 — mirrors design/02; change BOTH together
+js/rng.js           seeded PRNG (runs reproducible from their seed string)
+js/engine.js        run state machine: createRun/legalActions/act — headless by design
+js/generator.js     seeded multi-segment maps (template stitching; own rng stream seed:map)
+js/tools.js         toolbelt: costs, effects, per-tool legality
+js/encounters.js    world-side resolution: impacts, gust tail, fog
+js/autopsy.js       loss-as-teaching: autopsy JSON derivation + localStorage run log
+js/map.js           SVG map: layout (hand 1a + generic vertical stack), roads, glyphs, fog
+js/party.js         Canvas live layer: party cluster + hop races; DOM party row (tool targets)
+js/hud.js           meters, prompt strip, belt, legend popover, mute
+js/screens.js       start / win (message unfurl) / loss (autopsy card) overlays
+js/sound.js         WebAudio-synthesized sfx, zero assets
+js/icons.js         code-drawn inline SVG icons (Pip's spark shared with canvas)
+js/main.js          bootstrap + beat sequencing wiring only — no game rules
 ```
 
-- **No monoliths:** split any file approaching ~300 lines. One nameable responsibility per module. State lives on the coordinator in `state.js`; helpers receive what they need as arguments.
+- **No monoliths:** split any file approaching ~300 lines. One nameable responsibility per module. Run state lives on the engine's run object; helpers receive what they need as arguments.
+- **The engine is headless** — tests, the economy sims, and agent playtesters drive the same createRun/legalActions/act API the UI does. Never put game rules in main.js.
 - **SVG for the map/characters, Canvas for motion** — see design/08. `prefers-reduced-motion` respected.
 
 ## Non-negotiables (from the design)

@@ -3,8 +3,9 @@
 // resulting events into beats (animate the hop, flash the notices, re-render)
 // and routes taps back into engine actions.
 
-import { EASY } from './config.js';
+import { EASY, MAP_1A } from './config.js';
 import { createRun, legalActions, act, segmentRoads, roadDef } from './engine.js';
+import { generateMap } from './generator.js';
 import { randomSeed } from './rng.js';
 import { logRun, deriveAutopsy } from './autopsy.js';
 import { renderMap } from './map.js';
@@ -106,6 +107,9 @@ function computePrompt() {
 function scene() {
   const atJunction = run.phase === 'junction';
   return {
+    map: run.map,
+    segment: run.segment,
+    takenRoads: run.events.filter((e) => e.type === 'road-chosen').map((e) => e.road),
     chosenRoad: run.road,
     highlightRoad: pendingRoad,
     showJunctionGlyphs: atJunction,
@@ -143,10 +147,10 @@ function renderAll() {
   renderMeters(run);
   renderMap($('#map-layer'), scene());
   if (run.phase !== 'done') {
-    startIdle($('#live-layer'), () => ({ nodeId: run.node, fragments: run.fragments }));
+    startIdle($('#live-layer'), () => ({ map: run.map, nodeId: run.node, fragments: run.fragments }));
   } else {
     stopIdle();
-    renderParty($('#live-layer'), { nodeId: run.node, fragments: [] });
+    renderParty($('#live-layer'), { map: run.map, nodeId: run.node, fragments: [] });
   }
   renderPartyRow($('#party'), run.fragments, {
     threatened: threatenedSet(),
@@ -222,9 +226,9 @@ async function animateBatch(batch) {
         hasCopy: f.hasCopy || savedIds.includes(f.id),
         fate: sweptIds.includes(f.id) ? 'swept' : savedIds.includes(f.id) ? 'saved' : 'arrives',
       }));
-    await animateHop($('#live-layer'), { from: hop.from, to: hop.to, racers });
+    await animateHop($('#live-layer'), { map: run.map, from: hop.from, to: hop.to, racers });
     // settle into the standing cluster while the notices play
-    renderParty($('#live-layer'), { nodeId: hop.to, fragments: run.fragments });
+    renderParty($('#live-layer'), { map: run.map, nodeId: hop.to, fragments: run.fragments });
   }
 
   for (const e of batch) {
@@ -330,8 +334,18 @@ async function dispatch(action) {
 
 // --- run lifecycle ---
 
+// Map choice: the hand-authored 1a region until the first win (it doubles as
+// the tutorial region), seeded generated maps after. ?map=act1 pins the
+// tutorial region — used by shared tutorial seeds and the E2E suite.
+const pinnedMap = new URLSearchParams(window.location.search).get('map');
+
+function mapFor(seed) {
+  if (pinnedMap === 'act1' || winsCount() === 0) return MAP_1A;
+  return generateMap(seed);
+}
+
 function newRun(seed, { easy = winsCount() === 0, hint = null } = {}) {
-  run = createRun({ seed, mods: easy ? EASY : null });
+  run = createRun({ seed, mods: easy ? EASY : null, map: mapFor(seed) });
   hintText = hint;
   pendingRoad = null;
   armed = null;
@@ -344,7 +358,11 @@ function newRun(seed, { easy = winsCount() === 0, hint = null } = {}) {
 }
 
 const initialSeed = new URLSearchParams(window.location.search).get('seed') || randomSeed();
-run = createRun({ seed: initialSeed, mods: winsCount() === 0 ? EASY : null });
+run = createRun({
+  seed: initialSeed,
+  mods: winsCount() === 0 ? EASY : null,
+  map: mapFor(initialSeed),
+});
 wireLegend();
 wireMute();
 renderAll();

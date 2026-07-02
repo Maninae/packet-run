@@ -44,7 +44,7 @@ async function openGame(page, seed) {
   // these tests assert against unmodded engine replays — skip the protected
   // first session (which softens world RNG until the first win)
   await page.addInitScript(() => localStorage.setItem('packet-run-wins', '1'));
-  await page.goto(`${app.origin}/?seed=${seed}`);
+  await page.goto(`${app.origin}/?seed=${seed}&map=act1`); // pin the 1a region
   await page.getByRole('button', { name: /deliver/i }).click(); // start overlay
 }
 

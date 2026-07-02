@@ -1,48 +1,81 @@
-// map.js — SVG region map: geometry, roads, nodes, glyphs, fog-of-detail.
-// Responsibility: render the hand-authored Phase 1a map and the junction
-// interaction (tap a road → highlight, tap again → commit; build card #9).
-// Shape always visible; hazard glyphs only ~1 hop ahead. Threat glyphs are
-// FORECASTS ("the storm is eyeing #2 and #4") — never prophecy (design/07).
-//
-// "8 nodes" in design/02 counts the MEANINGFUL nodes (home, storm, both
-// pickups, drizzle, both fog penults, dock); hop counts (4 short / 7 long)
-// are the binding numbers and include plain waypoints.
+// map.js — SVG region map: layout, roads, nodes, glyphs, fog-of-detail.
+// Works on ANY map (config.js schema v2): the hand-tuned 1a region keeps its
+// hand geometry; generated maps get a vertical-stack layout (portrait-first,
+// source bottom → dock top, short roads bulge left / long roads right).
+// Fog-of-detail: shape always visible; hazard clouds and junction chips only
+// for the CURRENT segment; threat glyphs are FORECASTS (design/07).
 
 import { stormIcon, drizzleIcon, clockIcon } from './icons.js';
 
 const NS = 'http://www.w3.org/2000/svg';
+export const VIEWBOX = [0, 0, 390, 560];
 
-export const GEO = {
-  viewBox: [0, 0, 390, 560],
-  nodes: {
-    src: { x: 195, y: 522, kind: 'source', label: 'Home' },
-    s1: { x: 128, y: 452 },
-    s2: { x: 78, y: 348 },                 // storm impact (short road node 2)
-    s3: { x: 102, y: 220, kind: 'pickup' }, // +2 BW relay; penultimate → fog reveal
-    l1: { x: 268, y: 486 },
-    l2: { x: 322, y: 420 },
-    l3: { x: 345, y: 336 },                 // drizzle impact (long road node 3)
-    l4: { x: 330, y: 248, kind: 'pickup' }, // +2 BW relay (long road node 4)
-    l5: { x: 296, y: 172 },
-    l6: { x: 247, y: 118 },                 // penultimate → fog reveal
-    dock: { x: 195, y: 56, kind: 'dock', label: "Grandma's" },
-  },
-  roads: {
-    short: ['src', 's1', 's2', 's3', 'dock'],
-    long: ['src', 'l1', 'l2', 'l3', 'l4', 'l5', 'l6', 'dock'],
-  },
-  // where each road's hazard cloud hovers: over the impact segment
-  hazardSegments: { short: ['s1', 's2'], long: ['l2', 'l3'] },
+// ---------- layout ----------
+
+const HAND_NODES = {
+  src: { x: 195, y: 522, kind: 'source', label: 'Home' },
+  s1: { x: 128, y: 452 }, s2: { x: 78, y: 348 }, s3: { x: 102, y: 220, kind: 'pickup' },
+  l1: { x: 268, y: 486 }, l2: { x: 322, y: 420 }, l3: { x: 345, y: 336 },
+  l4: { x: 330, y: 248, kind: 'pickup' }, l5: { x: 296, y: 172 }, l6: { x: 247, y: 118 },
+  dock: { x: 195, y: 56, kind: 'dock', label: "Grandma's" },
 };
+
+function genericNodes(map) {
+  const K = map.segments.length;
+  const yTop = 64;
+  const yBottom = 520;
+  const levelY = (i) => yBottom - ((yBottom - yTop) / K) * i;
+  const nodes = {};
+  const place = (id, x, y, kind, label) => { nodes[id] = { x, y, kind, label }; };
+
+  map.segments.forEach((segment, i) => {
+    const from = segment.roads.short.nodes[0];
+    if (!nodes[from]) {
+      place(from, 195, levelY(i),
+        i === 0 ? 'source' : 'junction', i === 0 ? 'Home' : undefined);
+    }
+    for (const [key, road] of Object.entries(segment.roads)) {
+      const side = key === 'short' ? -1 : 1;
+      const bulge = key === 'short' ? 78 : 128;
+      const hops = road.nodes.length - 1;
+      road.nodes.slice(1, -1).forEach((id, n) => {
+        const t = (n + 1) / hops;
+        place(id, 195 + side * bulge * Math.sin(Math.PI * t),
+          levelY(i) - (levelY(i) - levelY(i + 1)) * t,
+          road.bwPickup?.node === id ? 'pickup' : undefined);
+      });
+    }
+  });
+  place('dock', 195, 56, 'dock', "Grandma's");
+  // pickup kinds can also land on shared nodes
+  for (const segment of map.segments) {
+    for (const road of Object.values(segment.roads)) {
+      if (road.bwPickup && nodes[road.bwPickup.node]) {
+        nodes[road.bwPickup.node].kind ??= 'pickup';
+      }
+    }
+  }
+  return nodes;
+}
+
+const layoutCache = new WeakMap();
+export function layoutMap(map) {
+  if (!layoutCache.has(map)) {
+    layoutCache.set(map, map.id === 'act1-intro' ? HAND_NODES : genericNodes(map));
+  }
+  return layoutCache.get(map);
+}
 
 // Maps SVG viewBox coords → stage pixels (shared with the canvas live layer).
 export function viewTransform(stageW, stageH) {
-  const [, , vw, vh] = GEO.viewBox;
+  const [, , vw, vh] = VIEWBOX;
   const scale = Math.min(stageW / vw, stageH / vh);
   const ox = (stageW - vw * scale) / 2;
   const oy = (stageH - vh * scale) / 2;
   return { scale, ox, oy, apply: (x, y) => [ox + x * scale, oy + y * scale] };
 }
+
+// ---------- drawing ----------
 
 function el(name, attrs = {}) {
   const node = document.createElementNS(NS, name);
@@ -50,37 +83,35 @@ function el(name, attrs = {}) {
   return node;
 }
 
-function roadPoints(road) {
-  return GEO.roads[road].map((id) => `${GEO.nodes[id].x},${GEO.nodes[id].y}`).join(' ');
+function roadPointsOf(nodes, road) {
+  return road.nodes.map((id) => `${nodes[id].x},${nodes[id].y}`).join(' ');
 }
 
-function midpoint(aId, bId) {
-  const a = GEO.nodes[aId];
-  const b = GEO.nodes[bId];
-  return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+function midpointOf(nodes, aId, bId) {
+  return { x: (nodes[aId].x + nodes[bId].x) / 2, y: (nodes[aId].y + nodes[bId].y) / 2 };
 }
 
-function drawRoad(svg, road, scene) {
-  const picked = scene.chosenRoad === road || scene.highlightRoad === road;
-  const base = el('polyline', {
-    points: roadPoints(road), fill: 'none',
-    stroke: 'var(--wire)', 'stroke-width': 7,
+// state: 'faint' (future / untaken past) | 'idle' | 'picked' (chosen or previewed)
+function drawRoad(svg, nodes, road, key, state, scene, interactive) {
+  const points = roadPointsOf(nodes, road);
+  const opacity = state === 'faint' ? 0.4 : 1;
+  svg.append(el('polyline', {
+    points, fill: 'none', stroke: 'var(--wire)', 'stroke-width': 7, opacity,
     'stroke-linecap': 'round', 'stroke-linejoin': 'round',
-  });
-  const signal = el('polyline', {
-    points: roadPoints(road), fill: 'none',
-    stroke: picked ? 'var(--road-pick)' : 'var(--wire-lit)',
-    'stroke-width': 2, 'stroke-linecap': 'round', 'stroke-linejoin': 'round',
+  }));
+  svg.append(el('polyline', {
+    points, fill: 'none',
+    stroke: state === 'picked' ? 'var(--road-pick)' : 'var(--wire-lit)',
+    'stroke-width': 2, opacity, 'stroke-linecap': 'round', 'stroke-linejoin': 'round',
     'stroke-dasharray': '1 11',
-    class: `road-signal${scene.chosenRoad === road ? ' flowing' : ''}`,
-  });
-  svg.append(base, signal);
-  if (scene.onRoadTap && !scene.chosenRoad) {
+    class: `road-signal${state === 'picked' && scene.chosenRoad ? ' flowing' : ''}`,
+  }));
+  if (interactive) {
     const hit = el('polyline', {
-      points: roadPoints(road), fill: 'none', stroke: 'transparent',
-      'stroke-width': 36, 'pointer-events': 'stroke', 'data-road': road,
+      points, fill: 'none', stroke: 'transparent',
+      'stroke-width': 36, 'pointer-events': 'stroke', 'data-road': key,
     });
-    hit.addEventListener('click', () => scene.onRoadTap(road));
+    hit.addEventListener('click', () => scene.onRoadTap(key));
     svg.append(hit);
   }
 }
@@ -123,6 +154,15 @@ function drawRelay(svg, { x, y }) {
   svg.append(g);
 }
 
+function drawJunctionNode(svg, { x, y }) {
+  const g = el('g', { transform: `translate(${x},${y})` });
+  g.innerHTML = `
+    <circle r="11" fill="var(--surface-2)" stroke="var(--wire-lit)" stroke-width="2"/>
+    <path d="M0 6 V0 M0 0 L-5 -6 M0 0 L5 -6" fill="none" stroke="var(--ink-soft)"
+          stroke-width="2" stroke-linecap="round"/>`;
+  svg.append(g);
+}
+
 function drawWaypoint(svg, { x, y }) {
   svg.append(el('circle', {
     cx: x, cy: y, r: 6, fill: 'var(--surface-2)',
@@ -130,21 +170,20 @@ function drawWaypoint(svg, { x, y }) {
   }));
 }
 
-function drawHazardCloud(svg, road, kind) {
-  const [a, b] = GEO.hazardSegments[road];
-  const m = midpoint(a, b);
-  const side = road === 'short' ? -1 : 1;
-  // position on the outer g (attribute transform); the CSS bob animates the
-  // inner g — a CSS transform would otherwise OVERRIDE the positioning
+function drawHazardCloud(svg, nodes, road, key) {
+  if (!road.hazard) return;
+  const idx = road.nodes.indexOf(road.hazard.impactNode);
+  const m = midpointOf(nodes, road.nodes[idx - 1], road.nodes[idx]);
+  const side = key === 'short' ? -1 : 1;
   const g = el('g', { transform: `translate(${m.x + side * 26},${m.y - 8})` });
   const bob = el('g', { class: 'hazard-cloud' });
-  bob.innerHTML = `<g transform="translate(-14,-14)">${kind === 'storm' ? stormIcon(28) : drizzleIcon(28)}</g>`;
+  bob.innerHTML = `<g transform="translate(-14,-14)">${road.hazard.kind === 'storm' ? stormIcon(28) : drizzleIcon(28)}</g>`;
   g.append(bob);
   svg.append(g);
 }
 
-// Junction read chip: hazard icon + threatened fragment numbers + distance
-// dots. Doubles as the road's big-friendly tap target (44px+ at any scale).
+// Junction read chip: hazard icon + threatened numbers + distance dots.
+// Doubles as the road's big-friendly tap target.
 function drawGlyphChip(svg, { x, y, kind, threatens, hops, road, scene }) {
   const g = el('g', { transform: `translate(${x},${y})`, class: 'glyph-chip' });
   if (road && scene?.onRoadTap && !scene.chosenRoad) {
@@ -167,18 +206,22 @@ function drawGlyphChip(svg, { x, y, kind, threatens, hops, road, scene }) {
   g.innerHTML = `
     <rect x="-37" y="-16" width="74" height="38" rx="10" fill="var(--surface)"
           stroke="var(--wire-lit)" stroke-width="2"/>
-    ${icon}
-    ${label}
-    ${dots}`;
+    ${icon}${label}${dots}`;
   svg.append(g);
 }
 
-// Once the fog lifts: if the last stretch is slow, say so where it is —
-// a consequence made visible, not a decision (build card #15).
-function drawSlowStretch(svg, scene) {
-  if (!scene.fogRevealed || !scene.fogCost || !scene.chosenRoad) return;
-  const nodes = GEO.roads[scene.chosenRoad];
-  const m = midpoint(nodes[nodes.length - 2], nodes[nodes.length - 1]);
+function chipAnchor(nodes, road, key) {
+  const first = nodes[road.nodes[1]];
+  const side = key === 'short' ? -1 : 1;
+  return {
+    x: Math.max(42, Math.min(348, first.x + side * 58)),
+    y: Math.max(42, Math.min(532, first.y + 14)),
+  };
+}
+
+function drawSlowStretch(svg, nodes, scene, lastRoad) {
+  if (!scene.fogRevealed || !scene.fogCost || !lastRoad) return;
+  const m = midpointOf(nodes, lastRoad.nodes.at(-2), lastRoad.nodes.at(-1));
   const g = el('g', { transform: `translate(${m.x + 30},${m.y})` });
   g.innerHTML = `
     <rect x="-24" y="-13" width="48" height="26" rx="9" fill="var(--surface)"
@@ -199,7 +242,7 @@ function drawFog(svg, scene) {
   svg.append(g);
 }
 
-// Ambient meadow: fixed positions (no per-render twinkle-jump), sparse and dim.
+// Ambient meadow: fixed positions (no per-render twinkle-jump), sparse, dim.
 const AMBIENT_DOTS = Array.from({ length: 26 }, (_, i) => {
   const gold = ((i * 2654435761) >>> 0) / 4294967296;
   const gold2 = ((i * 40503 + 12345) % 65536) / 65536;
@@ -215,9 +258,12 @@ function drawAmbient(svg) {
   svg.append(g);
 }
 
+// scene: { map, segment, chosenRoad, highlightRoad, takenRoads, dockFilled,
+//          showJunctionGlyphs, junctionGlyphs, fogRevealed, fogCost, onRoadTap }
 export function renderMap(svg, scene) {
-  svg.setAttribute('viewBox', GEO.viewBox.join(' '));
+  svg.setAttribute('viewBox', VIEWBOX.join(' '));
   svg.replaceChildren();
+  const nodes = layoutMap(scene.map);
 
   const defs = el('defs');
   defs.innerHTML =
@@ -225,38 +271,52 @@ export function renderMap(svg, scene) {
        <feGaussianBlur stdDeviation="10"/>
      </filter>`;
   svg.append(defs);
-
   drawAmbient(svg);
-  drawRoad(svg, 'short', scene);
-  drawRoad(svg, 'long', scene);
+
+  scene.map.segments.forEach((segment, s) => {
+    for (const [key, road] of Object.entries(segment.roads)) {
+      let state = 'faint';
+      if (s < scene.segment) state = scene.takenRoads?.[s] === key ? 'idle' : 'faint';
+      else if (s === scene.segment) {
+        state = (scene.chosenRoad === key || scene.highlightRoad === key) ? 'picked'
+          : scene.chosenRoad ? 'faint' : 'idle';
+      }
+      const interactive = s === scene.segment && scene.onRoadTap && !scene.chosenRoad;
+      drawRoad(svg, nodes, road, key, state, scene, interactive);
+    }
+  });
+
   drawFog(svg, scene); // mist covers the final stretch's wires, never the nodes
 
-  for (const [id, node] of Object.entries(GEO.nodes)) {
+  for (const node of Object.values(nodes)) {
     if (node.kind === 'source') drawHouse(svg, node);
     else if (node.kind === 'dock') drawDock(svg, node, scene);
     else if (node.kind === 'pickup') drawRelay(svg, node);
+    else if (node.kind === 'junction') drawJunctionNode(svg, node);
     else drawWaypoint(svg, node);
     if (node.label) {
       svg.append(Object.assign(el('text', {
-        x: node.x, y: node.y + (id === 'dock' ? 34 : 36),
+        x: node.x, y: node.y + (node.kind === 'dock' ? 34 : 36),
         'text-anchor': 'middle', 'font-size': 12, 'font-weight': 700,
         fill: 'var(--ink-soft)', 'font-family': 'var(--font)',
       }), { textContent: node.label }));
     }
   }
 
-  drawHazardCloud(svg, 'short', 'storm');
-  drawHazardCloud(svg, 'long', 'drizzle');
-  drawSlowStretch(svg, scene);
-
-  if (scene.showJunctionGlyphs) {
-    const CHIP_POS = { short: { x: 64, y: 480 }, long: { x: 322, y: 530 } };
-    const glyphs = scene.junctionGlyphs ?? [
-      { road: 'short', kind: 'storm', threatens: [2, 4], hops: 4 },
-      { road: 'long', kind: 'drizzle', threatens: [3], hops: 7 },
-    ];
-    for (const glyph of glyphs) {
-      drawGlyphChip(svg, { ...CHIP_POS[glyph.road], ...glyph, scene });
+  // hazard details are fog-of-detail: current segment only (design/07)
+  const current = scene.map.segments[scene.segment];
+  if (current) {
+    for (const [key, road] of Object.entries(current.roads)) {
+      drawHazardCloud(svg, nodes, road, key);
+    }
+    drawSlowStretch(svg, nodes, scene,
+      scene.segment === scene.map.segments.length - 1 && scene.chosenRoad
+        ? current.roads[scene.chosenRoad] : null);
+    if (scene.showJunctionGlyphs && scene.junctionGlyphs) {
+      for (const glyph of scene.junctionGlyphs) {
+        const anchor = chipAnchor(nodes, current.roads[glyph.road], glyph.road);
+        drawGlyphChip(svg, { ...anchor, ...glyph, scene });
+      }
     }
   }
 }

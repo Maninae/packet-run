@@ -13,7 +13,7 @@ async function stormLoss(page, seed, { presetWins = true } = {}) {
   if (presetWins) {
     await page.addInitScript(() => localStorage.setItem('packet-run-wins', '1'));
   }
-  await page.goto(`${app.origin}/?seed=${seed}`);
+  await page.goto(`${app.origin}/?seed=${seed}&map=act1`);
   await page.getByRole('button', { name: /deliver/i }).click();
   await page.locator('[data-road-chip="short"]').click();
   await page.locator('[data-road-chip="short"]').click();
