@@ -32,7 +32,8 @@ export function resolveImpact(run, hazard, rng) {
   }
 
   let gust = null;
-  if (rng() < HAZARDS.gustChance) {
+  const gustChance = run.mods?.gustChance ?? HAZARDS.gustChance;
+  if (rng() < gustChance) {
     const candidates = run.fragments.filter((f) => f.status === 'with-party');
     if (candidates.length > 0) {
       const target = candidates[Math.floor(rng() * candidates.length)];
@@ -45,12 +46,13 @@ export function resolveImpact(run, hazard, rng) {
 }
 
 // Rolls the fog outcome for the final stretch; returns the Deadline cost.
-export function rollFog(rng) {
+export function rollFog(run, rng) {
+  const outcomes = run.mods?.fogOutcomes ?? FOG.outcomes;
   const roll = rng();
   let cumulative = 0;
-  for (const outcome of FOG.outcomes) {
+  for (const outcome of outcomes) {
     cumulative += outcome.p;
     if (roll < cumulative) return outcome.deadlineCost;
   }
-  return FOG.outcomes[FOG.outcomes.length - 1].deadlineCost;
+  return outcomes[outcomes.length - 1].deadlineCost;
 }

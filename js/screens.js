@@ -91,8 +91,7 @@ export function showWin({ run, onNewRun, onSameSeed }) {
   $('#overlay .same-seed').addEventListener('click', onSameSeed);
 }
 
-// Build card #13: one honest line naming the killer, normalizing the loss,
-// plus retry-that-seed. The full autopsy screen is Phase 1b.
+// What killed the run, honestly and without moralizing.
 function lossLine(run) {
   if (run.failure.reason === 'missing-fragments') {
     const missing = run.fragments.filter((f) => f.status !== 'with-party').map((f) => `#${f.id}`);
@@ -100,11 +99,14 @@ function lossLine(run) {
     return `The ${kind} got ${missing.join(' and ')} — the message couldn't finish.
       This happens on the real internet all the time.`;
   }
-  return `Bedtime came before the message did. On the real internet,
-    data that arrives too late gets dropped too.`;
+  return 'Bedtime came before the message did.';
 }
 
-export function showLoss({ run, onNewRun, onSameSeed }) {
+const CONCEPT_NAMES = { 'packet-loss': 'packet loss', latency: 'lag' };
+
+// The loss autopsy card (design/06): what killed → which concept → which tool
+// might have saved you → the real-internet line → hint retry.
+export function showLoss({ run, autopsy, onNewRun, onSameSeed, onHint }) {
   $('#overlay').innerHTML = `
     <div class="screen loss-screen">
       <svg width="64" height="64" viewBox="-14 -14 28 28" aria-hidden="true">
@@ -116,12 +118,17 @@ export function showLoss({ run, onNewRun, onSameSeed }) {
           stroke-width="1.1" stroke-linecap="round"/>
       </svg>
       <p class="loss-line">${lossLine(run)}</p>
+      <p class="stat-line">That was <strong>${CONCEPT_NAMES[autopsy.killerConcept]}</strong>.
+        ${autopsy.toolLine}</p>
+      <p class="stat-line concept-line">${autopsy.conceptLine}</p>
       <div class="btn-row">
-        <button class="primary-btn same-seed">Try same seed</button>
+        <button class="primary-btn hint-retry">Try with a hint</button>
+        <button class="ghost-btn same-seed">Same seed</button>
         <button class="ghost-btn new-run">New run</button>
       </div>
       <span class="seed-note">SEED · ${run.seed}</span>
     </div>`;
   $('#overlay .new-run').addEventListener('click', onNewRun);
   $('#overlay .same-seed').addEventListener('click', onSameSeed);
+  $('#overlay .hint-retry').addEventListener('click', onHint);
 }

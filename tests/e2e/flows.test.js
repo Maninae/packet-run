@@ -23,6 +23,8 @@ function replayLine(seed, { road, insure }) {
 
 // Drive the same policy through the browser UI.
 async function playLineUI(page, seed, { road, insure }, origin) {
+  // skip the protected first session — these runs must match unmodded replays
+  await page.addInitScript(() => localStorage.setItem('packet-run-wins', '1'));
   await page.goto(`${origin}/?seed=${seed}`);
   await page.getByRole('button', { name: /deliver/i }).click();
   await page.locator(`[data-road-chip="${road}"]`).click();

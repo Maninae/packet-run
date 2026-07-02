@@ -3,9 +3,10 @@
 // resulting events into beats (animate the hop, flash the notices, re-render)
 // and routes taps back into engine actions.
 
-import { MAP_1A } from './config.js';
+import { MAP_1A, EASY } from './config.js';
 import { createRun, legalActions, act } from './engine.js';
 import { randomSeed } from './rng.js';
+import { logRun, deriveAutopsy } from './autopsy.js';
 import { renderMap } from './map.js';
 import { renderParty, renderPartyRow, animateHop, startIdle, stopIdle } from './party.js';
 import { renderMeters, setPrompt, flashPrompt, renderBelt, wireLegend, wireMute } from './hud.js';
@@ -20,6 +21,11 @@ let run;
 let pendingRoad = null; // junction two-tap preview (build card #9)
 let armed = null;       // tool waiting for a fragment tap
 let busy = false;       // input locked while beats resolve
+let hintText = null;    // autopsy tool-line carried into a hint retry
+
+// Protected first session (design/06, the Balatro move): world RNG runs easy
+// until the first win. Silent — no training-wheels label.
+const winsCount = () => Number(localStorage.getItem('packet-run-wins') ?? '0');
 
 // E2E tests and curious kids alike can inspect the run (rng excluded: not serializable)
 window.packetRun = {
@@ -43,6 +49,7 @@ function hazardOf(road) {
 function computePrompt() {
   if (armed) return ['copy', `${TOOLTIPS[armed]}<br>Tap a fragment below.`];
   if (run.phase === 'junction') {
+    if (hintText && !pendingRoad) return ['storm', `Hint: ${hintText}`];
     if (pendingRoad === 'short') {
       return ['storm', `The short road: 4 hops, but the storm is eyeing ${names([2, 4])}. Tap again to take it.`];
     }
@@ -269,26 +276,33 @@ async function dispatch(action) {
   busy = false;
   renderAll();
   if (run.phase === 'done') {
+    logRun(run); // every run, win or lose (design/06)
     const handlers = {
       onNewRun: () => newRun(randomSeed()),
       onSameSeed: () => newRun(run.seed),
     };
     if (run.outcome === 'rendered') {
+      localStorage.setItem('packet-run-wins', String(winsCount() + 1));
       await fillDock();
       sfx.win();
       showWin({ run, ...handlers });
     } else {
+      const autopsy = deriveAutopsy(run);
       await delay(500);
       sfx.fail();
-      showLoss({ run, ...handlers });
+      showLoss({
+        run, autopsy, ...handlers,
+        onHint: () => newRun(run.seed, { easy: true, hint: autopsy.toolLine }),
+      });
     }
   }
 }
 
 // --- run lifecycle ---
 
-function newRun(seed) {
-  run = createRun({ seed });
+function newRun(seed, { easy = winsCount() === 0, hint = null } = {}) {
+  run = createRun({ seed, mods: easy ? EASY : null });
+  hintText = hint;
   pendingRoad = null;
   armed = null;
   busy = false;
@@ -300,7 +314,7 @@ function newRun(seed) {
 }
 
 const initialSeed = new URLSearchParams(window.location.search).get('seed') || randomSeed();
-run = createRun({ seed: initialSeed });
+run = createRun({ seed: initialSeed, mods: winsCount() === 0 ? EASY : null });
 wireLegend();
 wireMute();
 renderAll();

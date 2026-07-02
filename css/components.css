@@ -405,6 +405,7 @@
 .stat-line { font-size: 13px; color: var(--ink-soft); }
 
 .loss-line { font-size: 16px; line-height: 1.45; color: var(--ink); }
+.concept-line { font-style: italic; }
 
 .grandma-react { animation: react-pop 0.6s ease; }
 @keyframes react-pop {

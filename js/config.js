@@ -47,6 +47,14 @@ export const FOG = {
   ],
 };
 
+// The "hint" / protected-first-session tier (design/06): world RNG softens —
+// no gust, clear fog — but the storm still sweeps what it names, so the core
+// lesson (insure or recover) is untouched.
+export const EASY = {
+  gustChance: 0,
+  fogOutcomes: [{ deadlineCost: 0, p: 1 }],
+};
+
 export const STARS = {
   // leftover Bandwidth at the dock (>=8 was >=7 until round-6 review
   // showed that let the mixed line dominate both neighbors)

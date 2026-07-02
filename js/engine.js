@@ -14,10 +14,11 @@ import { seededRng } from './rng.js';
 import { duplicateLegal, applyDuplicate, retransmitLegal, applyRetransmit } from './tools.js';
 import { resolveImpact, rollFog } from './encounters.js';
 
-export function createRun({ seed, rng }) {
+export function createRun({ seed, rng, mods = null }) {
   return {
     seed,
     rng: rng ?? seededRng(seed),
+    mods, // difficulty overrides (config.EASY) — null = standard world
     bandwidth: RUN.startBandwidth,
     deadline: RUN.startDeadline,
     fragments: Array.from({ length: RUN.partySize }, (_, i) => ({
@@ -126,7 +127,7 @@ function onward(run) {
 
   const penultimate = def.nodes[def.nodes.length - 2];
   if (to === penultimate && run.fogCost === null) {
-    run.fogCost = rollFog(run.rng);
+    run.fogCost = rollFog(run, run.rng);
     run.events.push({ type: 'fog-reveal', cost: run.fogCost });
   }
 
