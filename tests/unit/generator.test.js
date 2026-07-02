@@ -38,6 +38,8 @@ test('map shape: 3 segments, every road priced, threats name real fragments', ()
           assert.notEqual(road.hazard.impactNode, road.nodes[0]);
           if (road.hazard.kind === 'static') {
             assert.equal(road.hazard.corrupts, 1, 'static zones scramble one');
+          } else if (road.hazard.kind === 'sniffer') {
+            assert.ok(road.hazard.impactNode, 'the sniffer lurks on a node');
           } else if (road.hazard.kind === 'congestion') {
             assert.ok(road.hazard.impactNode, 'the jam sits on a node');
           } else if (road.hazard.kind === 'rapids') {

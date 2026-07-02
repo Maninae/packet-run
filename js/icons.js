@@ -34,6 +34,25 @@ export function drizzleIcon(size = 18) {
   </svg>`;
 }
 
+export function snifferIcon(size = 18) {
+  return `<svg width="${size}" height="${size}" viewBox="0 0 20 20" aria-hidden="true">
+    <path d="M2 10 q8-7 16 0 q-8 7 -16 0z" fill="none" stroke="var(--danger)"
+          stroke-width="1.8" stroke-linejoin="round"/>
+    <circle cx="10" cy="10" r="3" fill="var(--danger)"/>
+    <circle cx="11" cy="9" r="1" fill="var(--bg)"/>
+  </svg>`;
+}
+
+export function cloakIcon(size = 20, color = 'var(--copy)') {
+  return `<svg width="${size}" height="${size}" viewBox="0 0 20 20" aria-hidden="true">
+    <path d="M10 2 L17 5 v5 q0 5 -7 8 q-7-3 -7-8 V5 z" fill="none"
+          stroke="${color}" stroke-width="1.9" stroke-linejoin="round"/>
+    <rect x="7.5" y="8.5" width="5" height="4.5" rx="1.2" fill="${color}"/>
+    <path d="M8.5 8.5 v-1.5 a1.5 1.5 0 0 1 3 0 v1.5" fill="none"
+          stroke="${color}" stroke-width="1.5"/>
+  </svg>`;
+}
+
 export function jamIcon(size = 18) {
   return `<svg width="${size}" height="${size}" viewBox="0 0 20 20" aria-hidden="true">
     <path d="M2 5 h5 q3 0 4 3 q1 3 4 3 h3" fill="none" stroke="var(--hazard)"

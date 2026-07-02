@@ -62,6 +62,22 @@ export function resolveImpact(run, hazard, rng) {
     run.events.push({ type: 'impact', kind: 'congestion', node: hazard.impactNode });
     return;
   }
+  // the sniffer: with the Cloak it's foiled outright — sealed fragments are
+  // VISIBLE on the wire but unreadable (design/07; route-hiding is Tor, out
+  // of scope). Unsealed, its tamper IS corruption: scrambled bits the
+  // checksum pipeline catches, like real receivers do. rng: victimPick.
+  if (hazard.kind === 'sniffer') {
+    const foiled = run.belt.includes('cloak') || run.passives.has('cloak');
+    if (!foiled) {
+      const candidates = run.fragments.filter((f) => f.status === 'with-party');
+      if (candidates.length) {
+        candidates[Math.floor(rng() * candidates.length)].corrupted = true;
+      }
+    }
+    run.impactResolved = true;
+    run.events.push({ type: 'impact', kind: 'sniffer', node: hazard.impactNode, foiled });
+    return;
+  }
   if (hazard.kind === 'static') {
     const candidates = run.fragments.filter((f) => f.status === 'with-party');
     let scrambled = 0;

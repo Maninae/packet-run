@@ -42,7 +42,10 @@ export const TOOLS = {
 // two unowned tools + an energy top-up (pick 1 of 3).
 export const BELT = {
   slots: 4,
-  rewardPool: ['checksum', 'repair', 'buffer', 'reroute'], // starting kits live in PAYLOADS
+  // five tools now compete for four slots — loadout pressure is real.
+  // cloak: the Encryption Cloak passive; its handshake costs 1 Deadline
+  // when taken (design/03). Starting kits live in PAYLOADS.
+  rewardPool: ['checksum', 'repair', 'buffer', 'reroute', 'cloak'],
   resourceReward: { bw: 3 },
 };
 

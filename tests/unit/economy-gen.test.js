@@ -17,15 +17,15 @@ const N = 1500;
 // retransmitted at the first legal moment (the human response beat).
 function play(seed, { pickRoad, insure, avoidStatic }) {
   const map = generateMap(seed);
-  const hasStatic = map.segments.some((s) =>
-    Object.values(s.roads).some((r) => r.hazard?.kind === 'static'));
+  const hasCorruptor = map.segments.some((s) =>
+    Object.values(s.roads).some((r) => ['static', 'sniffer'].includes(r.hazard?.kind)));
   const run = createRun({ seed, map });
   while (run.phase !== 'done') {
     if (run.phase === 'reward') {
       // temperaments that will CROSS a static zone kit up; the guardian
       // routes around the uninsurable instead
       const legal = legalActions(run);
-      const kit = hasStatic && !avoidStatic && legal.find((a) =>
+      const kit = hasCorruptor && !avoidStatic && legal.find((a) =>
         a.kind === 'tool' && (a.tool === 'checksum' || a.tool === 'repair') && !a.replace);
       act(run, kit || legal.find((a) => a.kind === 'bandwidth'));
       continue;
@@ -35,7 +35,8 @@ function play(seed, { pickRoad, insure, avoidStatic }) {
       if (avoidStatic) {
         const roads = segmentRoads(run);
         const other = road === 'short' ? 'long' : 'short';
-        if (roads[road].hazard?.kind === 'static' && roads[other].hazard?.kind !== 'static') {
+        const corr = (r) => ['static', 'sniffer'].includes(r.hazard?.kind);
+        if (corr(roads[road]) && !corr(roads[other])) {
           road = other;
         }
       }
@@ -102,7 +103,7 @@ const POLICIES = {
 // a jam risks no fragments at all — just beats
 function threatWeight(road) {
   if (!road.hazard) return 0;
-  if (road.hazard.kind === 'static') return 1.5;
+  if (['static', 'sniffer'].includes(road.hazard.kind)) return 1.5;
   if (road.hazard.kind === 'congestion') return 0.5;
   return road.hazard.threatens?.length ?? 1;
 }

@@ -79,6 +79,8 @@ export function legalActions(run) {
   if (run.phase === 'reward') {
     const actions = [];
     run.rewardOptions.forEach((option, index) => {
+      // the cloak's handshake needs a beat on the clock — never a suicide pick
+      if (option.tool === 'cloak' && run.deadline < 1) return;
       if (option.kind !== 'tool') {
         actions.push({ type: 'take-reward', index, kind: option.kind });
       } else if (run.belt.length < BELT.slots) {
@@ -213,6 +215,15 @@ function takeReward(run, action) {
   if (option.kind === 'tool') {
     if (action.replace) run.belt = run.belt.filter((t) => t !== action.replace);
     run.belt.push(option.tool);
+    if (option.tool === 'cloak') {
+      run.deadline -= 1; // the encryption handshake takes a beat (design/03)
+      run.events.push({ type: 'handshake', deadline: run.deadline });
+      if (run.deadline < 0) {
+        run.rewardOptions = null;
+        fail(run, 'deadline', 'latency');
+        return;
+      }
+    }
     run.events.push({ type: 'reward-taken', kind: 'tool', tool: option.tool, replaced: action.replace ?? null });
   } else {
     run.bandwidth += option.amount;

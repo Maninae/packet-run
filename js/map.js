@@ -5,11 +5,11 @@
 // Fog-of-detail: shape always visible; hazard clouds and junction chips only
 // for the CURRENT segment; threat glyphs are FORECASTS (design/07).
 
-import { stormIcon, drizzleIcon, staticIcon, rapidsIcon, jamIcon, clockIcon } from './icons.js';
+import { stormIcon, drizzleIcon, staticIcon, rapidsIcon, jamIcon, snifferIcon, clockIcon } from './icons.js';
 
 const HAZARD_ICONS = {
   storm: stormIcon, drizzle: drizzleIcon, static: staticIcon, rapids: rapidsIcon,
-  congestion: jamIcon,
+  congestion: jamIcon, sniffer: snifferIcon,
 };
 
 const NS = 'http://www.w3.org/2000/svg';
@@ -206,7 +206,7 @@ function drawGlyphChip(svg, { x, y, kind, threatens, hops, straggles, road, scen
   const label = !kind
     ? `<text x="0" y="-1" text-anchor="middle" font-size="11" font-weight="700"
          fill="var(--safe)" font-family="var(--font)">quiet</text>`
-    : kind === 'static'
+    : kind === 'static' || kind === 'sniffer'
       ? `<text x="9" y="-1" text-anchor="middle" font-size="13" font-weight="800"
            fill="var(--danger)" font-family="var(--font)">#?</text>`
       : kind === 'rapids'

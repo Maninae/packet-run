@@ -83,6 +83,11 @@ function describeRoad(key) {
   if (road.hazard.kind === 'congestion') {
     return `${hops} hops, a jammed pipe — it only fits a few at a time`;
   }
+  if (road.hazard.kind === 'sniffer') {
+    return run.belt.includes('cloak')
+      ? `${hops} hops, a sniffer listening — your Cloak seals you`
+      : `${hops} hops, a sniffer listening — it can tamper with bits`;
+  }
   return `${hops} hops, a ${road.hazard.kind} eyeing ${names(road.hazard.threatens)}`;
 }
 
@@ -94,7 +99,8 @@ function scaryRoad() {
 }
 
 const HAZARD_PROMPT_ICONS = {
-  drizzle: 'drizzle', static: 'static', rapids: 'rapids', storm: 'storm', congestion: 'jam',
+  drizzle: 'drizzle', static: 'static', rapids: 'rapids', storm: 'storm',
+  congestion: 'jam', sniffer: 'sniffer',
 };
 
 function iconFor(key) {
@@ -122,6 +128,9 @@ function computePrompt() {
     }
     if (hazard.kind === 'congestion') {
       return ['jam', `A jammed pipe on the ${scary} road — slow, but nothing gets lost. Tap a road to look closer.`];
+    }
+    if (hazard.kind === 'sniffer') {
+      return ['sniffer', `A sniffer lurks on the ${scary} road. Tap a road to look closer.`];
     }
     return [iconFor(scary),
       `A ${hazard.kind} on the ${scary} road is eyeing ${names(hazard.threatens)}. Tap a road to look closer.`];
@@ -158,6 +167,11 @@ function computePrompt() {
     }
     if (hazard.kind === 'congestion') {
       return ['jam', `A jam ahead — the pipe only fits so many per beat. Start small and feel it out.`];
+    }
+    if (hazard.kind === 'sniffer') {
+      return run.belt.includes('cloak')
+        ? ['cloak', `A sniffer ahead — let it look. Your seal holds.`]
+        : ['sniffer', `A sniffer ahead — it can scramble what it touches. A Cloak or the Checksum kit answers it.`];
     }
     const approach = def.nodes[def.nodes.indexOf(hazard.impactNode) - 1];
     const icon = hazard.kind === 'storm' ? 'storm' : 'drizzle';
@@ -348,6 +362,17 @@ async function animateBatch(batch) {
   for (const e of batch) {
     switch (e.type) {
       case 'impact': {
+        if (e.kind === 'sniffer') {
+          if (e.foiled) {
+            sfx.pop();
+            flashPrompt('cloak', 'The sniffer watched your sealed fragments pass — and read nothing.');
+          } else {
+            sfx.static();
+            flashPrompt('sniffer', 'The sniffer touched one of your fragments — something\'s scrambled.');
+          }
+          await delay(1000);
+          break;
+        }
         if (e.kind === 'congestion') {
           sfx.mud();
           flashPrompt('jam', 'A jam! This pipe only fits so many per beat — start small.');
@@ -469,6 +494,10 @@ async function animateBatch(batch) {
       case 'congestion-cleared':
         sfx.chime();
         flashPrompt('jam', `Everyone's through — the pipe flows again!`);
+        await delay(800);
+        break;
+      case 'handshake':
+        flashPrompt('cloak', 'Sealing handshake… one tick. Your fragments now travel encrypted.');
         await delay(800);
         break;
       case 'dns-lookup':

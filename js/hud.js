@@ -5,7 +5,7 @@ import { RUN } from './config.js';
 import {
   boltIcon, clockIcon, copyIcon, retransmitIcon, stormIcon, drizzleIcon,
   staticIcon, checksumIcon, repairIcon, rerouteIcon, bufferIcon, rapidsIcon,
-  jamIcon, skipIcon, speakerIcon,
+  jamIcon, snifferIcon, cloakIcon, skipIcon, speakerIcon,
 } from './icons.js';
 import { isMuted, toggleMute } from './sound.js';
 
@@ -28,6 +28,8 @@ const PROMPT_ICONS = {
   drizzle: () => drizzleIcon(22),
   static: () => staticIcon(22),
   jam: () => jamIcon(22),
+  sniffer: () => snifferIcon(22),
+  cloak: () => cloakIcon(22),
   bolt: () => boltIcon(22),
   clock: () => clockIcon(22),
   copy: () => copyIcon(22, 'var(--copy)'),
@@ -83,6 +85,11 @@ export const BELT_TOOLS = {
     label: 'Skip', icon: () => skipIcon(22),
     costs: () => `<span>free</span>`,
   },
+  cloak: {
+    label: 'Encryption Cloak', icon: () => cloakIcon(22),
+    costs: () => `<span>on</span>`,
+    passive: true,
+  },
 };
 
 export { rapidsIcon }; // re-exported for the prompt icon map
@@ -137,6 +144,7 @@ export const REWARD_CARDS = {
   buffer: { icon: () => bufferIcon(26), name: 'Buffer', line: 'Waiting for stragglers costs half.' },
   reroute: { icon: () => rerouteIcon(26), name: 'Re-route', line: 'Ask home to try a different road.' },
   bandwidth: { icon: () => boltIcon(26), name: '+3 Energy', line: 'A top-up, right now.' },
+  cloak: { icon: () => cloakIcon(26), name: 'Encryption Cloak', line: 'Seals fragments from sniffers. Handshake: 1 tick.' },
 };
 
 export function wireMute() {

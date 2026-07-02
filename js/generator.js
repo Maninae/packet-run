@@ -38,6 +38,10 @@ const TEMPLATES = [
     short: { hops: 2, hazard: 'drizzle', threat: 1 },
     long: { hops: 2, hazard: 'congestion' },
   },
+  { // G — the eavesdropper: a quick road someone's listening on, vs long mild
+    short: { hops: 2, hazard: 'sniffer' },
+    long: { hops: 3, hazard: 'drizzle', threat: 1 },
+  },
 ];
 
 function shuffled(rng, array) {
@@ -58,6 +62,8 @@ function buildRoad(rng, spec, { segment, key, from, to }) {
     const impactNode = nodes[Math.min(2, spec.hops - 1)];
     if (spec.hazard === 'static') {
       hazard = { kind: 'static', impactNode, corrupts: 1 };
+    } else if (spec.hazard === 'sniffer') {
+      hazard = { kind: 'sniffer', impactNode };
     } else if (spec.hazard === 'congestion') {
       hazard = { kind: 'congestion', impactNode };
     } else if (spec.hazard === 'rapids') {
@@ -81,9 +87,9 @@ export function generateMap(seed, { segments = GEN.segments } = {}) {
     () => Math.floor(rng() * TEMPLATES.length));
   const stormy = picks.filter((p) => TEMPLATES[p].short.hazard === 'storm').length;
   if (stormy === segments) picks[1] = 1; // swap the middle for the tempo segment
-  // never open with the Static: a reward beat (where Checksum can be picked)
-  // must precede any corruption zone
-  while (TEMPLATES[picks[0]].short.hazard === 'static') {
+  // never open with a corruption-class hazard (Static or sniffer): a reward
+  // beat — where the counter-kit can be picked — must come first
+  while (['static', 'sniffer'].includes(TEMPLATES[picks[0]].short.hazard)) {
     picks[0] = (picks[0] + 1) % TEMPLATES.length;
   }
   // one send-rate puzzle per run at most (cognitive-load gating, design/04;
