@@ -44,7 +44,7 @@ function starsSVG(stars) {
 
 // After the first win, the kid picks what they're sending — two payloads,
 // two strategies. TCP/UDP are never named here (vocab rule, design/06).
-export function showStart({ seed, showPicker, payload = 'tcp-file', onPlay }) {
+export function showStart({ seed, showPicker, payload = 'tcp-file', gentle, onPlay, onGentle, onDaily }) {
   const picker = showPicker
     ? `<div class="reward-cards payload-cards">
         <button class="reward-card" data-payload="tcp-file">
@@ -65,6 +65,13 @@ export function showStart({ seed, showPicker, payload = 'tcp-file', onPlay }) {
       It travels as 5 fragments — you're Pip, their guide.
       ${showPicker ? '' : 'Get all 5 across the internet before her bedtime.'}</p>
       ${picker}
+      <div class="start-extras">
+        <label class="gentle-toggle">
+          <input type="checkbox" id="gentle" ${gentle ? 'checked' : ''}>
+          Gentle mode
+        </label>
+        <button class="ghost-btn daily-btn" id="daily">Today's run</button>
+      </div>
       <span class="seed-note">SEED · ${seed}</span>
     </div>`;
   for (const btn of document.querySelectorAll('#overlay [data-payload]')) {
@@ -73,6 +80,11 @@ export function showStart({ seed, showPicker, payload = 'tcp-file', onPlay }) {
       onPlay(btn.dataset.payload);
     });
   }
+  $('#gentle').addEventListener('change', (e) => onGentle(e.target.checked));
+  $('#daily').addEventListener('click', () => {
+    $('#overlay').replaceChildren();
+    onDaily();
+  });
 }
 
 // Panic-copying wins but wastes energy — make the waste legible (fun-gate

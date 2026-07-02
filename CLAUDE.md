@@ -8,7 +8,8 @@ Browser roguelite RPG teaching networking foundations to ages 9–12. You play *
 - **Gate 1 PASSED** (2026-07-01): portrait-first layout proven at 390×844; desktop derives from it.
 - **Phase 1a PLAYABLE, Gate 2 PASSED** (2026-07-01): fun review PASS; accuracy audit 0 violations.
 - **Phase 1b BUILT and GATED** (2026-07-02): multi-segment seeded maps (generator v1), corruption + Checksum/Repair, reorder rapids + Buffer, 4-slot belt + pick-1-of-3 rewards + Re-route, loss autopsy + hint retries + protected first session, boss paper specs (design/10). 1b gate: fun TUNE→applied, accuracy 2+1→fixed (log in design/README). ~91 tests green (`npm test`, `node --test tests/e2e/*.test.js`).
-- **Current phase: Phase 2** ([design/09-build-plan.md](design/09-build-plan.md)): UDP live-call payload (freshness timers + free Skip — design/05), headless batch simulator, onboarding map polish, easy-mode toggle, daily seeded run. **Kid playtests are non-negotiable from here** (Owen recruits ~3 kids, monthly).
+- **Phase 2 core BUILT** (2026-07-02): UDP live-call payload (born-expired freshness + stutter bleed + free Skip; contrast proven by simulation — design/05 synced), payload picker after first win, gentle-mode toggle, daily seeded run. The "headless batch simulator" deliverable lives as the executable economy suites (tests/unit/economy*.test.js).
+- **Current phase: Phase 3** ([design/09-build-plan.md](design/09-build-plan.md)): DNS + caching, the congestion send-rate puzzle, sniffer/encryption, undersea trench + satellite pass, Acts 1–3 as distinct biomes (palette families in design/08), the weather-state system, first Events, first elite (DDoS Swarm — spec in design/10). **Kid playtests are non-negotiable from here** (Owen recruits ~3 kids, monthly).
 - Testing lore: reduced-motion E2E misses animation-path crashes — keep at least one full-motion E2E per encounter type.
 
 ## Architecture

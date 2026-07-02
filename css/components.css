@@ -424,6 +424,25 @@
 
 .seed-note { font-family: var(--font-mono); font-size: 11px; color: var(--ink-faint); }
 
+.start-extras {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--space) * 2);
+}
+
+.gentle-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--ink-soft);
+  min-height: var(--touch-min);
+}
+
+.gentle-toggle input { width: 18px; height: 18px; accent-color: var(--safe); }
+
+.daily-btn { font-size: 13px; min-height: var(--touch-min); padding: 6px 14px; }
+
 /* win: the message unfurls line by line as the payoff */
 .message-card {
   width: 100%;

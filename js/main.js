@@ -27,8 +27,17 @@ let payload = 'tcp-file';
 let stutterNoticed = false; // one stutter notice per run, not per beat
 
 // Protected first session (design/06, the Balatro move): world RNG runs easy
-// until the first win. Silent — no training-wheels label.
+// until the first win. Silent — no training-wheels label. Gentle mode is the
+// same softening as an explicit, persistent choice (carries the 9-and-unders).
 const winsCount = () => Number(localStorage.getItem('packet-run-wins') ?? '0');
+const gentleOn = () => localStorage.getItem('packet-run-gentle') === '1';
+const playEasy = () => gentleOn() || winsCount() === 0;
+
+// today's shared seed — same map and rolls for everyone (design/06)
+const dailySeed = () => {
+  const d = new Date();
+  return `DAY-${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
+};
 
 // E2E tests and curious kids alike can inspect the run (rng excluded: not serializable)
 window.packetRun = {
@@ -495,7 +504,7 @@ function mapFor(seed) {
   return generateMap(seed);
 }
 
-function newRun(seed, { easy = winsCount() === 0, hint = null } = {}) {
+function newRun(seed, { easy = playEasy(), hint = null } = {}) {
   run = createRun({ seed, mods: easy ? EASY : null, map: mapFor(seed), payload });
   hintText = hint;
   pendingRoad = null;
@@ -514,7 +523,7 @@ const initialSeed = urlParams.get('seed') || randomSeed();
 payload = urlParams.get('payload') === 'call' ? 'udp-call' : 'tcp-file';
 run = createRun({
   seed: initialSeed,
-  mods: winsCount() === 0 ? EASY : null,
+  mods: playEasy() ? EASY : null,
   map: mapFor(initialSeed),
   payload,
 });
@@ -527,18 +536,16 @@ showStart({
   seed: initialSeed,
   showPicker: winsCount() > 0 && !urlParams.get('payload'),
   payload,
+  gentle: gentleOn(),
+  onGentle: (on) => localStorage.setItem('packet-run-gentle', on ? '1' : '0'),
+  onDaily: () => {
+    unlockAudio();
+    newRun(dailySeed());
+  },
   onPlay: (chosen) => {
     unlockAudio();
-    if (chosen && chosen !== payload) {
-      payload = chosen;
-      run = createRun({
-        seed: initialSeed,
-        mods: winsCount() === 0 ? EASY : null,
-        map: mapFor(initialSeed),
-        payload,
-      });
-    }
-    renderAll();
+    if (chosen && chosen !== payload) payload = chosen;
+    newRun(initialSeed);
   },
 });
 window.addEventListener('resize', () => { if (!busy) renderAll(); });

@@ -57,6 +57,25 @@ test('after the first win, the start screen offers the payload choice', async ()
   await page.context().close();
 });
 
+test('gentle mode persists and softens the world; the daily run shares a date seed', async () => {
+  const page = await app.page(VIEWPORTS.portrait, { reducedMotion: 'reduce' });
+  await page.addInitScript(() => localStorage.setItem('packet-run-wins', '1'));
+  await page.goto(`${app.origin}/?seed=GENTLE1&map=act1&payload=file`);
+  await page.locator('#gentle').check();
+  await page.getByRole('button', { name: /deliver/i }).click();
+  let run = await page.evaluate(() => window.packetRun.run);
+  assert.equal(run.mods?.gustChance, 0, 'gentle mode = easy world');
+  assert.equal(await page.evaluate(() => localStorage.getItem('packet-run-gentle')), '1');
+
+  // the daily run: a shared date seed
+  await page.goto(`${app.origin}/?map=act1&payload=file`);
+  await page.locator('#daily').click();
+  run = await page.evaluate(() => window.packetRun.run);
+  assert.match(run.seed, /^DAY-\d{8}$/);
+  assert.equal(run.phase, 'junction');
+  await page.context().close();
+});
+
 test('a brand-new player gets the simple message start (no picker)', async () => {
   const page = await app.page(VIEWPORTS.portrait, { reducedMotion: 'reduce' });
   await page.goto(`${app.origin}/?seed=FRESH1`);
