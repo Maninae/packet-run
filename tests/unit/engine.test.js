@@ -49,9 +49,13 @@ test('createRun: v0 starting state', () => {
   assert.equal(run.seed, 'TEST');
 });
 
-test('junction: only the two roads are legal', () => {
+test('junction: both roads offered, movement locked until one is chosen', () => {
   const run = createRun({ seed: 'TEST' });
-  assert.deepEqual(types(legalActions(run)), ['choose-road:short', 'choose-road:long']);
+  const legal = types(legalActions(run));
+  assert.ok(legal.includes('choose-road:short') && legal.includes('choose-road:long'));
+  assert.ok(!legal.includes('onward'), 'no moving without a road');
+  // tools stay usable at junctions (insure before you commit)
+  assert.ok(legal.includes('duplicate:1'));
   assert.throws(() => act(run, go), /illegal/i);
 });
 

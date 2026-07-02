@@ -39,6 +39,8 @@ export function createRun({ seed, rng, mods = null, map = MAP_1A }) {
     node: map.segments[0].roads.short.nodes[0],
     stepIndex: 0,           // index into the chosen road's node list
     impactResolved: false,  // per segment — resets at each junction
+    waitsUsed: 0,           // per rapids window (max 2 — design/04)
+    passives: new Set(),    // always-on machinery ('buffer', …) — belt 1b-v
     lastImpact: null,       // { kind, impactNode } — autopsy's killer
     fogCost: null,          // revealed at the last road's penultimate node
     outcome: null,          // 'rendered' | 'failed'
@@ -62,10 +64,14 @@ export function roadDef(run) {
 
 export function legalActions(run) {
   if (run.phase === 'done') return [];
-  if (run.phase === 'junction') {
-    return Object.keys(segmentRoads(run)).map((road) => ({ type: 'choose-road', road }));
-  }
+  // tools stay available at junction beats too (mid-map junctions: rescue or
+  // insure BEFORE committing to a road) — only movement needs a chosen road
   const actions = [];
+  if (run.phase === 'junction') {
+    for (const road of Object.keys(segmentRoads(run))) {
+      actions.push({ type: 'choose-road', road });
+    }
+  }
   for (const f of run.fragments) {
     if (duplicateLegal(run, f)) actions.push({ type: 'duplicate', fragment: f.id });
   }
@@ -76,7 +82,12 @@ export function legalActions(run) {
   for (const f of run.fragments) {
     if (repairLegal(run, f)) actions.push({ type: 'repair', fragment: f.id });
   }
-  actions.push({ type: 'onward' });
+  if (run.phase === 'node') {
+    if (run.fragments.some((f) => f.status === 'straggler') && run.waitsUsed < 2) {
+      actions.push({ type: 'wait' });
+    }
+    actions.push({ type: 'onward' });
+  }
   return actions;
 }
 
@@ -118,8 +129,44 @@ function arriveAtDock(run) {
   run.events.push({ type: 'render', delivered, stars: run.stars });
 }
 
+// Waiting at rapids: 1 Deadline per beat (Buffer passive: two beats for the
+// price of one). Lag counts down; caught-up stragglers rejoin.
+function waitBeat(run) {
+  const buffered = run.passives.has('buffer');
+  const cost = buffered ? run.waitsUsed % 2 : 1;
+  run.waitsUsed += 1;
+  run.deadline -= cost;
+  run.events.push({ type: 'wait', cost, deadline: run.deadline });
+  if (run.deadline < 0) {
+    fail(run, 'deadline', 'latency');
+    return;
+  }
+  const caught = [];
+  for (const f of run.fragments) {
+    if (f.status !== 'straggler') continue;
+    f.lag -= 1;
+    if (f.lag <= 0) {
+      f.status = 'with-party';
+      delete f.lag;
+      caught.push(f.id);
+    }
+  }
+  if (caught.length) run.events.push({ type: 'rejoin', fragments: caught });
+}
+
 function onward(run) {
   const def = roadDef(run);
+
+  // pressing on abandons any remaining stragglers (recoverable via Retransmit)
+  const abandoned = run.fragments.filter((f) => f.status === 'straggler');
+  if (abandoned.length) {
+    for (const f of abandoned) {
+      f.status = 'lost';
+      delete f.lag;
+    }
+    run.events.push({ type: 'stragglers-lost', fragments: abandoned.map((f) => f.id) });
+  }
+
   const from = def.nodes[run.stepIndex];
   run.stepIndex += 1;
   const to = def.nodes[run.stepIndex];
@@ -195,6 +242,9 @@ export function act(run, action) {
       break;
     case 'repair':
       applyRepair(run, run.fragments.find((f) => f.id === action.fragment));
+      break;
+    case 'wait':
+      waitBeat(run);
       break;
     case 'onward':
       onward(run);

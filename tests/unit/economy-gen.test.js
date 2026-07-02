@@ -31,8 +31,12 @@ function play(seed, { pickRoad, insure }) {
       }
       continue;
     }
-    // the response beat: fix what's broken before moving (all temperaments)
-    const fix = legalActions(run).find((a) =>
+    // the response beat: fix what's broken before moving (all temperaments);
+    // at rapids, wait while the clock allows, else press on and retransmit
+    const legal = legalActions(run);
+    const waitAct = legal.find((a) => a.type === 'wait');
+    if (waitAct && run.deadline > 4) { act(run, waitAct); continue; }
+    const fix = legal.find((a) =>
       a.type === 'retransmit' || a.type === 'checksum' || a.type === 'repair');
     act(run, fix ?? { type: 'onward' });
   }

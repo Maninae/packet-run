@@ -183,6 +183,14 @@ export function animateHop(canvas, { map, from, to, racers }, { duration = 850 }
           y += fall * 46;
           alpha = 1 - fall / 0.6;
         }
+        if (f.fate === 'straggle' && t01 >= IMPACT_T) {
+          // caught in the rapids: frozen mid-wire, still yours
+          const hold = IMPACT_T;
+          const lane2 = lanes[i % lanes.length] * Math.sin(Math.PI * Math.min(1, hold * 1.15));
+          x = a.x + dx * hold + perp.x * lane2;
+          y = a.y + dy * hold + perp.y * lane2 + Math.sin(t01 * 14) * 2;
+          alpha = 0.7;
+        }
         const [px, py] = t.apply(x, y);
         ctx.globalAlpha = alpha;
         drawFragment(ctx, px, py, 15 * t.scale, { id: f.id, hasCopy: f.hasCopy && t01 < IMPACT_T });
@@ -234,6 +242,14 @@ export function renderPartyRow(container, fragments, opts = {}) {
     if (f.corrupted && f.revealed) {
       chip.classList.add('glitched');
       chip.setAttribute('aria-label', `Fragment ${f.id} — scrambled`);
+    }
+    if (f.status === 'straggler') {
+      chip.classList.add('straggler');
+      chip.setAttribute('aria-label', `Fragment ${f.id} — ${f.lag} beat${f.lag > 1 ? 's' : ''} behind`);
+      const badge = document.createElement('span');
+      badge.className = 'lag-badge';
+      badge.textContent = f.lag;
+      chip.append(badge);
     }
     if (opts.threatened?.has(f.id)) chip.classList.add('threatened');
     if (opts.targetable?.has(f.id)) chip.classList.add('targetable');

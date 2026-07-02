@@ -70,7 +70,7 @@ const BELT_TOOLS = {
   },
 };
 
-export function renderBelt({ tools, legal, armed, canGo, onArm, onGo }) {
+export function renderBelt({ tools, legal, armed, canGo, onArm, onGo, onWait }) {
   const buttons = tools.map((name) => {
     const tool = BELT_TOOLS[name];
     const enabled = legal.some((a) => a.type === name);
@@ -79,11 +79,15 @@ export function renderBelt({ tools, legal, armed, canGo, onArm, onGo }) {
       ${tool.icon()}<span class="cost">${tool.costs()}</span>
     </button>`;
   }).join('');
+  const canWait = legal.some((a) => a.type === 'wait');
+  const waitBtn = canWait
+    ? `<button class="go-btn wait-btn" id="wait">Wait</button>` : '';
   $('#belt').innerHTML =
-    `${buttons}<button class="go-btn" id="go" ${canGo ? '' : 'disabled'}>Onward</button>`;
+    `${buttons}${waitBtn}<button class="go-btn" id="go" ${canGo ? '' : 'disabled'}>Onward</button>`;
   for (const name of tools) {
     $(`#tool-${name}`).addEventListener('click', () => onArm(name));
   }
+  if (canWait) $('#wait').addEventListener('click', onWait);
   $('#go').addEventListener('click', onGo);
 }
 

@@ -82,6 +82,11 @@ export const sfx = {
     voice({ type: 'sine', freq: 740, dur: 0.09, gain: 0.22 });
     voice({ type: 'sine', freq: 990, dur: 0.12, at: 0.11, gain: 0.22 });
   },
+  splash: () => {                                                            // rapids scatter
+    noise({ dur: 0.5, from: 900, to: 180, gain: 0.2 });
+    voice({ type: 'sine', freq: 320, to: 180, dur: 0.3, gain: 0.16 });
+  },
+  bloop: () => voice({ type: 'sine', freq: 260, to: 420, dur: 0.18, gain: 0.24 }), // a beat of waiting
   slot: (i) => {                                                             // dock fill, rising
     const scale = [523, 587, 659, 784, 880];
     voice({ type: 'triangle', freq: scale[i % 5], dur: 0.22, gain: 0.35 });

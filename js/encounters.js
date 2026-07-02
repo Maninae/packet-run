@@ -27,12 +27,32 @@ function sweep(fragment) {
 // Duplicate insures against loss, Checksum/Repair own corruption). The event
 // reports only the COUNT: which fragment is the Checksum's job to find.
 export function resolveImpact(run, hazard, rng) {
+  // rapids: fragments fall behind with VISIBLE lag (1–2 beats) — the wait-or-
+  // press-on choice is informed. rng order: per straggler pick, then its lag.
+  if (hazard.kind === 'rapids') {
+    const stragglers = [];
+    for (let i = 0; i < hazard.straggles; i++) {
+      const candidates = run.fragments.filter((f) => f.status === 'with-party');
+      if (!candidates.length) break;
+      const straggler = candidates[Math.floor(rng() * candidates.length)];
+      straggler.status = 'straggler';
+      straggler.lag = rng() < 0.5 ? 1 : 2;
+      stragglers.push({ fragment: straggler.id, lag: straggler.lag });
+    }
+    run.impactResolved = true;
+    run.waitsUsed = 0;
+    run.events.push({ type: 'impact', kind: 'rapids', node: hazard.impactNode, stragglers });
+    return;
+  }
   if (hazard.kind === 'static') {
     const candidates = run.fragments.filter((f) => f.status === 'with-party');
-    const victim = candidates[Math.floor(rng() * candidates.length)];
-    victim.corrupted = true;
+    let scrambled = 0;
+    if (candidates.length) {
+      candidates[Math.floor(rng() * candidates.length)].corrupted = true;
+      scrambled = 1;
+    }
     run.impactResolved = true;
-    run.events.push({ type: 'impact', kind: 'static', node: hazard.impactNode, scrambled: 1 });
+    run.events.push({ type: 'impact', kind: 'static', node: hazard.impactNode, scrambled });
     return;
   }
   const byId = new Map(run.fragments.map((f) => [f.id, f]));

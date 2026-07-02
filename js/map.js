@@ -5,9 +5,11 @@
 // Fog-of-detail: shape always visible; hazard clouds and junction chips only
 // for the CURRENT segment; threat glyphs are FORECASTS (design/07).
 
-import { stormIcon, drizzleIcon, staticIcon, clockIcon } from './icons.js';
+import { stormIcon, drizzleIcon, staticIcon, rapidsIcon, clockIcon } from './icons.js';
 
-const HAZARD_ICONS = { storm: stormIcon, drizzle: drizzleIcon, static: staticIcon };
+const HAZARD_ICONS = {
+  storm: stormIcon, drizzle: drizzleIcon, static: staticIcon, rapids: rapidsIcon,
+};
 
 const NS = 'http://www.w3.org/2000/svg';
 export const VIEWBOX = [0, 0, 390, 560];
@@ -186,7 +188,7 @@ function drawHazardCloud(svg, nodes, road, key) {
 
 // Junction read chip: hazard icon + threatened numbers + distance dots.
 // Doubles as the road's big-friendly tap target.
-function drawGlyphChip(svg, { x, y, kind, threatens, hops, road, scene }) {
+function drawGlyphChip(svg, { x, y, kind, threatens, hops, straggles, road, scene }) {
   const g = el('g', { transform: `translate(${x},${y})`, class: 'glyph-chip' });
   if (road && scene?.onRoadTap && !scene.chosenRoad) {
     g.setAttribute('data-road-chip', road);
@@ -206,8 +208,11 @@ function drawGlyphChip(svg, { x, y, kind, threatens, hops, road, scene }) {
     : kind === 'static'
       ? `<text x="9" y="-1" text-anchor="middle" font-size="13" font-weight="800"
            fill="var(--danger)" font-family="var(--font)">#?</text>`
-      : `<text x="9" y="-1" text-anchor="middle" font-size="12" font-weight="800"
-           fill="var(--hazard)" font-family="var(--font)">${nums}</text>`;
+      : kind === 'rapids'
+        ? `<text x="9" y="-1" text-anchor="middle" font-size="12" font-weight="800"
+             fill="var(--fragment)" font-family="var(--font)">x${straggles ?? 2}</text>`
+        : `<text x="9" y="-1" text-anchor="middle" font-size="12" font-weight="800"
+             fill="var(--hazard)" font-family="var(--font)">${nums}</text>`;
   g.innerHTML = `
     <rect x="-37" y="-16" width="74" height="38" rx="10" fill="var(--surface)"
           stroke="var(--wire-lit)" stroke-width="2"/>

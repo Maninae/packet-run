@@ -263,6 +263,36 @@
 
 .go-btn:disabled { opacity: 0.35; }
 
+.wait-btn {
+  min-width: 72px;
+  background: transparent;
+  border: var(--stroke-w) solid var(--fragment);
+  color: var(--fragment);
+}
+
+/* a straggler: still yours, just behind — dashed cyan with a lag badge */
+.fragment-chip.straggler {
+  border-style: dashed;
+  opacity: 0.75;
+}
+
+.fragment-chip .lag-badge {
+  position: absolute;
+  top: -7px;
+  right: -7px;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 6px;
+  background: var(--deadline);
+  border: var(--stroke-w) solid var(--bg);
+  color: var(--bg);
+  font-size: 11px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 /* ---------- juice ---------- */
 
 .road-signal.flowing { animation: dash-march 0.8s linear infinite; }

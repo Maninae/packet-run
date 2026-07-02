@@ -66,19 +66,23 @@ function describeRoad(key) {
   if (road.hazard.kind === 'static') {
     return `${hops} hops, static that scrambles one fragment`;
   }
+  if (road.hazard.kind === 'rapids') {
+    return `${hops} hops, rapids — ${road.hazard.straggles} fragments will fall behind`;
+  }
   return `${hops} hops, a ${road.hazard.kind} eyeing ${names(road.hazard.threatens)}`;
 }
 
 function scaryRoad() {
   const roads = segmentRoads(run);
   const threat = (k) => roads[k].hazard
-    ? (roads[k].hazard.threatens?.length ?? 1) : 0;
+    ? (roads[k].hazard.threatens?.length ?? roads[k].hazard.straggles ?? 1) : 0;
   return threat('short') >= threat('long') ? 'short' : 'long';
 }
 
+const HAZARD_PROMPT_ICONS = { drizzle: 'drizzle', static: 'static', rapids: 'rapids', storm: 'storm' };
+
 function iconFor(key) {
-  const kind = hazardOf(key)?.kind;
-  return kind === 'drizzle' ? 'drizzle' : kind === 'static' ? 'static' : 'storm';
+  return HAZARD_PROMPT_ICONS[hazardOf(key)?.kind] ?? 'storm';
 }
 
 function computePrompt() {
@@ -94,6 +98,9 @@ function computePrompt() {
     if (hazard.kind === 'static') {
       return ['static', `The Static haunts the ${scary} road — it scrambles bits. Tap a road to look closer.`];
     }
+    if (hazard.kind === 'rapids') {
+      return ['rapids', `Rapids on the ${scary} road — the party will scatter. Tap a road to look closer.`];
+    }
     return [iconFor(scary),
       `A ${hazard.kind} on the ${scary} road is eyeing ${names(hazard.threatens)}. Tap a road to look closer.`];
   }
@@ -102,9 +109,19 @@ function computePrompt() {
   const def = roadDef(run);
   const hazard = def.hazard;
   const lost = run.fragments.filter((f) => f.status === 'lost').map((f) => f.id);
+  const stragglers = run.fragments.filter((f) => f.status === 'straggler');
+  if (stragglers.length) {
+    const list = stragglers
+      .map((f) => `<strong>#${f.id}</strong> ${f.lag} beat${f.lag > 1 ? 's' : ''}`)
+      .join(', ');
+    return ['rapids', `Behind: ${list}. Wait for them, or press on without them.`];
+  }
   if (!run.impactResolved && hazard) {
     if (hazard.kind === 'static') {
       return ['static', `The Static is ahead — it scrambles one fragment's bits. Copies won't help; Checksum will, after.`];
+    }
+    if (hazard.kind === 'rapids') {
+      return ['rapids', `Rapids ahead — some of the party will fall behind. Waiting costs time; leaving them costs more.`];
     }
     const approach = def.nodes[def.nodes.indexOf(hazard.impactNode) - 1];
     const icon = hazard.kind === 'storm' ? 'storm' : 'drizzle';
@@ -193,6 +210,7 @@ function renderAll() {
     armed,
     canGo: !busy && (run.phase === 'node' || (run.phase === 'junction' && pendingRoad !== null)),
     onArm, onGo,
+    onWait: () => { if (!busy) dispatch({ type: 'wait' }); },
   });
   const [icon, html] = computePrompt();
   if (html) setPrompt(icon, html);
@@ -258,12 +276,16 @@ async function animateBatch(batch) {
       ? [...impact.saved, ...(impact.gust?.saved ? [impact.gust.fragment] : [])]
       : [];
     const rejoined = new Set(rejoin?.fragments ?? []);
+    const straggled = new Set((impact?.stragglers ?? []).map((s) => s.fragment));
     const racers = run.fragments
-      .filter((f) => (f.status === 'with-party' && !rejoined.has(f.id)) || sweptIds.includes(f.id))
+      .filter((f) => (f.status === 'with-party' && !rejoined.has(f.id))
+        || sweptIds.includes(f.id) || straggled.has(f.id))
       .map((f) => ({
         id: f.id,
         hasCopy: f.hasCopy || savedIds.includes(f.id),
-        fate: sweptIds.includes(f.id) ? 'swept' : savedIds.includes(f.id) ? 'saved' : 'arrives',
+        fate: sweptIds.includes(f.id) ? 'swept'
+          : straggled.has(f.id) ? 'straggle'
+            : savedIds.includes(f.id) ? 'saved' : 'arrives',
       }));
     await animateHop($('#live-layer'), { map: run.map, from: hop.from, to: hop.to, racers });
     // settle into the standing cluster while the notices play
@@ -273,6 +295,14 @@ async function animateBatch(batch) {
   for (const e of batch) {
     switch (e.type) {
       case 'impact': {
+        if (e.kind === 'rapids') {
+          sfx.splash();
+          const list = e.stragglers
+            .map((s) => `<strong>#${s.fragment}</strong>`).join(' and ');
+          flashPrompt('rapids', `Splash! The rapids scattered the party — ${list} fell behind.`);
+          await delay(1000);
+          break;
+        }
         if (e.kind === 'static') {
           sfx.static();
           const stage = $('#stage');
@@ -339,6 +369,14 @@ async function animateBatch(batch) {
         await delay(900);
         break;
       }
+      case 'stragglers-lost':
+        sfx.sweep();
+        flashPrompt('rapids', `You pressed on — ${names(e.fragments)} fell too far behind.`);
+        await delay(900);
+        break;
+      case 'wait':
+        sfx.bloop();
+        break;
       case 'copies-discarded':
         flashPrompt('copy',
           `The dock keeps one of each number — spare ${names(e.fragments)} not needed.`);

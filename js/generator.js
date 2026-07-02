@@ -29,6 +29,10 @@ const TEMPLATES = [
     short: { hops: 2, hazard: 'static' },
     long: { hops: 3, hazard: 'drizzle', threat: 1 },
   },
+  { // E — reorder rapids: a Deadline-priced shortcut vs long drizzle
+    short: { hops: 2, hazard: 'rapids', straggles: 2 },
+    long: { hops: 4, hazard: 'drizzle', threat: 1 },
+  },
 ];
 
 function shuffled(rng, array) {
@@ -49,6 +53,8 @@ function buildRoad(rng, spec, { segment, key, from, to }) {
     const impactNode = nodes[Math.min(2, spec.hops - 1)];
     if (spec.hazard === 'static') {
       hazard = { kind: 'static', impactNode, corrupts: 1 };
+    } else if (spec.hazard === 'rapids') {
+      hazard = { kind: 'rapids', impactNode, straggles: spec.straggles };
     } else {
       const threatens = shuffled(rng, Array.from({ length: RUN.partySize }, (_, i) => i + 1))
         .slice(0, spec.threat)

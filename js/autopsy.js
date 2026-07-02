@@ -28,11 +28,14 @@ const TOOL_LINES = {
     'Every Retransmit costs a tick. Spend them where they count.',
   'checksum-then-repair':
     'Checksum finds the scrambled fragment — Repair fixes it before the dock.',
+  'wait-at-rapids':
+    'Stragglers catch up if you wait a beat. Retransmit can still call back the ones you left.',
 };
 
 function suggestFor(run) {
   if (run.failure.reason === 'corrupted-payload') return 'checksum-then-repair';
   if (run.failure.reason === 'missing-fragments') {
+    if (run.lastImpact?.kind === 'rapids') return 'wait-at-rapids';
     const usedDuplicate = run.events.some((e) => e.type === 'duplicate');
     if (!usedDuplicate) return 'duplicate-before-storm';
     if (run.bandwidth >= TOOLS.retransmit.bw) return 'retransmit-the-lost';

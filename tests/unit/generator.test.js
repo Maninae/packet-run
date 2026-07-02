@@ -36,6 +36,8 @@ test('map shape: 3 segments, every road priced, threats name real fragments', ()
           assert.notEqual(road.hazard.impactNode, road.nodes[0]);
           if (road.hazard.kind === 'static') {
             assert.equal(road.hazard.corrupts, 1, 'static zones scramble one');
+          } else if (road.hazard.kind === 'rapids') {
+            assert.ok(road.hazard.straggles >= 1, 'rapids strand at least one');
           } else {
             for (const id of road.hazard.threatens) {
               assert.ok(id >= 1 && id <= RUN.partySize);
@@ -63,8 +65,9 @@ test('engine walks a generated map: junction per segment, tools reset each storm
 
   for (let segment = 0; segment < 3 && run.phase !== 'done'; segment++) {
     assert.equal(run.phase, 'junction', `segment ${segment} opens with a junction`);
-    assert.deepEqual(legalActions(run).map((a) => a.type),
-      ['choose-road', 'choose-road']);
+    const legal = legalActions(run).map((a) => a.type);
+    assert.equal(legal.filter((t) => t === 'choose-road').length, 2);
+    assert.ok(!legal.includes('onward'), 'movement locked until a road is chosen');
     act(run, { type: 'choose-road', road: 'long' });
     // duplicates are legal again before EACH segment's impact
     const canDup = legalActions(run).some((a) => a.type === 'duplicate');
