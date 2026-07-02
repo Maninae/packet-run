@@ -6,6 +6,8 @@ You're a message trying to get home. You shatter into five packet-fragments, jou
 
 ---
 
+**[Play it](https://maninae.github.io/packet-run/)** | **[For grown-ups](https://maninae.github.io/packet-run/teachers.html)** | **[Playtest kit](PLAYTEST.md)**
+
 No lectures, no quizzes. You don't read about retransmission — you lose a fragment to a storm and re-send it to win. Every tool is a real networking verb, every hazard a real phenomenon, every route a real tradeoff. The design law is [**never teach a falsehood**](design/07-accuracy.md): simplify, dramatize, personify — but never plant an idea a kid has to unlearn later.
 
 - **Five acts, five people waiting**: Grandma's birthday note, Ava's new apartment, pen-pal Kenji across the ocean, Auntie Rosa on the mesh her neighbors built — and Grandma again, with the Static in between. The act ladder is the curriculum: congestion enters with the city, undersea cables with the ocean, the finale is the entity behind every corruption zone.
@@ -56,7 +58,7 @@ The full table, the accuracy commitments, and co-play guidance live on [the grow
 createRun / legalActions / act        one headless engine drives everything
         │
         ├── the browser UI            (SVG map, canvas party, WebAudio sfx — all drawn in code)
-        ├── ~180 unit + E2E tests     (node:test + Playwright, portrait & desktop)
+        ├── the full test suite       (node:test + Playwright, portrait & desktop)
         ├── Monte-Carlo economies     (four player temperaments × 1500 runs — balance is simulated, not guessed)
         └── the map generator          (every candidate map replayed & verified winnable before serving)
 ```

@@ -55,4 +55,4 @@ js/main.js          bootstrap + beat sequencing wiring only — no game rules
 
 - No AI-attribution lines or Claude co-author trailers in commits or files.
 - No PII in the repo. Working title "Packet Run" — rename freely before publishing.
-- Not yet on GitHub; do not create a remote or publish without Owen's say-so (run prepare-for-public-sharing first when that day comes).
+- PUBLIC since 2026-07-02: github.com/maninae/packet-run, live at maninae.github.io/packet-run (Owen's go; prepare-for-public-sharing pass clean). Iterating live — next milestone is design/11 (landscape layout + chase-cam perspective view).
