@@ -9,9 +9,10 @@ If UDP were merely "TCP with a lower bar," kids would win it playing the same ca
 | | 📄 **File / message (TCP)** | 🎥 **Live call (UDP)** |
 |---|---|---|
 | Render rule | **5/5 at the dock**, correct & in order | **≥3/5 fresh** — the call plays with dropped frames |
-| Freshness | none — late is fine | **every fragment carries a 3-beat timer**; expired = useless |
-| Straggler rule | wait or retransmit — patience pays | an expired fragment **blocks the dock** (−1 Deadline per beat) until you **Skip** it |
+| Freshness | none — late is fine | a frame **≥2 beats behind is already too old** — born expired at the rapids; a lag-1 frame is worth one wait *(v0 implementation of the "3-beat timer": expiry lands at impact, making wait-vs-skip a per-frame read)* |
+| Gap rule | wait or retransmit — patience pays | an unacknowledged gap makes the call **stutter: −1 Deadline every beat** until you **Skip** it *(v0 refinement of "blocks the dock": the bleed is live, so acknowledging early is the winning tempo — verified by simulation: the tempo policy beats imported-TCP clinging, and the clock is what does the punishing)* |
 | Kit difference | Retransmit core; Skip absent | **no Retransmit**; **Skip (free)** is the signature verb |
+| Corruption | a scrambled fragment at the dock **fails the render** | the dock **drops the bad frame** and the call keeps playing |
 | Winning feel | discipline — every fragment matters | tempo — *abandon the straggler, ship the next one* |
 
 Render thresholds are **ratios, not counts** — with Compression (party of 3), the call renders at ≥2/3 — so payload identity survives every party size. Same maps, opposite optimal play. A kid who wins a call run *by deliberately abandoning stragglers* has understood UDP without being lectured. The "Was this real?" popup carries the honest nuance: *the app on top of UDP decides how much loss is OK — video calls tolerate a lot; other uses tolerate none.*

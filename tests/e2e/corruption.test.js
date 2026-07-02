@@ -59,7 +59,7 @@ test('build the kit at rewards, then detect and repair the Static\'s work', asyn
   const seed = scanSeed();
   const page = await app.page(VIEWPORTS.portrait, { reducedMotion: 'reduce' });
   await page.addInitScript(() => localStorage.setItem('packet-run-wins', '1'));
-  await page.goto(`${app.origin}/?seed=${seed}`);
+  await page.goto(`${app.origin}/?seed=${seed}&payload=file`);
   await page.getByRole('button', { name: /deliver/i }).click();
 
   let tookChecksum = false;

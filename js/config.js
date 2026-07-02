@@ -7,7 +7,24 @@ export const RUN = {
   startBandwidth: 10,
   startDeadline: 8,
   deadlinePerHop: 1,
-  renderThresholdRatio: 1.0, // TCP file payload: 5/5 at the dock, Deadline >= 0
+};
+
+// Payloads are strategic identity (design/05): different KITS, not different
+// thresholds. Thresholds are ratios so identity survives any party size.
+// TCP/UDP are never named until the Act-5 reveal (design/06 vocabulary rule).
+export const PAYLOADS = {
+  'tcp-file': {
+    renderRatio: 1.0,                  // 5/5 at the dock, correct, in order
+    belt: ['duplicate', 'retransmit'], // discipline: every fragment matters
+    freshness: null,                   // late is fine
+  },
+  'udp-call': {
+    renderRatio: 0.6,                  // ≥3/5 fresh — the call plays with gaps
+    belt: ['duplicate', 'skip'],       // tempo: abandon stragglers, ship the next
+    freshness: 2,                      // a frame ≥2 beats behind is ALREADY too old
+    // (expiry lands AT impact: lag-1 stragglers are worth one wait, lag-2 are
+    //  born expired — that per-frame read is the wait-vs-skip decision)
+  },
 };
 
 export const TOOLS = {
@@ -16,6 +33,7 @@ export const TOOLS = {
   checksum: { bw: 1, deadline: 0 },   // scan the party: reveals which fragment is scrambled
   repair: { bw: 2, deadline: 0 },     // fix one REVEALED scrambled fragment
   reroute: { bw: 1, deadline: 1 },    // sender reissue: rematerialize at the segment junction
+  skip: { bw: 0, deadline: 0 },       // wave a straggler/lost/expired frame goodbye — free (UDP kit)
 };
 
 // The loadout layer (design/03: 3 slots → 5 by late campaign; 4 fits the
@@ -24,8 +42,7 @@ export const TOOLS = {
 // two unowned tools + an energy top-up (pick 1 of 3).
 export const BELT = {
   slots: 4,
-  start: ['duplicate', 'retransmit'],
-  rewardPool: ['checksum', 'repair', 'buffer', 'reroute'],
+  rewardPool: ['checksum', 'repair', 'buffer', 'reroute'], // starting kits live in PAYLOADS
   resourceReward: { bw: 3 },
 };
 

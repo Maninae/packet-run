@@ -10,20 +10,22 @@
 // rng is injectable for tests/simulation; defaults to the seeded PRNG.
 // Consumption order is documented in encounters.js — keep it stable.
 
-import { RUN, MAP_1A, BELT, TOOLS } from './config.js';
+import { RUN, MAP_1A, BELT, TOOLS, PAYLOADS } from './config.js';
 import { seededRng } from './rng.js';
 import {
   duplicateLegal, applyDuplicate, retransmitLegal, applyRetransmit,
   checksumLegal, applyChecksum, repairLegal, applyRepair,
+  skipLegal, applySkip,
 } from './tools.js';
 import { resolveImpact, rollFog } from './encounters.js';
 
-export function createRun({ seed, rng, mods = null, map = MAP_1A }) {
+export function createRun({ seed, rng, mods = null, map = MAP_1A, payload = 'tcp-file' }) {
   return {
     seed,
     rng: rng ?? seededRng(seed),
     mods, // difficulty overrides (config.EASY) — null = standard world
     map,
+    payload, // 'tcp-file' | 'udp-call' — kit and render rule (design/05)
     bandwidth: map.startBandwidth,
     deadline: map.startDeadline,
     fragments: Array.from({ length: RUN.partySize }, (_, i) => ({
@@ -40,7 +42,7 @@ export function createRun({ seed, rng, mods = null, map = MAP_1A }) {
     stepIndex: 0,           // index into the chosen road's node list
     impactResolved: false,  // per segment — resets at each junction
     waitsUsed: 0,           // per rapids window (max 2 — design/04)
-    belt: [...BELT.start],  // actives AND passives share the 3 slots (design/03)
+    belt: [...PAYLOADS[payload].belt], // actives AND passives share the slots (design/03)
     passives: new Set(),    // extra always-on machinery (test/meta injection)
     rewardOptions: null,    // pick-1-of-3, offered at mid-map junctions
     lastImpact: null,       // { kind, impactNode } — autopsy's killer
@@ -101,6 +103,11 @@ export function legalActions(run) {
       actions.push({ type: 'retransmit', fragment: f.id });
     }
   }
+  for (const f of run.fragments) {
+    if (onBelt(run, 'skip') && skipLegal(run, f)) {
+      actions.push({ type: 'skip', fragment: f.id });
+    }
+  }
   if (onBelt(run, 'checksum') && checksumLegal(run)) actions.push({ type: 'checksum' });
   for (const f of run.fragments) {
     if (onBelt(run, 'repair') && repairLegal(run, f)) {
@@ -137,19 +144,33 @@ function fail(run, reason, killerConcept) {
 }
 
 function arriveAtDock(run) {
+  const payload = PAYLOADS[run.payload];
+
   // unneeded copies are discarded — the dock keeps only one of each number
   const discarded = run.fragments.filter((f) => f.hasCopy).map((f) => f.id);
   for (const f of run.fragments) f.hasCopy = false;
   if (discarded.length) run.events.push({ type: 'copies-discarded', fragments: discarded });
 
-  const delivered = run.fragments.filter((f) => f.status === 'with-party').length;
-  const needed = Math.ceil(RUN.partySize * RUN.renderThresholdRatio);
+  if (payload.freshness) {
+    // any gap still unacknowledged at the dock is silently accepted — the
+    // stutter bleed en route already priced the delay (design/05)
+    for (const f of run.fragments) {
+      if (f.status === 'lost' || f.status === 'expired') f.status = 'skipped';
+    }
+  }
+
+  // receiver-side check: real docks checksum on arrival. A file fails on it;
+  // a call just drops the bad frame and keeps playing.
+  const needed = Math.ceil(RUN.partySize * payload.renderRatio);
+  const delivered = payload.freshness
+    ? run.fragments.filter((f) => f.status === 'with-party' && !f.corrupted).length
+    : run.fragments.filter((f) => f.status === 'with-party').length;
   if (delivered < needed) {
     fail(run, 'missing-fragments', 'packet-loss');
     return;
   }
-  // receiver-side check: real docks checksum on arrival — and it's too late
-  if (run.fragments.some((f) => f.status === 'with-party' && f.corrupted)) {
+  if (!payload.freshness
+    && run.fragments.some((f) => f.status === 'with-party' && f.corrupted)) {
     fail(run, 'corrupted-payload', 'corruption');
     return;
   }
@@ -215,6 +236,20 @@ function reroute(run) {
   run.phase = 'junction';
 }
 
+// A live call STUTTERS over unacknowledged gaps: every beat with an
+// unskipped lost/expired frame bleeds +1 Deadline until you Skip it —
+// acknowledging losses early IS the tempo lesson (design/05).
+function stutterBleed(run) {
+  if (!PAYLOADS[run.payload].freshness) return 0;
+  const gaps = run.fragments
+    .filter((f) => f.status === 'lost' || f.status === 'expired')
+    .map((f) => f.id);
+  if (!gaps.length) return 0;
+  run.deadline -= 1;
+  run.events.push({ type: 'stutter', fragments: gaps, deadline: run.deadline });
+  return 1;
+}
+
 // Waiting at rapids: 1 Deadline per beat (Buffer passive: two beats for the
 // price of one). Lag counts down; caught-up stragglers rejoin.
 function waitBeat(run) {
@@ -223,6 +258,7 @@ function waitBeat(run) {
   run.waitsUsed += 1;
   run.deadline -= cost;
   run.events.push({ type: 'wait', cost, deadline: run.deadline });
+  stutterBleed(run);
   if (run.deadline < 0) {
     fail(run, 'deadline', 'latency');
     return;
@@ -261,6 +297,7 @@ function onward(run) {
   run.deadline -= RUN.deadlinePerHop;
   if (finalHop && run.fogCost) run.deadline -= run.fogCost;
   run.events.push({ type: 'hop', from, to, deadline: run.deadline });
+  stutterBleed(run);
   if (run.deadline < 0) {
     fail(run, 'deadline', 'latency');
     return;
@@ -330,6 +367,9 @@ export function act(run, action) {
       break;
     case 'repair':
       applyRepair(run, run.fragments.find((f) => f.id === action.fragment));
+      break;
+    case 'skip':
+      applySkip(run, run.fragments.find((f) => f.id === action.fragment));
       break;
     case 'wait':
       waitBeat(run);

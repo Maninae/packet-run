@@ -2,7 +2,7 @@
 // the emotional payoff), loss (one honest line + retry; full autopsy is 1b).
 // Kid-facing copy: ≤2 short sentences per beat, 6th-grade level (design/06).
 
-import { pipAvatar } from './icons.js';
+import { pipAvatar, letterIcon, callIcon } from './icons.js';
 import { REWARD_CARDS, BELT_TOOLS } from './hud.js';
 
 const $ = (sel) => document.querySelector(sel);
@@ -42,21 +42,37 @@ function starsSVG(stars) {
     ${[1, 2, 3].map((n) => star(n <= stars)).join('')}</div>`;
 }
 
-export function showStart({ seed, onPlay }) {
+// After the first win, the kid picks what they're sending — two payloads,
+// two strategies. TCP/UDP are never named here (vocab rule, design/06).
+export function showStart({ seed, showPicker, payload = 'tcp-file', onPlay }) {
+  const picker = showPicker
+    ? `<div class="reward-cards payload-cards">
+        <button class="reward-card" data-payload="tcp-file">
+          ${letterIcon(30)}<strong>Birthday message</strong>
+          <span>Every piece must arrive.</span>
+        </button>
+        <button class="reward-card" data-payload="udp-call">
+          ${callIcon(30)}<strong>Live call</strong>
+          <span>Keep it moving — skip stragglers.</span>
+        </button>
+      </div>`
+    : `<div class="btn-row"><button class="primary-btn" data-payload="${payload}">Deliver it!</button></div>`;
   $('#overlay').innerHTML = `
     <div class="screen start-screen">
       <div class="float">${pipAvatar(72)}</div>
       <h1>Packet Run</h1>
-      <p><strong>Grandma's birthday message is ready to go.</strong><br>
+      <p><strong>${showPicker ? 'What are we sending Grandma today?' : "Grandma's birthday message is ready to go."}</strong><br>
       It travels as 5 fragments — you're Pip, their guide.
-      Get all 5 across the internet before her bedtime.</p>
-      <div class="btn-row"><button class="primary-btn">Deliver it!</button></div>
+      ${showPicker ? '' : 'Get all 5 across the internet before her bedtime.'}</p>
+      ${picker}
       <span class="seed-note">SEED · ${seed}</span>
     </div>`;
-  $('#overlay .primary-btn').addEventListener('click', () => {
-    $('#overlay').replaceChildren();
-    onPlay();
-  });
+  for (const btn of document.querySelectorAll('#overlay [data-payload]')) {
+    btn.addEventListener('click', () => {
+      $('#overlay').replaceChildren();
+      onPlay(btn.dataset.payload);
+    });
+  }
 }
 
 // Panic-copying wins but wastes energy — make the waste legible (fun-gate
@@ -69,18 +85,36 @@ function wasteLine(run) {
     it never needed — energy you can keep next time.</p>`;
 }
 
+// A live call's render: the call PLAYS, with visible glitch bars where
+// frames were skipped — your choices are legible in the win (design/05).
+function callFrames(run) {
+  return `<div class="call-frames">${run.fragments.map((f) => {
+    const played = f.status === 'with-party' && !f.corrupted;
+    return played
+      ? `<div class="call-frame played">${grandmaSVG(34)}</div>`
+      : `<div class="call-frame gap" aria-label="skipped frame"></div>`;
+  }).join('')}</div>`;
+}
+
 export function showWin({ run, onNewRun, onSameSeed }) {
   const slack = run.deadline;
-  $('#overlay').innerHTML = `
-    <div class="screen win-screen">
-      <h2>It rendered!</h2>
-      ${starsSVG(run.stars)}
-      <div class="message-card">${MESSAGE_LINES.map((line, i) =>
+  const isCall = run.payload === 'udp-call';
+  const delivered = run.events.find((e) => e.type === 'render')?.delivered ?? 5;
+  const body = isCall
+    ? `${callFrames(run)}
+       <p class="stat-line">The call played — ${delivered}/5 frames, a little glitchy, all love.
+         ${slack} tick${slack === 1 ? '' : 's'} to spare, ${run.bandwidth} energy left.</p>`
+    : `<div class="message-card">${MESSAGE_LINES.map((line, i) =>
         `<div class="win-line" style="animation-delay:${0.15 + i * 0.4}s">${line}</div>`).join('')}
       </div>
       ${grandmaSVG()}
       <p class="stat-line">All 5 fragments made it with ${slack} tick${slack === 1 ? '' : 's'}
-        of bedtime to spare and ${run.bandwidth} energy left.</p>
+        of bedtime to spare and ${run.bandwidth} energy left.</p>`;
+  $('#overlay').innerHTML = `
+    <div class="screen win-screen">
+      <h2>${isCall ? 'The call connected!' : 'It rendered!'}</h2>
+      ${starsSVG(run.stars)}
+      ${body}
       ${wasteLine(run)}
       <div class="btn-row">
         <button class="primary-btn new-run">New run</button>
@@ -100,7 +134,12 @@ function listIds(ids) {
 }
 
 function lossLine(run) {
+  const isCall = run.payload === 'udp-call';
   if (run.failure.reason === 'missing-fragments') {
+    if (isCall) {
+      return `Too many frames went missing — a call needs 3 of 5.
+        This happens on real calls all the time.`;
+    }
     const missing = run.fragments.filter((f) => f.status !== 'with-party').map((f) => `#${f.id}`);
     const kind = run.lastImpact?.kind ?? 'storm';
     return `The ${kind} got ${listIds(missing)} — the message couldn't finish.
@@ -109,7 +148,9 @@ function lossLine(run) {
   if (run.failure.reason === 'corrupted-payload') {
     return "The dock caught a scrambled fragment — the message couldn't render.";
   }
-  return 'Bedtime came before the message did.';
+  return isCall
+    ? 'The call dropped — too slow, too late.'
+    : 'Bedtime came before the message did.';
 }
 
 const CONCEPT_NAMES = {

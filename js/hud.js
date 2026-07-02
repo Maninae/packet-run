@@ -5,7 +5,7 @@ import { RUN } from './config.js';
 import {
   boltIcon, clockIcon, copyIcon, retransmitIcon, stormIcon, drizzleIcon,
   staticIcon, checksumIcon, repairIcon, rerouteIcon, bufferIcon, rapidsIcon,
-  speakerIcon,
+  skipIcon, speakerIcon,
 } from './icons.js';
 import { isMuted, toggleMute } from './sound.js';
 
@@ -77,6 +77,10 @@ export const BELT_TOOLS = {
     label: 'Buffer', icon: () => bufferIcon(22),
     costs: () => `<span>on</span>`,
     passive: true,
+  },
+  skip: {
+    label: 'Skip', icon: () => skipIcon(22),
+    costs: () => `<span>free</span>`,
   },
 };
 

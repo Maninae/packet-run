@@ -483,6 +483,50 @@
 
 .tool-btn.passive { opacity: 0.8; border-style: dashed; }
 
+/* the live-call render: played frames vs glitch gaps */
+.call-frames {
+  display: flex;
+  gap: 6px;
+  width: 100%;
+  justify-content: center;
+}
+
+.call-frame {
+  width: 52px;
+  height: 64px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: var(--stroke-w) solid var(--fragment);
+  background: color-mix(in srgb, var(--fragment) 10%, var(--surface));
+}
+
+.call-frame.gap {
+  border-color: var(--wire-lit);
+  background: repeating-linear-gradient(
+    0deg,
+    var(--surface) 0 3px,
+    var(--surface-2) 3px 6px
+  );
+}
+
+/* fragment states unique to live calls */
+.fragment-chip.expired {
+  border-style: dotted;
+  border-color: var(--ink-faint);
+  color: var(--ink-faint);
+  background: transparent;
+}
+
+.fragment-chip.skipped {
+  border-style: dashed;
+  border-color: var(--wire);
+  color: var(--ink-faint);
+  background: transparent;
+  opacity: 0.55;
+}
+
 #belt { flex-wrap: wrap; }
 .go-btn { flex: 1; max-width: 180px; }
 .wait-btn { flex: 0.7; }

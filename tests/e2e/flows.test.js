@@ -25,7 +25,7 @@ function replayLine(seed, { road, insure }) {
 async function playLineUI(page, seed, { road, insure }, origin) {
   // skip the protected first session — these runs must match unmodded replays
   await page.addInitScript(() => localStorage.setItem('packet-run-wins', '1'));
-  await page.goto(`${origin}/?seed=${seed}&map=act1`); // pin the 1a region
+  await page.goto(`${origin}/?seed=${seed}&map=act1&payload=file`); // pin the 1a region
   await page.getByRole('button', { name: /deliver/i }).click();
   await page.locator(`[data-road-chip="${road}"]`).click();
   await page.locator(`[data-road-chip="${road}"]`).click();
@@ -133,7 +133,7 @@ test('mute persists across reloads', async () => {
 test('a generated 3-segment map plays end to end through the UI', async () => {
   const page = await app.page(VIEWPORTS.portrait, { reducedMotion: 'reduce' });
   await page.addInitScript(() => localStorage.setItem('packet-run-wins', '1'));
-  await page.goto(`${app.origin}/?seed=GENMAP1`); // no map pin → generated
+  await page.goto(`${app.origin}/?seed=GENMAP1&payload=file`); // no map pin → generated
   await page.getByRole('button', { name: /deliver/i }).click();
 
   let junctions = 0;

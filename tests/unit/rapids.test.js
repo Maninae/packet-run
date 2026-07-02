@@ -55,7 +55,8 @@ test('rapids: stragglers fall behind with visible lag; the party is scrambled, n
   assert.deepEqual(stragglers.map((f) => [f.id, f.lag]), [[1, 1], [2, 2]]);
   const impact = run.events.find((e) => e.type === 'impact');
   assert.equal(impact.kind, 'rapids');
-  assert.deepEqual(impact.stragglers, [{ fragment: 1, lag: 1 }, { fragment: 2, lag: 2 }]);
+  assert.deepEqual(impact.stragglers,
+    [{ fragment: 1, lag: 1, expired: false }, { fragment: 2, lag: 2, expired: false }]);
   assert.ok(legalActions(run).some((a) => a.type === 'wait'));
 });
 

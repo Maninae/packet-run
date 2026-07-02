@@ -23,6 +23,8 @@ let pendingRoad = null; // junction two-tap preview (build card #9)
 let armed = null;       // tool waiting for a fragment tap
 let busy = false;       // input locked while beats resolve
 let hintText = null;    // autopsy tool-line carried into a hint retry
+let payload = 'tcp-file';
+let stutterNoticed = false; // one stutter notice per run, not per beat
 
 // Protected first session (design/06, the Balatro move): world RNG runs easy
 // until the first win. Silent — no training-wheels label.
@@ -40,6 +42,7 @@ const TOOLTIPS = {
   duplicate: '<strong>Duplicate</strong>: send a spare copy of one fragment, just in case. The dock only keeps one of each number.',
   retransmit: '<strong>Retransmit</strong>: a fragment got lost? Ask home to send it again. Costs 2 energy and a tick of the clock.',
   repair: '<strong>Repair</strong>: fix the scrambled fragment the Checksum found. Costs 2 energy.',
+  skip: '<strong>Skip</strong>: wave goodbye to a late fragment. A live call can\'t wait for stragglers.',
 };
 
 const names = (ids) => ids.map((n) => `<strong>#${n}</strong>`).join(' and ');
@@ -110,6 +113,10 @@ function computePrompt() {
       .join(', ');
     return ['rapids', `Behind: ${list}. Wait for them, or press on without them.`];
   }
+  const gaps = run.fragments.filter((f) => f.status === 'expired' || (f.status === 'lost' && run.payload === 'udp-call'));
+  if (gaps.length && run.belt.includes('skip')) {
+    return ['rapids', `The call is stuttering over ${names(gaps.map((f) => f.id))}. Skip to steady it — a live call keeps moving.`];
+  }
   if (!run.impactResolved && hazard) {
     if (hazard.kind === 'static') {
       return ['static', `The Static is ahead — it scrambles one fragment's bits. Copies won't help; Checksum will, after.`];
@@ -135,7 +142,7 @@ function computePrompt() {
   if (glitched.length) {
     return ['repair', `${names(glitched)} is scrambled. Repair fixes it — the dock rejects garbled fragments.`];
   }
-  if (lost.length) {
+  if (lost.length && run.belt.includes('retransmit')) {
     return ['retransmit', `Still missing ${names(lost)}. Retransmit calls them back — the clock is ticking.`];
   }
   const returning = run.fragments.filter((f) => f.status === 'returning').map((f) => f.id);
@@ -228,6 +235,12 @@ function onRoadTap(road) {
 
 function onArm(tool) {
   if (busy) return;
+  if (tool === 'skip') {
+    // targeted like duplicate/retransmit — arm, then tap the frame to wave off
+    armed = armed === 'skip' ? null : 'skip';
+    renderAll();
+    return;
+  }
   if (tool === 'checksum' || tool === 'reroute') {
     // untargeted verbs fire immediately (checksum scans; reroute recalls all)
     if (legalActions(run).some((a) => a.type === tool)) {
@@ -372,6 +385,20 @@ async function animateBatch(batch) {
         flashPrompt('rapids', `You pressed on — ${names(e.fragments)} fell too far behind.`);
         await delay(900);
         break;
+      case 'skip':
+        sfx.bloop();
+        flashPrompt('rapids', `You waved <strong>#${e.fragment}</strong> goodbye — the call moves on.`);
+        await delay(600);
+        break;
+      case 'stutter':
+        if (!stutterNoticed) {
+          stutterNoticed = true;
+          sfx.mud();
+          flashPrompt('rapids',
+            `The call is stuttering over the missing frames — Skip them to steady it.`);
+          await delay(900);
+        }
+        break;
       case 'wait':
         sfx.bloop();
         break;
@@ -469,11 +496,12 @@ function mapFor(seed) {
 }
 
 function newRun(seed, { easy = winsCount() === 0, hint = null } = {}) {
-  run = createRun({ seed, mods: easy ? EASY : null, map: mapFor(seed) });
+  run = createRun({ seed, mods: easy ? EASY : null, map: mapFor(seed), payload });
   hintText = hint;
   pendingRoad = null;
   armed = null;
   busy = false;
+  stutterNoticed = false;
   $('#overlay').replaceChildren();
   const url = new URL(window.location);
   url.searchParams.set('seed', seed);
@@ -481,14 +509,36 @@ function newRun(seed, { easy = winsCount() === 0, hint = null } = {}) {
   renderAll();
 }
 
-const initialSeed = new URLSearchParams(window.location.search).get('seed') || randomSeed();
+const urlParams = new URLSearchParams(window.location.search);
+const initialSeed = urlParams.get('seed') || randomSeed();
+payload = urlParams.get('payload') === 'call' ? 'udp-call' : 'tcp-file';
 run = createRun({
   seed: initialSeed,
   mods: winsCount() === 0 ? EASY : null,
   map: mapFor(initialSeed),
+  payload,
 });
 wireLegend();
 wireMute();
 renderAll();
-showStart({ seed: initialSeed, onPlay: () => { unlockAudio(); renderAll(); } });
+// after the first win, the start screen offers the payload choice —
+// unless the URL already pinned one (shared links, tests)
+showStart({
+  seed: initialSeed,
+  showPicker: winsCount() > 0 && !urlParams.get('payload'),
+  payload,
+  onPlay: (chosen) => {
+    unlockAudio();
+    if (chosen && chosen !== payload) {
+      payload = chosen;
+      run = createRun({
+        seed: initialSeed,
+        mods: winsCount() === 0 ? EASY : null,
+        map: mapFor(initialSeed),
+        payload,
+      });
+    }
+    renderAll();
+  },
+});
 window.addEventListener('resize', () => { if (!busy) renderAll(); });

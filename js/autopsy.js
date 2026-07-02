@@ -57,7 +57,7 @@ export function deriveAutopsy(run) {
 
   const base = {
     seed: run.seed,
-    payload: 'tcp-file',
+    payload: run.payload,
     easy: !!run.mods,
     stars: run.stars,
     state: { fragments: alive, bw: run.bandwidth, deadline: run.deadline },

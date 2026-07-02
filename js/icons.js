@@ -34,6 +34,33 @@ export function drizzleIcon(size = 18) {
   </svg>`;
 }
 
+export function skipIcon(size = 20, color = 'var(--deadline)') {
+  return `<svg width="${size}" height="${size}" viewBox="0 0 20 20" aria-hidden="true">
+    <path d="M4 4 l7 6 -7 6 z" fill="${color}"/>
+    <path d="M13 4 v12" stroke="${color}" stroke-width="2.4" stroke-linecap="round"/>
+    <path d="M16 6 q2 4 0 8" fill="none" stroke="${color}" stroke-width="1.5"
+          stroke-linecap="round" opacity="0.5"/>
+  </svg>`;
+}
+
+export function letterIcon(size = 26) {
+  return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" aria-hidden="true">
+    <rect x="2.5" y="5" width="19" height="14" rx="3" fill="none"
+          stroke="var(--pip)" stroke-width="2"/>
+    <path d="M3.5 7 12 13.5 20.5 7" fill="none" stroke="var(--pip)"
+          stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>`;
+}
+
+export function callIcon(size = 26) {
+  return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" aria-hidden="true">
+    <rect x="2.5" y="5.5" width="13" height="13" rx="3" fill="none"
+          stroke="var(--fragment)" stroke-width="2"/>
+    <path d="M15.5 10 21 7 v10 l-5.5-3" fill="none" stroke="var(--fragment)"
+          stroke-width="2" stroke-linejoin="round"/>
+  </svg>`;
+}
+
 export function rerouteIcon(size = 20, color = 'var(--safe)') {
   return `<svg width="${size}" height="${size}" viewBox="0 0 20 20" aria-hidden="true">
     <path d="M4 16 V8 a4 4 0 0 1 4-4 h6" fill="none" stroke="${color}"

@@ -10,7 +10,7 @@
 //   resolveImpact: gustRoll, then gustPick (only if the gust fired)
 //   rollFog: fogRoll
 
-import { HAZARDS, FOG } from './config.js';
+import { HAZARDS, FOG, PAYLOADS } from './config.js';
 
 function sweep(fragment) {
   if (fragment.hasCopy) {
@@ -30,14 +30,19 @@ export function resolveImpact(run, hazard, rng) {
   // rapids: fragments fall behind with VISIBLE lag (1–2 beats) — the wait-or-
   // press-on choice is informed. rng order: per straggler pick, then its lag.
   if (hazard.kind === 'rapids') {
+    const freshness = PAYLOADS[run.payload].freshness;
     const stragglers = [];
     for (let i = 0; i < hazard.straggles; i++) {
       const candidates = run.fragments.filter((f) => f.status === 'with-party');
       if (!candidates.length) break;
       const straggler = candidates[Math.floor(rng() * candidates.length)];
-      straggler.status = 'straggler';
-      straggler.lag = rng() < 0.5 ? 1 : 2;
-      stragglers.push({ fragment: straggler.id, lag: straggler.lag });
+      const lag = rng() < 0.5 ? 1 : 2;
+      // live calls: a frame that far behind is ALREADY too old (design/05) —
+      // born expired; waiting can't save it, only Skip acknowledges it
+      const expired = Boolean(freshness && lag >= freshness);
+      straggler.status = expired ? 'expired' : 'straggler';
+      if (!expired) straggler.lag = lag;
+      stragglers.push({ fragment: straggler.id, lag, expired });
     }
     run.impactResolved = true;
     run.waitsUsed = 0;

@@ -64,3 +64,16 @@ export function applyRepair(run, fragment) {
   fragment.revealed = false;
   run.events.push({ type: 'repair', fragment: fragment.id });
 }
+
+// Skip (the UDP verb, design/05): wave a straggler/lost/expired frame goodbye.
+// Free — loss tolerance IS the strategy; the dock accepts the gap.
+export function skipLegal(run, fragment) {
+  return ['lost', 'straggler', 'expired'].includes(fragment.status);
+}
+
+export function applySkip(run, fragment) {
+  fragment.status = 'skipped';
+  delete fragment.lag;
+  delete fragment.age;
+  run.events.push({ type: 'skip', fragment: fragment.id });
+}

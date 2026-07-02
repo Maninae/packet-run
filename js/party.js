@@ -239,6 +239,14 @@ export function renderPartyRow(container, fragments, opts = {}) {
       chip.classList.add('lost');
       chip.setAttribute('aria-label', `Fragment ${f.id} — lost`);
     }
+    if (f.status === 'expired') {
+      chip.classList.add('expired');
+      chip.setAttribute('aria-label', `Fragment ${f.id} — too old for the call`);
+    }
+    if (f.status === 'skipped') {
+      chip.classList.add('skipped');
+      chip.setAttribute('aria-label', `Fragment ${f.id} — skipped`);
+    }
     if (f.corrupted && f.revealed) {
       chip.classList.add('glitched');
       chip.setAttribute('aria-label', `Fragment ${f.id} — scrambled`);
