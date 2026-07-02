@@ -13,11 +13,13 @@ function hazardKinds(map) {
     Object.values(s.roads).map((r) => r.hazard?.kind).filter(Boolean)));
 }
 
-test('three acts, named places, each with its own template pool', () => {
-  assert.equal(ACTS.length, 3);
+test('the act ladder: five named places, each with its own template pool', () => {
+  assert.equal(ACTS.length, 5);
   assert.match(ACTS[0].name, /home/i);
   assert.match(ACTS[1].name, /city/i);
   assert.match(ACTS[2].name, /ocean/i);
+  assert.match(ACTS[3].name, /far reaches/i);
+  assert.match(ACTS[4].name, /hostile/i);
 });
 
 test('Act 1 keeps to the basics: weather and rapids only', () => {

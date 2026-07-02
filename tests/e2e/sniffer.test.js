@@ -46,7 +46,7 @@ test.after(async () => { await app.close(); });
 test('sealed against the sniffer: the cloak is taken, the tamper never lands', async () => {
   const seed = cloakSeed();
   const page = await app.page(VIEWPORTS.portrait, { reducedMotion: 'reduce' });
-  await page.addInitScript(() => { localStorage.setItem('packet-run-wins', '9'); localStorage.setItem('packet-run-dns', '8'); });
+  await page.addInitScript(() => { localStorage.setItem('packet-run-wins', '6'); localStorage.setItem('packet-run-dns', '8'); });
   await page.goto(`${app.origin}/?seed=${seed}&payload=file`);
   await page.getByRole('button', { name: /deliver/i }).click();
 

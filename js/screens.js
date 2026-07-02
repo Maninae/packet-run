@@ -119,7 +119,7 @@ function callFrames(run) {
   }).join('')}</div>`;
 }
 
-export function showWin({ run, onNewRun, onSameSeed }) {
+export function showWin({ run, actUp = null, onNewRun, onSameSeed }) {
   const slack = run.deadline;
   const isCall = run.payload === 'udp-call';
   const delivered = run.events.find((e) => e.type === 'render')?.delivered ?? 5;
@@ -137,6 +137,7 @@ export function showWin({ run, onNewRun, onSameSeed }) {
     <div class="screen win-screen">
       <h2>${isCall ? 'The call connected!' : 'It rendered!'}</h2>
       ${starsSVG(run.stars)}
+      ${actUp ? `<p class="act-up"><strong>Act ${actUp.id} unlocked — ${actUp.name} awaits!</strong></p>` : ''}
       ${body}
       ${wasteLine(run)}
       <div class="btn-row">

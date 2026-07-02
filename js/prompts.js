@@ -47,6 +47,9 @@ function describeRoad(run, key) {
   if (road.hazard.kind === 'ddos') {
     return `${hops} hops through a FLOODED pipe — slow going, nothing lost`;
   }
+  if (road.hazard.kind === 'offline') {
+    return `${hops} hops past a router that keeps power-cycling — a beat lost while it reboots`;
+  }
   return `${hops} hops, a ${road.hazard.kind} eyeing ${names(road.hazard.threatens)}`;
 }
 
@@ -60,7 +63,7 @@ export function scaryRoad(run) {
 const HAZARD_PROMPT_ICONS = {
   drizzle: 'drizzle', static: 'static', rapids: 'rapids', storm: 'storm',
   congestion: 'jam', sniffer: 'sniffer', trench: 'trench', satellite: 'satellite',
-  ddos: 'swarm',
+  ddos: 'swarm', offline: 'clock',
 };
 
 function iconFor(run, key) {
@@ -75,6 +78,7 @@ const JUNCTION_HOOKS = {
   sniffer: (road) => ['sniffer', `A sniffer lurks on the ${road} road. Tap a road to look closer.`],
   trench: (road) => ['trench', `The ${road} road dives through the deep-sea cable. Tap a road to look closer.`],
   ddos: (road) => ['swarm', `A swarm floods the ${road} road — everyone's starving for bandwidth there. Tap a road to look closer.`],
+  offline: (road) => ['clock', `The ${road} road's router keeps power-cycling. Out here, uptime isn't a given. Tap a road to look closer.`],
   satellite: (road) => ['satellite', `The ${road} road goes up and over by satellite. Tap a road to look closer.`],
 };
 
@@ -154,6 +158,9 @@ export function computePrompt(run, { armed, hintText, pendingRoad }) {
     }
     if (hazard.kind === 'ddos') {
       return ['swarm', `A swarm floods the pipe ahead — a flood starves everyone, but it can't eat you. Rate-limit through.`];
+    }
+    if (hazard.kind === 'offline') {
+      return ['clock', `The router ahead is rebooting — you'll wait a beat. The mesh-builders out here keep it alive at all.`];
     }
     const approach = def.nodes[def.nodes.indexOf(hazard.impactNode) - 1];
     const icon = hazard.kind === 'storm' ? 'storm' : 'drizzle';

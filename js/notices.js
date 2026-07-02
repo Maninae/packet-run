@@ -51,6 +51,12 @@ async function impactNotice(e) {
     await delay(900);
     return;
   }
+  if (e.kind === 'offline') {
+    sfx.mud();
+    flashPrompt('clock', 'The router blinks off… and back on. One beat lost — uptime isn\'t a given out here.');
+    await delay(900);
+    return;
+  }
   if (e.kind === 'ddos') {
     sfx.static();
     shake();

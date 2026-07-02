@@ -474,6 +474,12 @@
   .message-card .win-line { opacity: 1; transform: none; }
 }
 
+.act-up {
+  color: var(--star);
+  font-size: 15px;
+  margin: 4px 0;
+}
+
 .win-stars { display: flex; gap: 6px; }
 
 .stat-line { font-size: 13px; color: var(--ink-soft); }

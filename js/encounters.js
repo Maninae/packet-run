@@ -95,6 +95,15 @@ export function resolveImpact(run, hazard, rng) {
     run.events.push({ type: 'impact', kind: 'satellite', node: hazard.impactNode, flaky, deadline: run.deadline });
     return;
   }
+  // the offline node (Far Reaches): the router is power-cycling — one
+  // forced beat while it reboots. Nothing harmed; uptime isn't a given
+  // everywhere. No rng.
+  if (hazard.kind === 'offline') {
+    run.deadline -= 1;
+    run.impactResolved = true;
+    run.events.push({ type: 'impact', kind: 'offline', node: hazard.impactNode, deadline: run.deadline });
+    return;
+  }
   // the DDoS swarm (design/10): the siege window opens — no rng, pure vice.
   if (hazard.kind === 'ddos') {
     run.siege = { beat: 0, pushes: 0 };

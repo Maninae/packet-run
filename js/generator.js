@@ -57,6 +57,11 @@ const TEMPLATES = [
     short: { hops: 2, hazard: 'ddos' },
     long: { hops: 4, hazard: 'drizzle', threat: 1 },
   },
+  { // K — the power-cycling node (Far Reaches signature): the quick road's
+    // router reboots for a beat; the long way is longer but always on
+    short: { hops: 2, hazard: 'offline' },
+    long: { hops: 4, hazard: 'drizzle', threat: 1 },
+  },
 ];
 
 function shuffled(rng, array) {
@@ -79,7 +84,7 @@ function buildRoad(rng, spec, { segment, key, from, to }) {
       hazard = { kind: 'static', impactNode, corrupts: 1 };
     } else if (spec.hazard === 'sniffer') {
       hazard = { kind: 'sniffer', impactNode };
-    } else if (['trench', 'satellite', 'ddos'].includes(spec.hazard)) {
+    } else if (['trench', 'satellite', 'ddos', 'offline'].includes(spec.hazard)) {
       hazard = { kind: spec.hazard, impactNode };
     } else if (spec.hazard === 'congestion') {
       hazard = { kind: 'congestion', impactNode };
@@ -160,10 +165,11 @@ export function generateMap(seed, { segments = GEN.segments, act = 3 } = {}) {
       };
     }
   }
+  const budgets = (ACTS.find((a) => a.id === act) ?? {}).budgets ?? {};
   return {
     id: `gen-${seed}`,
-    startBandwidth: GEN.startBandwidth,
-    startDeadline: GEN.startDeadline,
+    startBandwidth: budgets.startBandwidth ?? GEN.startBandwidth,
+    startDeadline: budgets.startDeadline ?? GEN.startDeadline,
     stars: { ...GEN.stars },
     segments: built,
   };

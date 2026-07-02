@@ -315,7 +315,11 @@ async function dispatch(action) {
       localStorage.setItem('packet-run-uptime', String(uptimeBalance() + run.stars));
       await fillDock();
       sfx.win();
-      showWin({ run, ...handlers });
+      // did this win unlock a new act? (the ladder climbs every 3 wins)
+      const wins = winsCount();
+      const actUp = (wins % 3 === 0 && wins / 3 < ACTS.length)
+        ? ACTS[wins / 3] : null;
+      showWin({ run, actUp, ...handlers });
     } else {
       const autopsy = deriveAutopsy(run);
       await delay(500);

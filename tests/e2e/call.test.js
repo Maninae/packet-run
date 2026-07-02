@@ -175,10 +175,23 @@ test('acts climb with wins: biome class, act chip, and gated hazards', async () 
   assert.ok(kinds.every((k) => !['trench', 'satellite', 'sniffer'].includes(k)),
     'act 2 never rolls ocean systems');
 
-  await page.addInitScript(() => localStorage.setItem('packet-run-wins', '9'));
+  await page.addInitScript(() => localStorage.setItem('packet-run-wins', '6'));
   await page.goto(`${app.origin}/?seed=ACT3A&payload=file`);
   assert.equal(await page.evaluate(() => document.body.className), 'act-3');
   assert.match(await page.locator('#act-chip').textContent(), /Act 3 · The Ocean Crossing/);
+
+  // the back half of the campaign: Far Reaches at 9 wins, Hostile Zone at 12
+  await page.addInitScript(() => localStorage.setItem('packet-run-wins', '9'));
+  await page.goto(`${app.origin}/?seed=ACT4A&payload=file`);
+  assert.equal(await page.evaluate(() => document.body.className), 'act-4');
+  assert.match(await page.locator('#act-chip').textContent(), /Act 4 · The Far Reaches/);
+  let run4 = await page.evaluate(() => window.packetRun.run);
+  assert.equal(run4.map.startBandwidth, 14, 'the sparse grid gives less energy');
+
+  await page.addInitScript(() => localStorage.setItem('packet-run-wins', '12'));
+  await page.goto(`${app.origin}/?seed=ACT5A&payload=file`);
+  assert.equal(await page.evaluate(() => document.body.className), 'act-5');
+  assert.match(await page.locator('#act-chip').textContent(), /Act 5 · The Hostile Zone/);
   await page.context().close();
 });
 

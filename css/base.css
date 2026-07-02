@@ -83,6 +83,36 @@ body.act-2 { /* Backbone City: neon dusk */
   --fog-edge: rgba(170, 160, 210, 0.05);
 }
 
+body.act-4 { /* The Far Reaches: warm ochre — big skies, sparse grid */
+  --bg: #1a1410;
+  --bg-deep: #120d0a;
+  --surface: #2a2118;
+  --surface-2: #3b2f22;
+  --ink-soft: #d1bfa4;
+  --ink-faint: #8d7a60;
+  --wire: #4a3b28;
+  --wire-lit: #8a6f4d;
+  --road-pick: #ffc966;
+  --safe: #ffc966;
+  --fog: rgba(215, 185, 140, 0.14);
+  --fog-edge: rgba(215, 185, 140, 0.05);
+}
+
+body.act-5 { /* The Hostile Zone: inky violet — rough neighborhood */
+  --bg: #16101f;
+  --bg-deep: #0e0a16;
+  --surface: #221831;
+  --surface-2: #302145;
+  --ink-soft: #bda8d6;
+  --ink-faint: #776394;
+  --wire: #423156;
+  --wire-lit: #79619c;
+  --road-pick: #e08cff;
+  --safe: #e08cff;
+  --fog: rgba(190, 160, 225, 0.15);
+  --fog-edge: rgba(190, 160, 225, 0.05);
+}
+
 body.act-3 { /* The Ocean Crossing: deep blues */
   --bg: #0a141f;
   --bg-deep: #060d16;

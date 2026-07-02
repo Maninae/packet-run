@@ -195,6 +195,8 @@ const ACT_SKIES = {
   1: ['clear', 'clear', 'rain', 'storm'],
   2: ['clear', 'clear', 'rain', 'storm'],
   3: ['clear', 'clear', 'rain', 'flare'],
+  4: ['clear', 'rain', 'flare', 'flare'], // satellite country: space weather matters
+  5: ['clear', 'rain', 'storm', 'storm'], // it's rough out here
 };
 
 export function weatherFor(seed, actId) {
@@ -212,6 +214,18 @@ export const ACTS = [
   { id: 1, name: 'Home & Neighborhood', cssClass: 'act-1', templates: [0, 1, 2, 4] },        // A B C E
   { id: 2, name: 'Backbone City', cssClass: 'act-2', templates: [0, 1, 2, 3, 4, 5] },        // + D static, F jam
   { id: 3, name: 'The Ocean Crossing', cssClass: 'act-3', templates: [1, 2, 3, 5, 6, 7, 8, 9] },// + G sniffer, H trench, I satellite, J swarm elite
+  { // the Far Reaches (design/04): SCARCITY is the challenge — sparse grid,
+    // satellite gaps, power-cycling nodes. Underinvestment, never the people:
+    // the neighbors here are the mesh-builders (respect rule).
+    id: 4, name: 'The Far Reaches', cssClass: 'act-4',
+    templates: [1, 3, 4, 8, 10], // B tempo, D static, E rapids, I satellite, K offline
+    budgets: { startBandwidth: 14 },
+  },
+  { // the Hostile Zone (design/04): the open internet's rough neighborhood —
+    // never "the dark net". Sniffers crawl it; swarms are at home here.
+    id: 5, name: 'The Hostile Zone', cssClass: 'act-5',
+    templates: [2, 3, 5, 6, 6, 9], // C storm, D static, F jam, G sniffer ×2, J swarm
+  },
 ];
 
 export const STARS = {
