@@ -12,7 +12,7 @@ test.after(async () => { await app.close(); });
 
 test('a call run: lose two to the storm, skip them, the call connects at 3/5', async () => {
   const page = await app.page(VIEWPORTS.portrait, { reducedMotion: 'reduce' });
-  await page.addInitScript(() => localStorage.setItem('packet-run-wins', '1'));
+  await page.addInitScript(() => { localStorage.setItem('packet-run-wins', '1'); localStorage.setItem('packet-run-dns', '8'); });
   await page.goto(`${app.origin}/?seed=CALL1&map=act1&payload=call`);
   await page.getByRole('button', { name: /deliver/i }).click();
 
@@ -47,7 +47,7 @@ test('a call run: lose two to the storm, skip them, the call connects at 3/5', a
 
 test('after the first win, the start screen offers the payload choice', async () => {
   const page = await app.page(VIEWPORTS.portrait, { reducedMotion: 'reduce' });
-  await page.addInitScript(() => localStorage.setItem('packet-run-wins', '1'));
+  await page.addInitScript(() => { localStorage.setItem('packet-run-wins', '1'); localStorage.setItem('packet-run-dns', '8'); });
   await page.goto(`${app.origin}/?seed=PICK1&map=act1`);
   assert.equal(await page.locator('[data-payload]').count(), 2, 'two payload cards');
   await page.locator('[data-payload="udp-call"]').click();
@@ -59,7 +59,7 @@ test('after the first win, the start screen offers the payload choice', async ()
 
 test('gentle mode persists and softens the world; the daily run shares a date seed', async () => {
   const page = await app.page(VIEWPORTS.portrait, { reducedMotion: 'reduce' });
-  await page.addInitScript(() => localStorage.setItem('packet-run-wins', '1'));
+  await page.addInitScript(() => { localStorage.setItem('packet-run-wins', '1'); localStorage.setItem('packet-run-dns', '8'); });
   await page.goto(`${app.origin}/?seed=GENTLE1&map=act1&payload=file`);
   await page.locator('#gentle').check();
   await page.getByRole('button', { name: /deliver/i }).click();
@@ -83,5 +83,28 @@ test('a brand-new player gets the simple message start (no picker)', async () =>
   await page.getByRole('button', { name: /deliver/i }).click();
   const run = await page.evaluate(() => window.packetRun.run);
   assert.equal(run.payload, 'tcp-file');
+  await page.context().close();
+});
+
+test('DNS: the first run looks up the address; the cache skips it afterward', async () => {
+  const page = await app.page(VIEWPORTS.portrait, { reducedMotion: 'reduce' });
+  await page.goto(`${app.origin}/?seed=DNS1&map=act1&payload=file`); // fresh: no cache
+  await page.getByRole('button', { name: /deliver/i }).click();
+  let run = await page.evaluate(() => window.packetRun.run);
+  assert.equal(run.phase, 'dns');
+  const before = run.deadline;
+  await page.getByRole('button', { name: /look it up/i }).click();
+  run = await page.evaluate(() => window.packetRun.run);
+  assert.equal(run.phase, 'junction');
+  assert.equal(run.deadline, before - 1, 'the lookup cost a tick');
+  assert.equal(await page.evaluate(() => localStorage.getItem('packet-run-dns')), '8');
+
+  // reload: the device remembers — straight to the junction
+  await page.reload();
+  await page.getByRole('button', { name: /deliver/i }).click();
+  run = await page.evaluate(() => window.packetRun.run);
+  assert.equal(run.phase, 'junction');
+  assert.equal(await page.evaluate(() => localStorage.getItem('packet-run-dns')), '7',
+    'the cache spends down toward the next lookup');
   await page.context().close();
 });

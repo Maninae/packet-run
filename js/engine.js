@@ -19,7 +19,11 @@ import {
 } from './tools.js';
 import { resolveImpact, rollFog } from './encounters.js';
 
-export function createRun({ seed, rng, mods = null, map = MAP_1A, payload = 'tcp-file' }) {
+// Grandma's address — from TEST-NET-3 (192.0.2/24 siblings), the range
+// reserved for documentation, so the game never prints a real host.
+export const DEST_ADDRESS = '203.0.113.7';
+
+export function createRun({ seed, rng, mods = null, map = MAP_1A, payload = 'tcp-file', dnsNeeded = false }) {
   return {
     seed,
     rng: rng ?? seededRng(seed),
@@ -35,7 +39,7 @@ export function createRun({ seed, rng, mods = null, map = MAP_1A, payload = 'tcp
       corrupted: false,     // the Static's work — hidden until…
       revealed: false,      // …Checksum finds it (then Repair can fix it)
     })),
-    phase: 'junction',      // 'junction' | 'node' | 'done'
+    phase: dnsNeeded ? 'dns' : 'junction', // 'dns' | 'junction' | 'node' | 'reward' | 'done'
     segment: 0,             // index into map.segments
     road: null,             // 'short' | 'long' within the current segment
     node: map.segments[0].roads.short.nodes[0],
@@ -70,6 +74,7 @@ const onBelt = (run, tool) => run.belt.includes(tool);
 
 export function legalActions(run) {
   if (run.phase === 'done') return [];
+  if (run.phase === 'dns') return [{ type: 'lookup' }];
   if (run.phase === 'reward') {
     const actions = [];
     run.rewardOptions.forEach((option, index) => {
@@ -379,6 +384,12 @@ export function act(run, action) {
       break;
     case 'take-reward':
       takeReward(run, action);
+      break;
+    case 'lookup':
+      // names → addresses: the address book answers, the clock ticks once
+      run.deadline -= 1;
+      run.phase = 'junction';
+      run.events.push({ type: 'dns-lookup', address: DEST_ADDRESS, deadline: run.deadline });
       break;
     case 'onward':
       onward(run);

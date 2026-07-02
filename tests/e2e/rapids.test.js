@@ -19,7 +19,7 @@ test.before(async () => { app = await launch(); });
 test.after(async () => { await app.close(); });
 
 async function intoRapids(page, seed) {
-  await page.addInitScript(() => localStorage.setItem('packet-run-wins', '1'));
+  await page.addInitScript(() => { localStorage.setItem('packet-run-wins', '1'); localStorage.setItem('packet-run-dns', '8'); });
   await page.goto(`${app.origin}/?seed=${seed}&payload=file`);
   await page.getByRole('button', { name: /deliver/i }).click();
   await page.locator('[data-road-chip="short"]').click();
@@ -53,7 +53,7 @@ test('full motion: a rapids impact animates without crashing (regression)', asyn
   // undefined) — invisible to reduced-motion tests, fatal for real kids
   const seed = rapidsSeed();
   const page = await app.page(VIEWPORTS.portrait); // real animation timing
-  await page.addInitScript(() => localStorage.setItem('packet-run-wins', '1'));
+  await page.addInitScript(() => { localStorage.setItem('packet-run-wins', '1'); localStorage.setItem('packet-run-dns', '8'); });
   await page.goto(`${app.origin}/?seed=${seed}&payload=file`);
   await page.getByRole('button', { name: /deliver/i }).click();
   const chip = page.locator('[data-road-chip="short"]');

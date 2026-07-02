@@ -86,7 +86,7 @@ export const BELT_TOOLS = {
 
 export { rapidsIcon }; // re-exported for the prompt icon map
 
-export function renderBelt({ tools, legal, armed, canGo, onArm, onGo, onWait }) {
+export function renderBelt({ tools, legal, armed, canGo, goLabel = 'Onward', onArm, onGo, onWait }) {
   const buttons = tools.map((name) => {
     const tool = BELT_TOOLS[name];
     if (tool.passive) {
@@ -105,7 +105,7 @@ export function renderBelt({ tools, legal, armed, canGo, onArm, onGo, onWait }) 
   const waitBtn = canWait
     ? `<button class="go-btn wait-btn" id="wait">Wait</button>` : '';
   $('#belt').innerHTML =
-    `${buttons}${waitBtn}<button class="go-btn" id="go" ${canGo ? '' : 'disabled'}>Onward</button>`;
+    `${buttons}${waitBtn}<button class="go-btn" id="go" ${canGo ? '' : 'disabled'}>${goLabel}</button>`;
   for (const name of tools) {
     if (!BELT_TOOLS[name].passive) {
       $(`#tool-${name}`).addEventListener('click', () => onArm(name));

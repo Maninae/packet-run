@@ -33,6 +33,14 @@ const winsCount = () => Number(localStorage.getItem('packet-run-wins') ?? '0');
 const gentleOn = () => localStorage.getItem('packet-run-gentle') === '1';
 const playEasy = () => gentleOn() || winsCount() === 0;
 
+// DNS cache: the address book's answer is remembered for 8 runs — the
+// lookup beat is rare BECAUSE caching is real (design/04)
+const dnsNeededNow = () => Number(localStorage.getItem('packet-run-dns') ?? '0') <= 0;
+const dnsSpend = () => {
+  const left = Number(localStorage.getItem('packet-run-dns') ?? '0');
+  if (left > 0) localStorage.setItem('packet-run-dns', String(left - 1));
+};
+
 // today's shared seed — same map and rolls for everyone (design/06)
 const dailySeed = () => {
   const d = new Date();
@@ -90,6 +98,9 @@ function iconFor(key) {
 
 function computePrompt() {
   if (armed) return ['copy', `${TOOLTIPS[armed]}<br>Tap a fragment below.`];
+  if (run.phase === 'dns') {
+    return ['bolt', `Where does Grandma's live? Ask the address book — it costs a tick.`];
+  }
   if (run.phase === 'junction') {
     if (hintText && !pendingRoad) return ['storm', `Hint: ${hintText}`];
     if (pendingRoad) {
@@ -221,7 +232,9 @@ function renderAll() {
     tools: run.belt,
     legal: busy ? [] : legalActions(run),
     armed,
-    canGo: !busy && (run.phase === 'node' || (run.phase === 'junction' && pendingRoad !== null)),
+    canGo: !busy && (run.phase === 'node' || run.phase === 'dns'
+      || (run.phase === 'junction' && pendingRoad !== null)),
+    goLabel: run.phase === 'dns' ? 'Look it up' : 'Onward',
     onArm, onGo,
     onWait: () => { if (!busy) dispatch({ type: 'wait' }); },
   });
@@ -272,6 +285,10 @@ function onChipTap(id) {
 
 function onGo() {
   if (busy) return;
+  if (run.phase === 'dns') {
+    dispatch({ type: 'lookup' });
+    return;
+  }
   if (run.phase === 'junction') {
     if (pendingRoad) onRoadTap(pendingRoad); // commit the previewed road
     return;
@@ -416,6 +433,13 @@ async function animateBatch(batch) {
         flashPrompt('bolt', 'You told home to try a different road — the party reappears at the junction.');
         await delay(900);
         break;
+      case 'dns-lookup':
+        sfx.chime();
+        localStorage.setItem('packet-run-dns', '8');
+        flashPrompt('bolt',
+          `Found it — Grandma's is at <strong>${e.address}</strong>! Your device will remember for a while.`);
+        await delay(1100);
+        break;
       case 'reward-taken':
         if (e.kind === 'tool') {
           sfx.chime();
@@ -505,7 +529,9 @@ function mapFor(seed) {
 }
 
 function newRun(seed, { easy = playEasy(), hint = null } = {}) {
-  run = createRun({ seed, mods: easy ? EASY : null, map: mapFor(seed), payload });
+  const dnsNeeded = dnsNeededNow();
+  if (!dnsNeeded) dnsSpend();
+  run = createRun({ seed, mods: easy ? EASY : null, map: mapFor(seed), payload, dnsNeeded });
   hintText = hint;
   pendingRoad = null;
   armed = null;
@@ -521,11 +547,14 @@ function newRun(seed, { easy = playEasy(), hint = null } = {}) {
 const urlParams = new URLSearchParams(window.location.search);
 const initialSeed = urlParams.get('seed') || randomSeed();
 payload = urlParams.get('payload') === 'call' ? 'udp-call' : 'tcp-file';
+// boot only PEEKS at the dns cache — newRun (via the start screen) is the
+// single place the cache is spent, so a reload never double-decrements
 run = createRun({
   seed: initialSeed,
   mods: playEasy() ? EASY : null,
   map: mapFor(initialSeed),
   payload,
+  dnsNeeded: dnsNeededNow(),
 });
 wireLegend();
 wireMute();

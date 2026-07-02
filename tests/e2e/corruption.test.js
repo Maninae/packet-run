@@ -58,7 +58,7 @@ test.after(async () => { await app.close(); });
 test('build the kit at rewards, then detect and repair the Static\'s work', async () => {
   const seed = scanSeed();
   const page = await app.page(VIEWPORTS.portrait, { reducedMotion: 'reduce' });
-  await page.addInitScript(() => localStorage.setItem('packet-run-wins', '1'));
+  await page.addInitScript(() => { localStorage.setItem('packet-run-wins', '1'); localStorage.setItem('packet-run-dns', '8'); });
   await page.goto(`${app.origin}/?seed=${seed}&payload=file`);
   await page.getByRole('button', { name: /deliver/i }).click();
 

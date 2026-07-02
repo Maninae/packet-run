@@ -11,7 +11,7 @@ test.after(async () => { await app.close(); });
 
 async function stormLoss(page, seed, { presetWins = true } = {}) {
   if (presetWins) {
-    await page.addInitScript(() => localStorage.setItem('packet-run-wins', '1'));
+    await page.addInitScript(() => { localStorage.setItem('packet-run-wins', '1'); localStorage.setItem('packet-run-dns', '8'); });
   }
   await page.goto(`${app.origin}/?seed=${seed}&map=act1&payload=file`);
   await page.getByRole('button', { name: /deliver/i }).click();
@@ -61,6 +61,8 @@ test('protected first session: easy until the first win, standard after', async 
   await page.getByRole('button', { name: /deliver/i }).click();
   let run = await page.evaluate(() => window.packetRun.run);
   assert.equal(run.mods?.gustChance, 0, 'first run is protected');
+  assert.equal(run.phase, 'dns', 'a brand-new destination needs the lookup');
+  await page.getByRole('button', { name: /look it up/i }).click();
 
   // win it: insure both and walk (cannot fail under easy mods)
   await page.locator('[data-road-chip="short"]').click();
