@@ -321,6 +321,30 @@ body.dueling #stage::after {
 
 body.dueling #prompt { border-color: var(--fragment-corrupt); }
 
+#villain {
+  display: none;
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  width: 130px;
+  margin-left: -65px;
+  filter: drop-shadow(0 0 14px rgba(255, 93, 143, 0.35));
+}
+
+body.dueling #villain { display: block; }
+
+.static-villain { animation: villain-jitter 0.55s steps(2) infinite; }
+
+@keyframes villain-jitter {
+  0% { transform-box: fill-box; }
+  50% { translate: 1.2px -0.8px; }
+  100% { translate: -0.8px 0.6px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .static-villain { animation: none; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   body.dueling #stage::after { animation: none; }
 }

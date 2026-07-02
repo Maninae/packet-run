@@ -114,7 +114,7 @@ function renderBeltDuel({ duel, legal, armed, pouch = [], onArm, onPouch }) {
     </button>
     ${pouch.map((item, index) => legal.some((a) => a.type === 'use-item' && a.index === index)
       ? `<button class="tool-btn pouch-btn" data-pouch="${index}">${POUCH_ICONS[item]()}</button>` : '').join('')}
-    <button class="go-btn" id="hold">Hold<br><span class="cost">${pips} · ${duel.banked} banked</span></button>`;
+    <button class="go-btn" id="hold" aria-label="Hold: end this beat (${duel.actionsLeft} actions left, ${duel.banked} banked)">Hold<br><span class="cost">${pips} · ${duel.banked} banked</span></button>`;
   $('#duel-checksum')?.addEventListener('click', () => onArm('duel-checksum'));
   $('#duel-repair')?.addEventListener('click', () => onArm('duel-repair'));
   $('#brace')?.addEventListener('click', () => onArm('brace'));

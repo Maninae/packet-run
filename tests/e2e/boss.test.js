@@ -86,6 +86,8 @@ test('the Static duel: brace the surges, burst the repairs, render the message',
   assert.equal(run.phase, 'duel', 'the tunnel of noise opened at the dock');
   assert.ok(await page.evaluate(() => document.body.classList.contains('dueling')),
     'the arena crawls with static');
+  assert.equal(await page.locator('.static-villain').count(), 1,
+    'The Static itself looms over the dock');
 
   // beats 1–3: brace both actions, hold the beat closed
   for (let beat = 1; beat <= 3; beat++) {

@@ -66,6 +66,7 @@ window.packetRun = {
 function scene() {
   const atJunction = run.phase === 'junction';
   return {
+    dueling: run.phase === 'duel',
     dockLabel: recipientFor(actFor().id).dockLabel,
     map: run.map,
     segment: run.segment,
