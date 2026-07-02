@@ -223,7 +223,7 @@ export async function playNotices(run, batch, { recipient } = {}) {
         sfx.chime();
         localStorage.setItem('packet-run-dns', '8');
         flashPrompt('bolt',
-          `Found it — ${recipient?.dockLabel ?? "Grandma's"} is at <strong>${e.address}</strong>! Your device will remember for a while.`);
+          `Got it — ${recipient?.dockLabel ?? "Grandma's"} is at <strong>${e.address}</strong>. Your device will remember, so we don't have to ask again for a while.`);
         await delay(1100);
         break;
       case 'reward-taken':

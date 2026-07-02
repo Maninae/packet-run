@@ -187,9 +187,9 @@ function renderBeltNormal({ tools, legal, armed, canGo, goLabel, pouch = [], onA
 }
 
 export const REWARD_CARDS = {
-  checksum: { icon: () => checksumIcon(26), name: 'Checksum', line: 'Find a scrambled fragment.' },
-  repair: { icon: () => repairIcon(26), name: 'Repair', line: 'Fix a scrambled fragment.' },
-  buffer: { icon: () => bufferIcon(26), name: 'Buffer', line: 'Waiting for stragglers costs half.' },
+  checksum: { icon: () => checksumIcon(26), name: 'Checksum', line: 'Sniffs out which fragment got scrambled.' },
+  repair: { icon: () => repairIcon(26), name: 'Repair', line: 'Un-scrambles a fragment before the dock sees it.' },
+  buffer: { icon: () => bufferIcon(26), name: 'Buffer', line: 'Waiting for stragglers costs half. Patience gets cheaper.' },
   reroute: { icon: () => rerouteIcon(26), name: 'Re-route', line: 'Ask home to try a different road.' },
   bandwidth: { icon: () => boltIcon(26), name: '+3 Energy', line: 'A top-up, right now.' },
   cloak: { icon: () => cloakIcon(26), name: 'Encryption Cloak', line: 'Seals fragments from sniffers. Handshake: 1 tick.' },

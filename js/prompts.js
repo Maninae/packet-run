@@ -90,7 +90,7 @@ export function computePrompt(run, { armed, hintText, pendingRoad, recipient }) 
   }
   if (armed) return ['copy', `${TOOLTIPS[armed]}<br>Tap a fragment below.`];
   if (run.phase === 'dns') {
-    return ['bolt', `Where does ${who} live? Ask the address book — it costs a tick.`];
+    return ['bolt', `Where does ${who} live? Every home on the internet has a number — let's ask.`];
   }
   if (run.phase === 'junction') {
     if (hintText && !pendingRoad) return ['storm', `Hint: ${hintText}`];
@@ -107,7 +107,9 @@ export function computePrompt(run, { armed, hintText, pendingRoad, recipient }) 
   }
   if (run.phase === 'done') return ['bolt', ''];
   if (run.phase === 'reward') {
-    return ['bolt', 'A relay station! Pick one reward for your belt.'];
+    return ['bolt', run.segment <= 1
+      ? 'A relay station — someone left gear behind. Pick one.'
+      : 'Another station. What did they leave this time?'];
   }
   if (run.phase === 'event') {
     return ['bolt', EVENTS[run.eventCard].title];

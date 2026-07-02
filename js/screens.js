@@ -105,8 +105,8 @@ function wasteLine(run) {
   const tossed = run.events.find((e) => e.type === 'copies-discarded');
   if (!tossed) return '';
   const n = tossed.fragments.length;
-  return `<p class="stat-line">The dock tossed ${n} spare ${n === 1 ? 'copy' : 'copies'}
-    it never needed — energy you can keep next time.</p>`;
+  return `<p class="stat-line">The dock only keeps one of each number — ${n} spare
+    ${n === 1 ? 'copy' : 'copies'} got tossed. That's how the real internet cleans up too.</p>`;
 }
 
 // A live call's render: the call PLAYS, with visible glitch bars where
