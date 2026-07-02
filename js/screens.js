@@ -101,7 +101,7 @@ function lossLine(run) {
       This happens on the real internet all the time.`;
   }
   if (run.failure.reason === 'corrupted-payload') {
-    return 'A scrambled fragment reached the dock — the message came out garbled.';
+    return "The dock caught a scrambled fragment — the message couldn't render.";
   }
   return 'Bedtime came before the message did.';
 }

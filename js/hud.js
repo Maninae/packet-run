@@ -115,7 +115,7 @@ export const REWARD_CARDS = {
   checksum: { icon: () => checksumIcon(26), name: 'Checksum', line: 'Find a scrambled fragment.' },
   repair: { icon: () => repairIcon(26), name: 'Repair', line: 'Fix a scrambled fragment.' },
   buffer: { icon: () => bufferIcon(26), name: 'Buffer', line: 'Waiting for stragglers costs half.' },
-  reroute: { icon: () => rerouteIcon(26), name: 'Re-route', line: 'Go back and try the other road.' },
+  reroute: { icon: () => rerouteIcon(26), name: 'Re-route', line: 'Ask home to try a different road.' },
   bandwidth: { icon: () => boltIcon(26), name: '+3 Energy', line: 'A top-up, right now.' },
 };
 

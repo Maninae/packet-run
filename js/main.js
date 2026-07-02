@@ -54,7 +54,8 @@ function describeRoad(key) {
   const hops = road.nodes.length - 1;
   if (!road.hazard) return `${hops} hops and quiet — the long way around`;
   if (road.hazard.kind === 'static') {
-    return `${hops} hops, static that scrambles one fragment`;
+    const unkitted = !run.belt.includes('checksum') || !run.belt.includes('repair');
+    return `${hops} hops, static that scrambles one fragment${unkitted ? " — your belt can't fix that" : ''}`;
   }
   if (road.hazard.kind === 'rapids') {
     return `${hops} hops, rapids — ${road.hazard.straggles} fragments will fall behind`;
@@ -125,6 +126,9 @@ function computePrompt() {
   }
   const hidden = run.fragments.some((f) => f.corrupted && !f.revealed);
   if (hidden) {
+    if (!run.belt.includes('checksum')) {
+      return ['static', `Something's scrambled — and nothing on your belt can find it. The dock will catch it.`];
+    }
     return ['checksum', `Something's scrambled — you can't tell which. Checksum finds it for 1 energy.`];
   }
   const glitched = run.fragments.filter((f) => f.corrupted && f.revealed).map((f) => f.id);
@@ -262,10 +266,11 @@ async function animateBatch(batch) {
 
   if (hop && !reduced()) {
     sfx.whoosh();
-    const sweptIds = impact
+    // static/rapids impacts carry no swept/saved fields — default them
+    const sweptIds = impact?.swept
       ? [...impact.swept, ...(impact.gust && !impact.gust.saved ? [impact.gust.fragment] : [])]
       : [];
-    const savedIds = impact
+    const savedIds = impact?.saved
       ? [...impact.saved, ...(impact.gust?.saved ? [impact.gust.fragment] : [])]
       : [];
     const rejoined = new Set(rejoin?.fragments ?? []);

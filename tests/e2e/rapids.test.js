@@ -48,6 +48,24 @@ test('rapids: straggler chips show lag; waiting brings them back', async () => {
   await page.context().close();
 });
 
+test('full motion: a rapids impact animates without crashing (regression)', async () => {
+  // static/rapids impacts once crashed the animation path (impact.swept
+  // undefined) — invisible to reduced-motion tests, fatal for real kids
+  const seed = rapidsSeed();
+  const page = await app.page(VIEWPORTS.portrait); // real animation timing
+  await page.addInitScript(() => localStorage.setItem('packet-run-wins', '1'));
+  await page.goto(`${app.origin}/?seed=${seed}`);
+  await page.getByRole('button', { name: /deliver/i }).click();
+  const chip = page.locator('[data-road-chip="short"]');
+  await chip.click();
+  await chip.click();
+  await page.locator('#go:enabled').click();
+  await page.locator('#wait, #go:enabled').first().waitFor({ timeout: 15000 });
+  const run = await page.evaluate(() => window.packetRun.run);
+  assert.ok(run.fragments.some((f) => f.status === 'straggler'), 'rapids resolved in motion');
+  await page.context().close();
+});
+
 test('pressing on loses stragglers — recoverable after the reward beat', async () => {
   const seed = rapidsSeed();
   const page = await app.page(VIEWPORTS.portrait, { reducedMotion: 'reduce' });
