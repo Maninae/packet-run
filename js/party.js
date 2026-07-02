@@ -6,7 +6,7 @@
 //   2. DOM party row: one 44px chip per fragment — also the tap target for
 //      tool aiming on mobile (arm a tool, then tap the fragment).
 
-import { layoutMap, viewTransform } from './map.js';
+import { layoutMap, viewTransform } from './map-layout.js';
 import { PIP_SPARK_D, pipAvatar, copyIcon } from './icons.js';
 
 const cssCache = {};
@@ -149,14 +149,6 @@ export function stopIdle() {
 // 'saved' ones flare violet as their copy absorbs the hit.
 // racers: [{ id, hasCopy, fate: 'arrives' | 'swept' | 'saved' }]
 export function animateHop(canvas, { map, from, to, racers }, { duration = 850 } = {}) {
-  const nodes = layoutMap(map);
-  const a = nodes[from];
-  const b = nodes[to];
-  const dx = b.x - a.x;
-  const dy = b.y - a.y;
-  const len = Math.hypot(dx, dy);
-  const perp = { x: -dy / len, y: dx / len };
-
   // visual-only randomness (never the engine rng): lanes shuffle every hop
   const lanes = [-16, -8, 0, 8, 16].sort(() => Math.random() - 0.5);
   const jitter = racers.map(() => 0.5 + Math.random());
@@ -167,6 +159,15 @@ export function animateHop(canvas, { map, from, to, racers }, { duration = 850 }
     const frame = (now) => {
       const t01 = Math.min(1, (now - start) / duration);
       const { ctx, w, h, t } = setupCanvas(canvas);
+      // node coords re-read each frame: a breakpoint flip mid-hop (portrait ⇄
+      // landscape) must keep the racers on the same wire the SVG shows
+      const nodes = layoutMap(map);
+      const a = nodes[from];
+      const b = nodes[to];
+      const dx = b.x - a.x;
+      const dy = b.y - a.y;
+      const len = Math.hypot(dx, dy);
+      const perp = { x: -dy / len, y: dx / len };
       ctx.clearRect(0, 0, w, h);
 
       racers.forEach((f, i) => {
