@@ -1,0 +1,52 @@
+/* landscape.css — the desktop two-pane recomposition (design/11 step 2).
+   Portrait (components.css) is the design target and stays untouched; this
+   file only rearranges the same sections at the breakpoint: the map pane
+   west, the rail (meters / prompt / party / belt) east. js/map.js flips the
+   journey west→east under the SAME media query — keep the two in sync
+   (LANDSCAPE_MQ in js/map.js). */
+
+@media (min-width: 900px) and (orientation: landscape) {
+  #game {
+    max-width: 1440px;
+    grid-template-columns: minmax(0, 1fr) 380px;
+    grid-template-rows: auto auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      "stage meters"
+      "stage prompt"
+      "stage party"
+      "stage belt";
+  }
+
+  #stage {
+    grid-area: stage;
+    border-right: var(--stroke-w) solid var(--wire);
+  }
+
+  #meters {
+    grid-area: meters;
+    flex-wrap: wrap;
+    row-gap: 6px;
+    padding: calc(var(--space) * 2) calc(var(--space) * 2) var(--space);
+  }
+
+  #prompt {
+    grid-area: prompt;
+    margin: var(--space) calc(var(--space) * 2) 0;
+  }
+
+  /* party pinned under the prompt; the flexible row keeps the belt at the
+     bottom of the rail like a hand resting on the tools */
+  #party {
+    grid-area: party;
+    align-self: start;
+    padding: calc(var(--space) * 2);
+  }
+
+  #belt {
+    grid-area: belt;
+    padding: var(--space) calc(var(--space) * 2) calc(var(--space) * 2);
+  }
+
+  /* overlays keep the centered card, with a little more room to breathe */
+  .screen { width: min(460px, 100%); }
+}
