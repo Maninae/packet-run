@@ -9,7 +9,7 @@ import { generateMap } from '../../js/generator.js';
 function rapidsSeed() {
   for (let i = 0; i < 500; i++) {
     const seed = `RAP${i}`;
-    if (generateMap(seed).segments[0].roads.short.hazard?.kind === 'rapids') return seed;
+    if (generateMap(seed, { act: 1 }).segments[0].roads.short.hazard?.kind === 'rapids') return seed;
   }
   throw new Error('no rapids-opening seed found');
 }

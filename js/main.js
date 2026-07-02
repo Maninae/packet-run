@@ -3,7 +3,7 @@
 // resulting events into beats (animate the hop, flash the notices, re-render)
 // and routes taps back into engine actions.
 
-import { EASY, MAP_1A, BELT } from './config.js';
+import { EASY, MAP_1A, BELT, ACTS } from './config.js';
 import { createRun, legalActions, act, segmentRoads, roadDef } from './engine.js';
 import { generateMap } from './generator.js';
 import { randomSeed } from './rng.js';
@@ -275,14 +275,24 @@ async function dispatch(action) {
 // Map choice: the hand-authored 1a region until the first win (it doubles as
 // the tutorial region), seeded generated maps after. ?map=act1 pins the
 // tutorial region — used by shared tutorial seeds and the E2E suite.
+// Wins climb the act ladder (a biome every 3 wins) until Phase 4's campaign.
 const pinnedMap = new URLSearchParams(window.location.search).get('map');
+
+const actFor = () => ACTS[Math.min(ACTS.length - 1, Math.floor(winsCount() / 3))];
+
+function applyBiome(act) {
+  document.body.className = act.cssClass;
+  const chip = $('#act-chip');
+  if (chip) chip.textContent = `Act ${act.id} · ${act.name}`;
+}
 
 function mapFor(seed) {
   if (pinnedMap === 'act1' || winsCount() === 0) return MAP_1A;
-  return generateMap(seed);
+  return generateMap(seed, { act: actFor().id });
 }
 
 function newRun(seed, { easy = playEasy(), hint = null } = {}) {
+  applyBiome(actFor());
   const dnsNeeded = dnsNeededNow();
   if (!dnsNeeded) dnsSpend();
   run = createRun({ seed, mods: easy ? EASY : null, map: mapFor(seed), payload, dnsNeeded });
@@ -311,6 +321,7 @@ run = createRun({
 });
 wireLegend();
 wireMute();
+applyBiome(actFor());
 renderAll();
 // after the first win, the start screen offers the payload choice —
 // unless the URL already pinned one (shared links, tests)

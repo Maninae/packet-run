@@ -120,6 +120,17 @@ export const EASY = {
   fogOutcomes: [{ deadlineCost: 0, p: 1 }],
 };
 
+// Acts are BIOMES (design/04): places with their own hazard mix — and the
+// act ladder is the curriculum (cognitive-load gating: congestion Act 2 at
+// the earliest, the ocean systems Act 3). Template letters index
+// js/generator.js's TEMPLATES array. Wins climb the ladder (every 3) until
+// Phase 4's campaign spine replaces the proxy.
+export const ACTS = [
+  { id: 1, name: 'Home & Neighborhood', cssClass: 'act-1', templates: [0, 1, 2, 4] },        // A B C E
+  { id: 2, name: 'Backbone City', cssClass: 'act-2', templates: [0, 1, 2, 3, 4, 5] },        // + D static, F jam
+  { id: 3, name: 'The Ocean Crossing', cssClass: 'act-3', templates: [1, 2, 3, 5, 6, 7, 8] },// + G sniffer, H trench, I satellite
+];
+
 export const STARS = {
   // leftover Bandwidth at the dock (>=8 was >=7 until round-6 review
   // showed that let the mixed line dominate both neighbors)

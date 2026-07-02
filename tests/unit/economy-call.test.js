@@ -10,7 +10,9 @@ import { generateMap } from '../../js/generator.js';
 const N = 1200;
 
 function playCall(seed, style) {
-  const run = createRun({ seed, map: generateMap(seed), payload: 'udp-call' });
+  // act 2's pool is where the gap-makers (storms, rapids) live — the
+  // tempo-vs-clinging contrast must hold where gaps actually occur
+  const run = createRun({ seed, map: generateMap(seed, { act: 2 }), payload: 'udp-call' });
   for (let guard = 0; guard < 120 && run.phase !== 'done'; guard++) {
     if (run.phase === 'reward') {
       act(run, legalActions(run).find((a) => a.kind === 'bandwidth'));

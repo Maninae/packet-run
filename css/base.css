@@ -66,6 +66,46 @@ button {
   -webkit-tap-highlight-color: transparent;
 }
 
+/* Biome palette families (design/08): the ENVIRONMENT shifts per act;
+   characters and the hazard hue family stay constant — color is pedagogy. */
+body.act-2 { /* Backbone City: neon dusk */
+  --bg: #131022;
+  --bg-deep: #0c0a19;
+  --surface: #1d1833;
+  --surface-2: #2a2149;
+  --ink-soft: #b3a8d1;
+  --ink-faint: #6f6592;
+  --wire: #3b3159;
+  --wire-lit: #7263a5;
+  --road-pick: #6ee8c8;
+  --safe: #6ee8c8;
+  --fog: rgba(170, 160, 210, 0.14);
+  --fog-edge: rgba(170, 160, 210, 0.05);
+}
+
+body.act-3 { /* The Ocean Crossing: deep blues */
+  --bg: #0a141f;
+  --bg-deep: #060d16;
+  --surface: #112438;
+  --surface-2: #19344e;
+  --ink-soft: #9cc2dc;
+  --ink-faint: #587e9a;
+  --wire: #23445e;
+  --wire-lit: #4a80a8;
+  --road-pick: #6fd6ff;
+  --safe: #6fd6ff;
+  --fog: rgba(150, 195, 225, 0.15);
+  --fog-edge: rgba(150, 195, 225, 0.05);
+}
+
+.act-chip { margin-left: auto; }
+#seed-chip { margin-left: 10px; }
+
+/* on a 6" portrait screen the act label wins; the seed lives in the URL */
+@media (max-width: 430px) {
+  #seed-chip { display: none; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation: none !important;

@@ -7,7 +7,7 @@
 // never disturbs gameplay rolls for the same seed.
 
 import { seededRng } from './rng.js';
-import { RUN, GEN } from './config.js';
+import { RUN, GEN, ACTS } from './config.js';
 
 // Archetypes. Every junction keeps the 1a dichotomy: short = quicker/riskier,
 // long = slower/milder — and the tension rule holds: a hazard-free road is
@@ -91,18 +91,23 @@ function buildRoad(rng, spec, { segment, key, from, to }) {
   return { nodes, hazard, bwPickup };
 }
 
-export function generateMap(seed, { segments = GEN.segments } = {}) {
+export function generateMap(seed, { segments = GEN.segments, act = 3 } = {}) {
   const rng = seededRng(`${seed}:map`);
+  // the act's biome pool: which archetypes this part of the world rolls
+  const pool = (ACTS.find((a) => a.id === act) ?? ACTS.at(-1)).templates;
   // pacing + economy constraint: at most 2 heavy (storm) segments per map —
   // a full-insurance temperament must stay affordable at these budgets
   const picks = Array.from({ length: segments },
-    () => Math.floor(rng() * TEMPLATES.length));
+    () => pool[Math.floor(rng() * pool.length)]);
   const stormy = picks.filter((p) => TEMPLATES[p].short.hazard === 'storm').length;
   if (stormy === segments) picks[1] = 1; // swap the middle for the tempo segment
   // never open with a corruption-class hazard (Static or sniffer): a reward
-  // beat — where the counter-kit can be picked — must come first
+  // beat — where the counter-kit can be picked — must come first. Walk
+  // WITHIN the act's pool so no other biome's archetype leaks in.
+  let pi = pool.indexOf(picks[0]);
   while (['static', 'sniffer'].includes(TEMPLATES[picks[0]].short.hazard)) {
-    picks[0] = (picks[0] + 1) % TEMPLATES.length;
+    pi = (pi + 1) % pool.length;
+    picks[0] = pool[pi];
   }
   // one send-rate puzzle per run at most (cognitive-load gating, design/04;
   // and stacked pipes would starve the clock)

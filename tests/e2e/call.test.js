@@ -86,6 +86,25 @@ test('a brand-new player gets the simple message start (no picker)', async () =>
   await page.context().close();
 });
 
+test('acts climb with wins: biome class, act chip, and gated hazards', async () => {
+  const page = await app.page(VIEWPORTS.portrait, { reducedMotion: 'reduce' });
+  await page.addInitScript(() => { localStorage.setItem('packet-run-wins', '4'); localStorage.setItem('packet-run-dns', '8'); });
+  await page.goto(`${app.origin}/?seed=ACT2A&payload=file`);
+  assert.equal(await page.evaluate(() => document.body.className), 'act-2');
+  assert.match(await page.locator('#act-chip').textContent(), /Act 2 · Backbone City/);
+  let run = await page.evaluate(() => window.packetRun.run);
+  const kinds = run.map.segments.flatMap((s) =>
+    Object.values(s.roads).map((r) => r.hazard?.kind).filter(Boolean));
+  assert.ok(kinds.every((k) => !['trench', 'satellite', 'sniffer'].includes(k)),
+    'act 2 never rolls ocean systems');
+
+  await page.addInitScript(() => localStorage.setItem('packet-run-wins', '9'));
+  await page.goto(`${app.origin}/?seed=ACT3A&payload=file`);
+  assert.equal(await page.evaluate(() => document.body.className), 'act-3');
+  assert.match(await page.locator('#act-chip').textContent(), /Act 3 · The Ocean Crossing/);
+  await page.context().close();
+});
+
 test('DNS: the first run looks up the address; the cache skips it afterward', async () => {
   const page = await app.page(VIEWPORTS.portrait, { reducedMotion: 'reduce' });
   await page.goto(`${app.origin}/?seed=DNS1&map=act1&payload=file`); // fresh: no cache

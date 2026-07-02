@@ -9,7 +9,7 @@ import { generateMap } from '../../js/generator.js';
 function jamSeed() {
   for (let i = 0; i < 800; i++) {
     const seed = `JAM${i}`;
-    if (generateMap(seed).segments[0].roads.long.hazard?.kind === 'congestion') return seed;
+    if (generateMap(seed, { act: 2 }).segments[0].roads.long.hazard?.kind === 'congestion') return seed;
   }
   throw new Error('no congestion-opening seed found');
 }
@@ -21,7 +21,7 @@ test.after(async () => { await app.close(); });
 test('the bottleneck: rate buttons own the belt until everyone is through', async () => {
   const seed = jamSeed();
   const page = await app.page(VIEWPORTS.portrait, { reducedMotion: 'reduce' });
-  await page.addInitScript(() => { localStorage.setItem('packet-run-wins', '1'); localStorage.setItem('packet-run-dns', '8'); });
+  await page.addInitScript(() => { localStorage.setItem('packet-run-wins', '3'); localStorage.setItem('packet-run-dns', '8'); });
   await page.goto(`${app.origin}/?seed=${seed}&payload=file`);
   await page.getByRole('button', { name: /deliver/i }).click();
   await page.locator('[data-road-chip="long"]').click();

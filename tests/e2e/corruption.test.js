@@ -13,7 +13,7 @@ import { generateMap } from '../../js/generator.js';
 // rewards: Checksum first, Repair second, energy after; at nodes: checksum
 // when offered, repair when offered, else onward.
 function replayForScan(seed) {
-  const run = createRun({ seed, map: generateMap(seed) });
+  const run = createRun({ seed, map: generateMap(seed, { act: 2 }) });
   let tookChecksum = false;
   let tookRepair = false;
   let sawStatic = false;
@@ -60,7 +60,7 @@ test.after(async () => { await app.close(); });
 test('build the kit at rewards, then detect and repair the Static\'s work', async () => {
   const seed = scanSeed();
   const page = await app.page(VIEWPORTS.portrait, { reducedMotion: 'reduce' });
-  await page.addInitScript(() => { localStorage.setItem('packet-run-wins', '1'); localStorage.setItem('packet-run-dns', '8'); });
+  await page.addInitScript(() => { localStorage.setItem('packet-run-wins', '3'); localStorage.setItem('packet-run-dns', '8'); });
   await page.goto(`${app.origin}/?seed=${seed}&payload=file`);
   await page.getByRole('button', { name: /deliver/i }).click();
 
