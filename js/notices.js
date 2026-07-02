@@ -51,6 +51,13 @@ async function impactNotice(e) {
     await delay(900);
     return;
   }
+  if (e.kind === 'ddos') {
+    sfx.static();
+    shake();
+    flashPrompt('swarm', 'A swarm floods the pipe! Only two of yours can squeeze through per beat.');
+    await delay(1000);
+    return;
+  }
   if (e.kind === 'congestion') {
     sfx.mud();
     flashPrompt('jam', 'A jam! This pipe only fits so many per beat — start small.');
@@ -167,6 +174,16 @@ export async function playNotices(run, batch) {
           flashPrompt('jam', `<strong>${e.crossed}</strong> slipped through — the pipe holds. Push harder?`);
           await delay(650);
         }
+        break;
+      case 'siege-over':
+        sfx.chime();
+        flashPrompt('swarm', 'The flood breaks up — the road is yours again.');
+        await delay(900);
+        break;
+      case 'push':
+        sfx.bloop();
+        break;
+      case 'siege-beat':
         break;
       case 'congestion-cleared':
         sfx.chime();

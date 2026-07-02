@@ -44,6 +44,9 @@ function describeRoad(run, key) {
   if (road.hazard.kind === 'satellite') {
     return `${hops} hops by satellite — the long way up always costs a beat`;
   }
+  if (road.hazard.kind === 'ddos') {
+    return `${hops} hops through a FLOODED pipe — slow going, nothing lost`;
+  }
   return `${hops} hops, a ${road.hazard.kind} eyeing ${names(road.hazard.threatens)}`;
 }
 
@@ -57,6 +60,7 @@ export function scaryRoad(run) {
 const HAZARD_PROMPT_ICONS = {
   drizzle: 'drizzle', static: 'static', rapids: 'rapids', storm: 'storm',
   congestion: 'jam', sniffer: 'sniffer', trench: 'trench', satellite: 'satellite',
+  ddos: 'swarm',
 };
 
 function iconFor(run, key) {
@@ -70,6 +74,7 @@ const JUNCTION_HOOKS = {
   congestion: (road) => ['jam', `A jammed pipe on the ${road} road — slow, but nothing gets lost. Tap a road to look closer.`],
   sniffer: (road) => ['sniffer', `A sniffer lurks on the ${road} road. Tap a road to look closer.`],
   trench: (road) => ['trench', `The ${road} road dives through the deep-sea cable. Tap a road to look closer.`],
+  ddos: (road) => ['swarm', `A swarm floods the ${road} road — everyone's starving for bandwidth there. Tap a road to look closer.`],
   satellite: (road) => ['satellite', `The ${road} road goes up and over by satellite. Tap a road to look closer.`],
 };
 
@@ -101,6 +106,10 @@ export function computePrompt(run, { armed, hintText, pendingRoad }) {
   if (run.congestion) {
     const alive = run.fragments.filter((f) => f.status === 'with-party').length;
     return ['jam', `The pipe is jammed — <strong>${run.congestion.crossed}/${alive}</strong> across. How many do you push this beat?`];
+  }
+  if (run.siege) {
+    const held = run.fragments.filter((f) => f.status === 'with-party').length;
+    return ['swarm', `The swarm rages (beat ${run.siege.beat + 1} of 3) — tap two fragments to push through, or Wait it out. ${held} still held.`];
   }
 
   const def = roadDef(run);
@@ -138,6 +147,9 @@ export function computePrompt(run, { armed, hintText, pendingRoad }) {
     }
     if (hazard.kind === 'satellite') {
       return ['satellite', `The satellite pass ahead — space is far, and the clock knows it.`];
+    }
+    if (hazard.kind === 'ddos') {
+      return ['swarm', `A swarm floods the pipe ahead — a flood starves everyone, but it can't eat you. Rate-limit through.`];
     }
     const approach = def.nodes[def.nodes.indexOf(hazard.impactNode) - 1];
     const icon = hazard.kind === 'storm' ? 'storm' : 'drizzle';

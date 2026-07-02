@@ -171,6 +171,13 @@
   transform: translateY(-2px);
 }
 
+/* pushed through the flood: safe on the far side */
+.fragment-chip.pushed {
+  border-color: var(--safe);
+  color: var(--safe);
+  opacity: 0.8;
+}
+
 /* revealed corruption: the fragment visibly glitches (design/08) */
 .fragment-chip.glitched {
   border-color: var(--fragment-corrupt);

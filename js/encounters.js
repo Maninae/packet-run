@@ -90,6 +90,13 @@ export function resolveImpact(run, hazard, rng) {
     run.events.push({ type: 'impact', kind: 'satellite', node: hazard.impactNode, flaky, deadline: run.deadline });
     return;
   }
+  // the DDoS swarm (design/10): the siege window opens — no rng, pure vice.
+  if (hazard.kind === 'ddos') {
+    run.siege = { beat: 0, pushes: 0 };
+    run.impactResolved = true;
+    run.events.push({ type: 'impact', kind: 'ddos', node: hazard.impactNode });
+    return;
+  }
   // the sniffer: with the Cloak it's foiled outright — sealed fragments are
   // VISIBLE on the wire but unreadable (design/07; route-hiding is Tor, out
   // of scope). Unsealed, its tamper IS corruption: scrambled bits the

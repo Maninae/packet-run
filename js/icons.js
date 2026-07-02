@@ -73,6 +73,19 @@ export function satelliteIcon(size = 18) {
   </svg>`;
 }
 
+export function swarmIcon(size = 18) {
+  return `<svg width="${size}" height="${size}" viewBox="0 0 20 20" aria-hidden="true">
+    <circle cx="5" cy="6" r="1.6" fill="var(--danger)"/>
+    <circle cx="11" cy="4" r="1.4" fill="var(--danger)" opacity="0.85"/>
+    <circle cx="16" cy="7" r="1.6" fill="var(--danger)"/>
+    <circle cx="7" cy="11" r="1.4" fill="var(--danger)" opacity="0.85"/>
+    <circle cx="13" cy="11" r="1.6" fill="var(--danger)"/>
+    <circle cx="4" cy="15" r="1.4" fill="var(--danger)" opacity="0.7"/>
+    <circle cx="10" cy="16" r="1.6" fill="var(--danger)"/>
+    <circle cx="16" cy="15" r="1.4" fill="var(--danger)" opacity="0.7"/>
+  </svg>`;
+}
+
 export function jamIcon(size = 18) {
   return `<svg width="${size}" height="${size}" viewBox="0 0 20 20" aria-hidden="true">
     <path d="M2 5 h5 q3 0 4 3 q1 3 4 3 h3" fill="none" stroke="var(--hazard)"

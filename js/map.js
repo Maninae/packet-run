@@ -7,12 +7,13 @@
 
 import {
   stormIcon, drizzleIcon, staticIcon, rapidsIcon, jamIcon, snifferIcon,
-  trenchIcon, satelliteIcon, clockIcon,
+  trenchIcon, satelliteIcon, swarmIcon, clockIcon,
 } from './icons.js';
 
 const HAZARD_ICONS = {
   storm: stormIcon, drizzle: drizzleIcon, static: staticIcon, rapids: rapidsIcon,
   congestion: jamIcon, sniffer: snifferIcon, trench: trenchIcon, satellite: satelliteIcon,
+  ddos: swarmIcon,
 };
 
 const NS = 'http://www.w3.org/2000/svg';

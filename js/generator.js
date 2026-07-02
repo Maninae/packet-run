@@ -52,6 +52,11 @@ const TEMPLATES = [
     short: { hops: 2, hazard: 'drizzle', threat: 1 },
     long: { hops: 2, hazard: 'satellite' },
   },
+  { // J — the DDoS Swarm (elite, design/10): brave the flooded shortcut —
+    // rate-limited, surcharged, nothing lost — or take the long mild road
+    short: { hops: 2, hazard: 'ddos' },
+    long: { hops: 4, hazard: 'drizzle', threat: 1 },
+  },
 ];
 
 function shuffled(rng, array) {
@@ -74,7 +79,7 @@ function buildRoad(rng, spec, { segment, key, from, to }) {
       hazard = { kind: 'static', impactNode, corrupts: 1 };
     } else if (spec.hazard === 'sniffer') {
       hazard = { kind: 'sniffer', impactNode };
-    } else if (spec.hazard === 'trench' || spec.hazard === 'satellite') {
+    } else if (['trench', 'satellite', 'ddos'].includes(spec.hazard)) {
       hazard = { kind: spec.hazard, impactNode };
     } else if (spec.hazard === 'congestion') {
       hazard = { kind: 'congestion', impactNode };
@@ -114,6 +119,11 @@ export function generateMap(seed, { segments = GEN.segments, act = 3 } = {}) {
   let jams = 0;
   for (let i = 0; i < picks.length; i++) {
     if (TEMPLATES[picks[i]].long.hazard === 'congestion' && ++jams > 1) picks[i] = 1;
+  }
+  // the Swarm is an ELITE: one per map at most, never the opener
+  let swarms = 0;
+  for (let i = 0; i < picks.length; i++) {
+    if (TEMPLATES[picks[i]].short.hazard === 'ddos' && (i === 0 || ++swarms > 1)) picks[i] = 1;
   }
 
   const built = [];

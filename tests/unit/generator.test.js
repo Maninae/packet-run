@@ -40,7 +40,7 @@ test('map shape: 3 segments, every road priced, threats name real fragments', ()
             assert.equal(road.hazard.corrupts, 1, 'static zones scramble one');
           } else if (road.hazard.kind === 'sniffer') {
             assert.ok(road.hazard.impactNode, 'the sniffer lurks on a node');
-          } else if (['congestion', 'trench', 'satellite'].includes(road.hazard.kind)) {
+          } else if (['congestion', 'trench', 'satellite', 'ddos'].includes(road.hazard.kind)) {
             assert.ok(road.hazard.impactNode, 'the jam sits on a node');
           } else if (road.hazard.kind === 'rapids') {
             assert.ok(road.hazard.straggles >= 1, 'rapids strand at least one');
@@ -80,8 +80,11 @@ test('engine walks a generated map: junction per segment, tools reset each storm
     assert.ok(canDup || run.bandwidth < 3, `segment ${segment}: preemptive play available`);
     while (run.phase === 'node' || run.phase === 'event') {
       if (run.phase === 'event') { act(run, legalActions(run)[0]); continue; }
-      const sends = legalActions(run).filter((a) => a.type === 'send');
-      act(run, sends.length ? sends.at(-1) : { type: 'onward' });
+      const legal2 = legalActions(run);
+      const sends = legal2.filter((a) => a.type === 'send');
+      if (sends.length) { act(run, sends.at(-1)); continue; }
+      const pushAct = legal2.find((a) => a.type === 'push');
+      act(run, pushAct ?? { type: 'onward' });
     }
     if (run.phase === 'reward') {
       act(run, legalActions(run).find((a) => a.kind === 'bandwidth'));
@@ -103,8 +106,11 @@ test('fog fires exactly once, at the end of the run', () => {
       } else if (run.phase === 'junction') {
         act(run, { type: 'choose-road', road: 'short' });
       } else {
-        const sends = legalActions(run).filter((a) => a.type === 'send');
-        act(run, sends.length ? sends.at(-1) : { type: 'onward' });
+        const legal3 = legalActions(run);
+        const sends = legal3.filter((a) => a.type === 'send');
+        if (sends.length) { act(run, sends.at(-1)); continue; }
+        const pushAct = legal3.find((a) => a.type === 'push');
+        act(run, pushAct ?? { type: 'onward' });
       }
     }
     const fogs = run.events.filter((e) => e.type === 'fog-reveal');
@@ -114,7 +120,8 @@ test('fog fires exactly once, at the end of the run', () => {
     if (fogs.length) {
       const fogIndex = run.events.findIndex((e) => e.type === 'fog-reveal');
       const lastHop = run.events.map((e) => e.type).lastIndexOf('hop');
-      assert.ok(fogIndex > 0 && fogIndex >= lastHop - 4, 'fog is an endgame beat');
+      // siege/pipe beats can sit between the reveal and the final hop
+      assert.ok(fogIndex > 0 && fogIndex >= lastHop - 10, 'fog is an endgame beat');
     }
   }
 });

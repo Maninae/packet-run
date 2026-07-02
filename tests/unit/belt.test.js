@@ -18,8 +18,19 @@ const go = { type: 'onward' };
 const road = (r) => ({ type: 'choose-road', road: r });
 
 function toSegmentEnd(run, r = 'short') {
-  act(run, road(r));
-  while (run.phase === 'node') act(run, go);
+  const startSegment = run.segment;
+  // walk until the segment's reward beat (a cable cut can bounce us back
+  // to the junction — just choose again)
+  for (let guard = 0; guard < 60 && run.phase !== 'reward' && run.phase !== 'done'
+    && run.segment === startSegment; guard++) {
+    const legal = legalActions(run);
+    if (run.phase === 'junction') { act(run, road(r)); continue; }
+    if (run.phase === 'event') { act(run, legal[0]); continue; }
+    const sends = legal.filter((a) => a.type === 'send');
+    if (sends.length) { act(run, sends.at(-1)); continue; }
+    const pushAct = legal.find((a) => a.type === 'push');
+    act(run, pushAct ?? go);
+  }
   return run;
 }
 

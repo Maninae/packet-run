@@ -89,6 +89,11 @@ function threatenedSet() {
 }
 
 function targetableSet() {
+  if (run.siege && !armed) {
+    return new Set(legalActions(run)
+      .filter((a) => a.type === 'push')
+      .map((a) => a.fragment));
+  }
   if (!armed) return new Set();
   return new Set(legalActions(run)
     .filter((a) => a.type === armed)
@@ -113,7 +118,7 @@ function renderAll() {
     tools: run.belt,
     legal: busy ? [] : legalActions(run),
     armed,
-    canGo: !busy && (run.phase === 'node' || run.phase === 'dns'
+    canGo: !busy && !run.siege && (run.phase === 'node' || run.phase === 'dns'
       || (run.phase === 'junction' && pendingRoad !== null)),
     goLabel: run.phase === 'dns' ? 'Look it up' : 'Onward',
     onArm, onGo,
@@ -158,7 +163,14 @@ function onArm(tool) {
 }
 
 function onChipTap(id) {
-  if (busy || !armed) return;
+  if (busy) return;
+  if (run.siege && !armed) {
+    if (legalActions(run).some((a) => a.type === 'push' && a.fragment === id)) {
+      dispatch({ type: 'push', fragment: id });
+    }
+    return;
+  }
+  if (!armed) return;
   const action = { type: armed, fragment: id };
   if (!legalActions(run).some((a) => a.type === armed && a.fragment === id)) return;
   armed = null;

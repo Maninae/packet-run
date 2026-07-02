@@ -159,7 +159,7 @@ export const EVENTS = [
 export const ACTS = [
   { id: 1, name: 'Home & Neighborhood', cssClass: 'act-1', templates: [0, 1, 2, 4] },        // A B C E
   { id: 2, name: 'Backbone City', cssClass: 'act-2', templates: [0, 1, 2, 3, 4, 5] },        // + D static, F jam
-  { id: 3, name: 'The Ocean Crossing', cssClass: 'act-3', templates: [1, 2, 3, 5, 6, 7, 8] },// + G sniffer, H trench, I satellite
+  { id: 3, name: 'The Ocean Crossing', cssClass: 'act-3', templates: [1, 2, 3, 5, 6, 7, 8, 9] },// + G sniffer, H trench, I satellite, J swarm elite
 ];
 
 export const STARS = {

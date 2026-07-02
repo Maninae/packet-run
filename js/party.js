@@ -247,6 +247,10 @@ export function renderPartyRow(container, fragments, opts = {}) {
       chip.classList.add('skipped');
       chip.setAttribute('aria-label', `Fragment ${f.id} — skipped`);
     }
+    if (f.status === 'pushed') {
+      chip.classList.add('pushed');
+      chip.setAttribute('aria-label', `Fragment ${f.id} — through the flood`);
+    }
     if (f.corrupted && f.revealed) {
       chip.classList.add('glitched');
       chip.setAttribute('aria-label', `Fragment ${f.id} — scrambled`);

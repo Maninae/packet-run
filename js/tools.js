@@ -6,9 +6,16 @@
 
 import { TOOLS } from './config.js';
 
+// While a DDoS swarm rages, every paid action costs +1 energy (the pipe is
+// starved for everyone — design/10). Free verbs (Skip) stay free: mercy.
+export function bwCost(run, toolName) {
+  const base = TOOLS[toolName].bw;
+  return base === 0 ? 0 : base + (run.siege ? 1 : 0);
+}
+
 export function canAfford(run, toolName) {
-  const cost = TOOLS[toolName];
-  return run.bandwidth >= cost.bw && run.deadline >= cost.deadline;
+  return run.bandwidth >= bwCost(run, toolName)
+    && run.deadline >= TOOLS[toolName].deadline;
 }
 
 // Duplicate: preemptive only (illegal once the impact resolved — build card #6),
@@ -21,7 +28,7 @@ export function duplicateLegal(run, fragment) {
 }
 
 export function applyDuplicate(run, fragment) {
-  run.bandwidth -= TOOLS.duplicate.bw;
+  run.bandwidth -= bwCost(run, 'duplicate');
   fragment.hasCopy = true;
   run.events.push({ type: 'duplicate', fragment: fragment.id });
 }
@@ -33,7 +40,7 @@ export function retransmitLegal(run, fragment) {
 }
 
 export function applyRetransmit(run, fragment) {
-  run.bandwidth -= TOOLS.retransmit.bw;
+  run.bandwidth -= bwCost(run, 'retransmit');
   run.deadline -= TOOLS.retransmit.deadline;
   fragment.status = 'returning'; // catches up at the next node (any node, incl. the dock)
   run.events.push({ type: 'retransmit', fragment: fragment.id });
@@ -47,7 +54,7 @@ export function checksumLegal(run) {
 }
 
 export function applyChecksum(run) {
-  run.bandwidth -= TOOLS.checksum.bw;
+  run.bandwidth -= bwCost(run, 'checksum');
   const found = run.fragments.filter((f) => f.status === 'with-party' && f.corrupted);
   for (const f of found) f.revealed = true;
   run.events.push({ type: 'checksum', found: found.map((f) => f.id) });
@@ -59,7 +66,7 @@ export function repairLegal(run, fragment) {
 }
 
 export function applyRepair(run, fragment) {
-  run.bandwidth -= TOOLS.repair.bw;
+  run.bandwidth -= bwCost(run, 'repair');
   fragment.corrupted = false;
   fragment.revealed = false;
   run.events.push({ type: 'repair', fragment: fragment.id });

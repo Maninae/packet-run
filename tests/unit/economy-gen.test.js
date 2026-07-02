@@ -58,6 +58,8 @@ function play(seed, { pickRoad, insure, avoidStatic }) {
     const legal = legalActions(run);
     const sends = legal.filter((a) => a.type === 'send');
     if (sends.length) { act(run, sends.at(-1)); continue; }
+    const pushAct = legal.find((a) => a.type === 'push');
+    if (pushAct) { act(run, pushAct); continue; }
     const waitAct = legal.find((a) => a.type === 'wait');
     if (waitAct && run.deadline > 4) { act(run, waitAct); continue; }
     const fix = legal.find((a) =>
@@ -106,6 +108,7 @@ function threatWeight(road) {
   if (!road.hazard) return 0;
   if (['static', 'sniffer'].includes(road.hazard.kind)) return 1.5;
   if (road.hazard.kind === 'congestion') return 0.5;
+  if (road.hazard.kind === 'ddos') return 0.5;
   if (road.hazard.kind === 'trench' || road.hazard.kind === 'satellite') return 0.5;
   return road.hazard.threatens?.length ?? 1;
 }

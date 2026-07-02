@@ -48,6 +48,7 @@ export function createRun({ seed, rng, mods = null, map = MAP_1A, payload = 'tcp
     waitsUsed: 0,           // per rapids window (max 2 — design/04)
     congestion: null,       // open bottleneck window { capacity, maxRate, crossed }
     eventCard: null,        // open "?" card (index into config.EVENTS)
+    siege: null,            // DDoS window { beat, pushes } — design/10
     eventsSeen: new Set(),  // "?" nodes already visited (per segment:node)
     belt: [...PAYLOADS[payload].belt], // actives AND passives share the slots (design/03)
     passives: new Set(),    // extra always-on machinery (test/meta injection)
@@ -104,6 +105,21 @@ export function legalActions(run) {
   }
   // an open bottleneck locks everything but the send-rate choice — the
   // puzzle IS the beat (design/04)
+  if (run.siege) {
+    // the swarm owns movement: push two through per beat, or wait it out;
+    // rescues still work — at the flood surcharge (Duplicate stays
+    // preemptive-only: this segment's impact already resolved)
+    const actions = run.fragments
+      .filter((f) => f.status === 'with-party')
+      .map((f) => ({ type: 'push', fragment: f.id }));
+    for (const f of run.fragments) {
+      if (onBelt(run, 'retransmit') && retransmitLegal(run, f)) {
+        actions.push({ type: 'retransmit', fragment: f.id });
+      }
+    }
+    actions.push({ type: 'wait' });
+    return actions;
+  }
   if (run.congestion) {
     return CONGESTION.rates
       .filter((rate) => rate <= run.congestion.maxRate)
@@ -285,6 +301,49 @@ function stutterBleed(run) {
   return 1;
 }
 
+// The DDoS siege (design/10): a beat passes — the swarm rages on. After
+// three beats it disperses; everyone pushed (or held) regroups unharmed.
+function siegeTick(run) {
+  run.deadline -= 1;
+  run.events.push({ type: 'siege-beat', beat: run.siege.beat + 1, deadline: run.deadline });
+  stutterBleed(run);
+  if (run.deadline < 0) {
+    fail(run, 'deadline', 'latency');
+    return;
+  }
+  run.siege.beat += 1;
+  maybeDisperse(run);
+}
+
+function siegeBeat(run) {
+  siegeTick(run);
+}
+
+function maybeDisperse(run) {
+  if (!run.siege) return;
+  const stillHeld = run.fragments.some((f) => f.status === 'with-party');
+  if (run.siege.beat >= 3 || !stillHeld) {
+    for (const f of run.fragments) {
+      if (f.status === 'pushed') f.status = 'with-party';
+    }
+    run.siege = null;
+    run.events.push({ type: 'siege-over' });
+  }
+}
+
+// push one fragment through the flooded pipe: two pushes complete a beat
+function pushThroughFlood(run, action) {
+  const fragment = run.fragments.find((f) => f.id === action.fragment);
+  fragment.status = 'pushed';
+  run.siege.pushes += 1;
+  run.events.push({ type: 'push', fragment: fragment.id });
+  if (run.siege.pushes % 2 === 0) {
+    siegeTick(run);
+    if (run.phase === 'done') return;
+  }
+  maybeDisperse(run);
+}
+
 // Waiting at rapids: 1 Deadline per beat (Buffer passive: two beats for the
 // price of one). Lag counts down; caught-up stragglers rejoin.
 function waitBeat(run) {
@@ -459,8 +518,12 @@ export function act(run, action) {
     case 'skip':
       applySkip(run, run.fragments.find((f) => f.id === action.fragment));
       break;
+    case 'push':
+      pushThroughFlood(run, action);
+      break;
     case 'wait':
-      waitBeat(run);
+      if (run.siege) siegeBeat(run);
+      else waitBeat(run);
       break;
     case 'reroute':
       reroute(run);
