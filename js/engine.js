@@ -10,7 +10,7 @@
 // rng is injectable for tests/simulation; defaults to the seeded PRNG.
 // Consumption order is documented in encounters.js — keep it stable.
 
-import { RUN, MAP_1A, BELT } from './config.js';
+import { RUN, MAP_1A, BELT, TOOLS } from './config.js';
 import { seededRng } from './rng.js';
 import {
   duplicateLegal, applyDuplicate, retransmitLegal, applyRetransmit,
@@ -108,7 +108,8 @@ export function legalActions(run) {
     }
   }
   if (run.phase === 'node') {
-    if (onBelt(run, 'reroute') && run.stepIndex > 0 && run.deadline >= 1) {
+    if (onBelt(run, 'reroute') && run.stepIndex > 0
+      && run.bandwidth >= TOOLS.reroute.bw && run.deadline >= TOOLS.reroute.deadline) {
       actions.push({ type: 'reroute' });
     }
     if (run.fragments.some((f) => f.status === 'straggler') && run.waitsUsed < 2) {
@@ -190,8 +191,11 @@ function takeReward(run, action) {
 // Re-route (design/03, /07): a SENDER REISSUE — the party fades and
 // rematerializes at the segment's junction; it never walks backwards.
 // The hazard window resets: whatever road you take next plays fresh.
+// Stragglers ride along (home re-sends everything it has) — but the price
+// matches Retransmit's shape (1 BW + 1 Deadline) so it never undercuts it.
 function reroute(run) {
-  run.deadline -= 1;
+  run.bandwidth -= TOOLS.reroute.bw;
+  run.deadline -= TOOLS.reroute.deadline;
   run.events.push({ type: 'reroute', deadline: run.deadline });
   if (run.deadline < 0) {
     fail(run, 'deadline', 'latency');

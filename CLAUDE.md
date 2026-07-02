@@ -6,8 +6,10 @@ Browser roguelite RPG teaching networking foundations to ages 9–12. You play *
 
 - **The design is CONVERGED** (2026-07-01, seven review rounds) and lives in [`design/`](design/README.md) — **read `design/README.md` first** (module map + decision log + review/gate log). `design/CLAUDE.md` has the rules for editing design docs.
 - **Gate 1 PASSED** (2026-07-01): portrait-first layout proven at 390×844; desktop derives from it.
-- **Phase 1a is PLAYABLE and Gate 2 PASSED** (2026-07-01): fresh-context fun review = "PASS — fun gate cleared"; accuracy audit = 0 violations. 29 unit + 14 E2E tests green (`npm test`, `npm run test:e2e`).
-- **Current phase: Phase 1b** ([design/09-build-plan.md](design/09-build-plan.md)): run logging + loss autopsy, protected first session, corruption + reorder encounters (Checksum/Repair/Buffer/Re-route), belt slots + pick-1-of-3, seeded procedural maps, paper-spec The Static + one elite. Kid playtests become non-negotiable from here.
+- **Phase 1a PLAYABLE, Gate 2 PASSED** (2026-07-01): fun review PASS; accuracy audit 0 violations.
+- **Phase 1b BUILT and GATED** (2026-07-02): multi-segment seeded maps (generator v1), corruption + Checksum/Repair, reorder rapids + Buffer, 4-slot belt + pick-1-of-3 rewards + Re-route, loss autopsy + hint retries + protected first session, boss paper specs (design/10). 1b gate: fun TUNE→applied, accuracy 2+1→fixed (log in design/README). ~91 tests green (`npm test`, `node --test tests/e2e/*.test.js`).
+- **Current phase: Phase 2** ([design/09-build-plan.md](design/09-build-plan.md)): UDP live-call payload (freshness timers + free Skip — design/05), headless batch simulator, onboarding map polish, easy-mode toggle, daily seeded run. **Kid playtests are non-negotiable from here** (Owen recruits ~3 kids, monthly).
+- Testing lore: reduced-motion E2E misses animation-path crashes — keep at least one full-motion E2E per encounter type.
 
 ## Architecture
 

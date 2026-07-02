@@ -92,12 +92,18 @@ export function showWin({ run, onNewRun, onSameSeed }) {
   $('#overlay .same-seed').addEventListener('click', onSameSeed);
 }
 
-// What killed the run, honestly and without moralizing.
+// What killed the run, honestly and without moralizing. Attribution matches
+// the autopsy: the LAST impact is the killer, not the first (1b review).
+function listIds(ids) {
+  if (ids.length <= 2) return ids.join(' and ');
+  return `${ids.slice(0, -1).join(', ')}, and ${ids.at(-1)}`;
+}
+
 function lossLine(run) {
   if (run.failure.reason === 'missing-fragments') {
     const missing = run.fragments.filter((f) => f.status !== 'with-party').map((f) => `#${f.id}`);
-    const kind = run.events.find((e) => e.type === 'impact')?.kind ?? 'storm';
-    return `The ${kind} got ${missing.join(' and ')} — the message couldn't finish.
+    const kind = run.lastImpact?.kind ?? 'storm';
+    return `The ${kind} got ${listIds(missing)} — the message couldn't finish.
       This happens on the real internet all the time.`;
   }
   if (run.failure.reason === 'corrupted-payload') {

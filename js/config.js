@@ -15,7 +15,7 @@ export const TOOLS = {
   duplicate: { bw: 3, deadline: 0 },  // preemptive, targeted; one copy per fragment; no copying copies
   checksum: { bw: 1, deadline: 0 },   // scan the party: reveals which fragment is scrambled
   repair: { bw: 2, deadline: 0 },     // fix one REVEALED scrambled fragment
-  reroute: { bw: 0, deadline: 1 },    // sender reissue: rematerialize at the segment junction
+  reroute: { bw: 1, deadline: 1 },    // sender reissue: rematerialize at the segment junction
 };
 
 // The loadout layer (design/03: 3 slots → 5 by late campaign; 4 fits the
@@ -66,7 +66,7 @@ export const GEN = {
   segments: 3,
   startBandwidth: 16,
   startDeadline: 13, // scarcity is the point: recovery must COST something vs insurance
-  stars: { threeStar: 13, twoStar: 10 },
+  stars: { threeStar: 14, twoStar: 10 }, // 14: full-insurance play must not coin-flip into ★★★ (1b review)
 };
 
 export const HAZARDS = {

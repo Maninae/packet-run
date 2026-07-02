@@ -71,7 +71,7 @@ export const BELT_TOOLS = {
   },
   reroute: {
     label: 'Re-route', icon: () => rerouteIcon(22),
-    costs: () => `<span>${clockIcon(11)}1</span>`,
+    costs: () => `<span>${boltIcon(11)}1</span><span>${clockIcon(11)}1</span>`,
   },
   buffer: {
     label: 'Buffer', icon: () => bufferIcon(22),

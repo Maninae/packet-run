@@ -7,7 +7,7 @@ The moment-to-moment kit. Design rules: every tool is a **real networking verb**
 - **Active tools** — always usable, cost Bandwidth and/or Deadline per use.
 - **Passive tools** — always-on machinery; they occupy a slot and typically *spend resources automatically* (convenience vs control).
 - **Pouch** — up to 3 one-shot consumables. This is where deck-like "make do with what you've got" improvisation lives, without draw unfairness. Pickup while full → one-tap choice: swap for an existing item or leave it.
-- **Slots:** Phase 1a: fixed 2-tool kit, no slot UI. From Phase 1b: belt = **3 slots → 5 by late campaign**. You can't bring everything — loadout IS your build, and slot opportunity cost makes "pure upside" impossible by construction. (The deck-thinning insight from reviews survives as *belt curation*.)
+- **Slots:** Phase 1a: fixed 2-tool kit, no slot UI. From Phase 1b: belt = **4 slots → 5 by late campaign**. You can't bring everything — loadout IS your build, and slot opportunity cost makes "pure upside" impossible by construction. (The deck-thinning insight from reviews survives as *belt curation*.) **1b calibration note:** with only 4 tools in the 1b pool, 4 slots means loadout pressure is deliberately deferred — the squeeze begins in Act 2+ when the pool outgrows the belt (1b review flagged this; it's a choice, not an oversight: the corruption counter needs two slots and two reward beats must fit it).
 
 ## Active tools
 

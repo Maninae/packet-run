@@ -18,18 +18,25 @@ movement during the duel; the party stands in the tunnel. Each beat:
 1. **The Static acts** (beats 1–3: corrupts ONE hidden fragment; beat 4: TWO at
    once — the escalation kids must budget for).
 2. **You answer** with up to TWO actions per beat from: Checksum (1 BW,
-   reveals all), Repair (2 BW, fixes one revealed), pouch item, or **Brace**
-   (pass — bank the action).
+   reveals all), Repair (2 BW, fixes one revealed), pouch item, or **Brace**.
 3. **Deadline ticks 1** at the beat's end (the recipient is still waiting —
    the duel is never free).
 
+**The banking rule (load-bearing — the duel is UNWINNABLE without it).**
+Every Brace adds one action to a running pool; banked actions may be spent on
+any later beat ON TOP of that beat's base two. (Verified by brute force in
+1b review: with pass-and-lose Bracing, no 8-action sequence clears 5
+scrambles; with banking, brace early → beat-4 burst of 1 Checksum +
+banked Repairs wins at 11 BW.) Kid-facing fiction: *"Hold steady — save
+your strength for the surge."*
+
 **Win / lose.** Survive all 4 beats and cross to the dock: standard render
 rules apply — any corrupted fragment at the dock fails it. So the REAL enemy
-is the running arithmetic: total scrambles = 5; full counter-kit cost =
-5 Checksum-reveals worth of info + up to 5 Repairs. A perfect duel needs
-~2 Checksums (reveals batch!) + timely Repairs ≈ 2 + 10 BW. The boss is
-beatable while behind — leave with 4/5 clean + one Repair short and the
-render still fails honestly.
+is the running arithmetic: total scrambles = 5; the optimal line banks
+patience, then mass-reveals once (ONE Checksum late reveals everything
+scrambled so far) and Repairs in bulk ≈ 1 + 10 BW. The boss is beatable
+while behind — leave with 4/5 clean + one Repair short and the render still
+fails honestly.
 
 **The teach.** Batching detection (one Checksum reveals everything scrambled
 so far) vs paying per-fix — kids discover "scan less often, repair in bulk,"
@@ -57,11 +64,14 @@ yours. (Teaches: floods starve *shared* capacity; nobody's packets are special.)
 
 1. While it rages, **Bandwidth income and pickups are dead** (relays on this
    road pay 0) and **every action's BW cost +1** (the pipe is jammed).
-2. Each beat, only **N of your fragments may advance** (N = 2, the rate limit);
-   the rest hold at the previous node. You CHOOSE which move — priority is
-   the player's verb (rate-limiting = triage, the real defense posture).
+2. Each beat, only **N of your fragments may advance one hop** (N = 2, the
+   rate limit); the rest hold at their current node. You CHOOSE which move —
+   priority is the player's verb (rate-limiting = triage, the real defense
+   posture).
 3. Fragments holding in the flood are safe (the swarm clogs, it doesn't eat) —
    the price is pure Deadline: the siege costs 3 beats ≈ 3 ticks minimum.
+   **When the siege ends, held fragments auto-advance and regroup at the
+   party's node** (no Retransmit needed — nothing was lost, only slowed).
 
 **Win / lose.** No fail state inside the siege itself — it's an economy vice:
 BW frozen + inflated costs + forced slow-march. Deadline does the killing if
