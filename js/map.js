@@ -8,7 +8,7 @@
 // pickups, drizzle, both fog penults, dock); hop counts (4 short / 7 long)
 // are the binding numbers and include plain waypoints.
 
-import { stormIcon, drizzleIcon } from './icons.js';
+import { stormIcon, drizzleIcon, clockIcon } from './icons.js';
 
 const NS = 'http://www.w3.org/2000/svg';
 
@@ -141,9 +141,15 @@ function drawHazardCloud(svg, road, kind) {
   svg.append(g);
 }
 
-// Junction read chip: hazard icon + threatened fragment numbers + distance dots.
-function drawGlyphChip(svg, { x, y, kind, threatens, hops }) {
+// Junction read chip: hazard icon + threatened fragment numbers + distance
+// dots. Doubles as the road's big-friendly tap target (44px+ at any scale).
+function drawGlyphChip(svg, { x, y, kind, threatens, hops, road, scene }) {
   const g = el('g', { transform: `translate(${x},${y})`, class: 'glyph-chip' });
+  if (road && scene?.onRoadTap && !scene.chosenRoad) {
+    g.setAttribute('data-road-chip', road);
+    g.setAttribute('cursor', 'pointer');
+    g.addEventListener('click', () => scene.onRoadTap(road));
+  }
   const nums = threatens.map((n) => `#${n}`).join(' ');
   const dots = Array.from({ length: hops }, (_, i) =>
     `<circle cx="${(i - (hops - 1) / 2) * 8}" cy="13" r="2.4" fill="var(--ink-soft)"/>`
@@ -155,6 +161,22 @@ function drawGlyphChip(svg, { x, y, kind, threatens, hops }) {
     <text x="9" y="-1" text-anchor="middle" font-size="12" font-weight="800"
           fill="var(--hazard)" font-family="var(--font)">${nums}</text>
     ${dots}`;
+  svg.append(g);
+}
+
+// Once the fog lifts: if the last stretch is slow, say so where it is —
+// a consequence made visible, not a decision (build card #15).
+function drawSlowStretch(svg, scene) {
+  if (!scene.fogRevealed || !scene.fogCost || !scene.chosenRoad) return;
+  const nodes = GEO.roads[scene.chosenRoad];
+  const m = midpoint(nodes[nodes.length - 2], nodes[nodes.length - 1]);
+  const g = el('g', { transform: `translate(${m.x + 30},${m.y})` });
+  g.innerHTML = `
+    <rect x="-24" y="-13" width="48" height="26" rx="9" fill="var(--surface)"
+          stroke="var(--hazard)" stroke-width="2"/>
+    <g transform="translate(-16,-8)">${clockIcon(16, 'var(--hazard)')}</g>
+    <text x="8" y="4.5" text-anchor="middle" font-size="12" font-weight="800"
+          fill="var(--hazard)" font-family="var(--font)">+${scene.fogCost}</text>`;
   svg.append(g);
 }
 
@@ -199,9 +221,10 @@ export function renderMap(svg, scene) {
 
   drawHazardCloud(svg, 'short', 'storm');
   drawHazardCloud(svg, 'long', 'drizzle');
+  drawSlowStretch(svg, scene);
 
   if (scene.showJunctionGlyphs) {
-    drawGlyphChip(svg, { x: 64, y: 480, kind: 'storm', threatens: [2, 4], hops: 4 });
-    drawGlyphChip(svg, { x: 322, y: 530, kind: 'drizzle', threatens: [3], hops: 7 });
+    drawGlyphChip(svg, { x: 64, y: 480, kind: 'storm', threatens: [2, 4], hops: 4, road: 'short', scene });
+    drawGlyphChip(svg, { x: 322, y: 530, kind: 'drizzle', threatens: [3], hops: 7, road: 'long', scene });
   }
 }

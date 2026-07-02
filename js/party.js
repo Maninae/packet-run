@@ -80,9 +80,7 @@ function drawFragment(ctx, x, y, size, fragment) {
   ctx.restore();
 }
 
-// Draw the party standing at a node. `fragments` uses state.js shape:
-// [{ id, status: 'with-party' | 'lost', hasCopy }]
-export function renderParty(canvas, { nodeId, fragments }) {
+function setupCanvas(canvas) {
   const stage = canvas.parentElement;
   const dpr = window.devicePixelRatio || 1;
   const w = stage.clientWidth;
@@ -91,19 +89,93 @@ export function renderParty(canvas, { nodeId, fragments }) {
   canvas.height = h * dpr;
   const ctx = canvas.getContext('2d');
   ctx.scale(dpr, dpr);
+  return { ctx, w, h, t: viewTransform(w, h) };
+}
+
+// Draw the party standing at a node. `fragments` uses the engine shape:
+// [{ id, status: 'with-party' | 'lost' | 'returning', hasCopy }]
+export function renderParty(canvas, { nodeId, fragments }) {
+  const { ctx, w, h, t } = setupCanvas(canvas);
   ctx.clearRect(0, 0, w, h);
 
-  const t = viewTransform(w, h);
   const node = GEO.nodes[nodeId];
   const present = fragments.filter((f) => f.status === 'with-party');
 
-  present.forEach((f, i) => {
+  for (const f of present) {
     const off = FRAG_OFFSETS[(f.id - 1) % FRAG_OFFSETS.length];
     const [x, y] = t.apply(node.x + off.x, node.y + off.y);
     drawFragment(ctx, x, y, 17 * t.scale, f);
-  });
+  }
   const [px, py] = t.apply(node.x + PIP_OFFSET.x, node.y + PIP_OFFSET.y);
   drawPip(ctx, px, py, t.scale);
+}
+
+// The hop: fragments scatter onto lanes and RACE — different speeds, arriving
+// shuffled (the visual itself teaches independent, out-of-order travel;
+// design/07). Impact fates resolve mid-wire: 'swept' fragments flash and drop,
+// 'saved' ones flare violet as their copy absorbs the hit.
+// racers: [{ id, hasCopy, fate: 'arrives' | 'swept' | 'saved' }]
+export function animateHop(canvas, { from, to, racers }, { duration = 850 } = {}) {
+  const a = GEO.nodes[from];
+  const b = GEO.nodes[to];
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  const len = Math.hypot(dx, dy);
+  const perp = { x: -dy / len, y: dx / len };
+
+  // visual-only randomness (never the engine rng): lanes shuffle every hop
+  const lanes = [-16, -8, 0, 8, 16].sort(() => Math.random() - 0.5);
+  const jitter = racers.map(() => 0.5 + Math.random());
+  const IMPACT_T = 0.55;
+
+  return new Promise((resolve) => {
+    const start = performance.now();
+    const frame = (now) => {
+      const t01 = Math.min(1, (now - start) / duration);
+      const { ctx, w, h, t } = setupCanvas(canvas);
+      ctx.clearRect(0, 0, w, h);
+
+      racers.forEach((f, i) => {
+        // progress wobbles per-racer mid-hop but everyone lands at t=1
+        const race = Math.min(1, t01 + Math.sin(t01 * Math.PI) * 0.12 * Math.sin(jitter[i] * 9 + i));
+        const lane = lanes[i % lanes.length] * Math.sin(Math.PI * Math.min(1, race * 1.15));
+        let x = a.x + dx * race + perp.x * lane;
+        let y = a.y + dy * race + perp.y * lane;
+        let alpha = 1;
+
+        if (f.fate === 'swept' && t01 >= IMPACT_T) {
+          const fall = (t01 - IMPACT_T) / (1 - IMPACT_T);
+          if (fall > 0.6) return; // gone
+          y += fall * 46;
+          alpha = 1 - fall / 0.6;
+        }
+        const [px, py] = t.apply(x, y);
+        ctx.globalAlpha = alpha;
+        drawFragment(ctx, px, py, 15 * t.scale, { id: f.id, hasCopy: f.hasCopy && t01 < IMPACT_T });
+        ctx.globalAlpha = 1;
+
+        if (f.fate === 'saved' && t01 >= IMPACT_T && t01 < IMPACT_T + 0.18) {
+          // the copy pops: a violet burst ring
+          const burst = (t01 - IMPACT_T) / 0.18;
+          ctx.strokeStyle = cssVar('--copy');
+          ctx.globalAlpha = 1 - burst;
+          ctx.lineWidth = 2.5;
+          ctx.beginPath();
+          ctx.arc(px, py, (8 + burst * 16) * t.scale, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.globalAlpha = 1;
+        }
+      });
+
+      // Pip glides ahead on the center line
+      const [px, py] = t.apply(a.x + dx * t01, a.y + dy * t01 - 14);
+      drawPip(ctx, px, py, t.scale * 0.95);
+
+      if (t01 < 1) requestAnimationFrame(frame);
+      else resolve();
+    };
+    requestAnimationFrame(frame);
+  });
 }
 
 // The DOM party row: Pip's avatar + one chip per fragment (44px targets).
