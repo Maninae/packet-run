@@ -23,11 +23,12 @@ import { resolveImpact, rollFog } from './encounters.js';
 // reserved for documentation, so the game never prints a real host.
 export const DEST_ADDRESS = '203.0.113.7';
 
-export function createRun({ seed, rng, mods = null, map = MAP_1A, payload = 'tcp-file', dnsNeeded = false }) {
+export function createRun({ seed, rng, mods = null, map = MAP_1A, payload = 'tcp-file', dnsNeeded = false, weather = null }) {
   return {
     seed,
     rng: rng ?? seededRng(seed),
     mods, // difficulty overrides (config.EASY) — null = standard world
+    weather, // the run's sky (config.WEATHER) — mods take precedence
     map,
     payload, // 'tcp-file' | 'udp-call' — kit and render rule (design/05)
     bandwidth: map.startBandwidth,

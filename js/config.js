@@ -1,3 +1,5 @@
+import { seededRng } from './rng.js';
+
 // v0 numbers — mirrors design/02-core-loop.md and the Phase 1a build card
 // (design/09-build-plan.md). Change BOTH together; EV-check the pricing
 // table whenever any value changes (tests/unit/economy.test.js runs it).
@@ -150,6 +152,48 @@ export const EVENTS = [
     ],
   },
 ];
+
+// Weather is a biome SYSTEM (design/04): a seeded per-run sky that makes the
+// same map play differently. Overrides compose UNDER mods: gentle-mode
+// protection always beats the weather.
+export const WEATHER = {
+  clear: { id: 'clear', name: 'Clear skies' },
+  rain: {
+    id: 'rain', name: 'Rain',
+    gustChance: 0.25,
+    fogOutcomes: [
+      { deadlineCost: 0, p: 0.25 },
+      { deadlineCost: 1, p: 0.45 },
+      { deadlineCost: 2, p: 0.3 },
+    ],
+  },
+  storm: {
+    id: 'storm', name: 'Storm front',
+    gustChance: 0.3, // was 0.35: careful play fell under 60% survival (sim fence)
+    fogOutcomes: [
+      { deadlineCost: 0, p: 0.2 },
+      { deadlineCost: 1, p: 0.45 },
+      { deadlineCost: 2, p: 0.35 },
+    ],
+  },
+  flare: {
+    id: 'flare', name: 'Solar flare',
+    satelliteAlwaysFlaky: true,
+  },
+};
+
+// which skies each act rolls (flare belongs to the satellite act)
+const ACT_SKIES = {
+  1: ['clear', 'clear', 'rain', 'storm'],
+  2: ['clear', 'clear', 'rain', 'storm'],
+  3: ['clear', 'clear', 'rain', 'flare'],
+};
+
+export function weatherFor(seed, actId) {
+  const skies = ACT_SKIES[actId] ?? ACT_SKIES[3];
+  const roll = seededRng(`${seed}:weather`)();
+  return WEATHER[skies[Math.floor(roll * skies.length)]];
+}
 
 // Acts are BIOMES (design/04): places with their own hazard mix — and the
 // act ladder is the curriculum (cognitive-load gating: congestion Act 2 at

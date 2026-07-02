@@ -84,7 +84,8 @@ export function resolveImpact(run, hazard, rng) {
     return;
   }
   if (hazard.kind === 'satellite') {
-    const flaky = rng() < 0.20;
+    // always consume the roll (stream stability); a solar flare forces it
+    const flaky = run.weather?.satelliteAlwaysFlaky || rng() < 0.20;
     run.deadline -= flaky ? 2 : 1;
     run.impactResolved = true;
     run.events.push({ type: 'impact', kind: 'satellite', node: hazard.impactNode, flaky, deadline: run.deadline });
@@ -132,7 +133,7 @@ export function resolveImpact(run, hazard, rng) {
   }
 
   let gust = null;
-  const gustChance = run.mods?.gustChance ?? HAZARDS.gustChance;
+  const gustChance = run.mods?.gustChance ?? run.weather?.gustChance ?? HAZARDS.gustChance;
   if (rng() < gustChance) {
     const candidates = run.fragments.filter((f) => f.status === 'with-party');
     if (candidates.length > 0) {
@@ -147,7 +148,7 @@ export function resolveImpact(run, hazard, rng) {
 
 // Rolls the fog outcome for the final stretch; returns the Deadline cost.
 export function rollFog(run, rng) {
-  const outcomes = run.mods?.fogOutcomes ?? FOG.outcomes;
+  const outcomes = run.mods?.fogOutcomes ?? run.weather?.fogOutcomes ?? FOG.outcomes;
   const roll = rng();
   let cumulative = 0;
   for (const outcome of outcomes) {

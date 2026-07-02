@@ -3,7 +3,7 @@
 // resulting events into beats (animate the hop, flash the notices, re-render)
 // and routes taps back into engine actions.
 
-import { EASY, MAP_1A, BELT, ACTS, EVENTS } from './config.js';
+import { EASY, MAP_1A, BELT, ACTS, EVENTS, WEATHER, weatherFor } from './config.js';
 import { createRun, legalActions, act, segmentRoads, roadDef } from './engine.js';
 import { generateMap } from './generator.js';
 import { randomSeed } from './rng.js';
@@ -300,10 +300,17 @@ const pinnedMap = new URLSearchParams(window.location.search).get('map');
 
 const actFor = () => ACTS[Math.min(ACTS.length - 1, Math.floor(winsCount() / 3))];
 
-function applyBiome(act) {
+// the run's sky: seeded per run; protected/gentle runs keep clear skies
+// (showing a storm front while silently softening it would be a false read)
+const skyFor = (seed) => (playEasy() ? WEATHER.clear : weatherFor(seed, actFor().id));
+
+function applyBiome(act, weather = WEATHER.clear) {
   document.body.className = act.cssClass;
   const chip = $('#act-chip');
-  if (chip) chip.textContent = `Act ${act.id} · ${act.name}`;
+  if (chip) {
+    chip.textContent = `Act ${act.id} · ${act.name}`
+      + (weather.id !== 'clear' ? ` · ${weather.name}` : '');
+  }
 }
 
 function mapFor(seed) {
@@ -312,10 +319,11 @@ function mapFor(seed) {
 }
 
 function newRun(seed, { easy = playEasy(), hint = null } = {}) {
-  applyBiome(actFor());
+  const weather = easy ? WEATHER.clear : weatherFor(seed, actFor().id);
+  applyBiome(actFor(), weather);
   const dnsNeeded = dnsNeededNow();
   if (!dnsNeeded) dnsSpend();
-  run = createRun({ seed, mods: easy ? EASY : null, map: mapFor(seed), payload, dnsNeeded });
+  run = createRun({ seed, mods: easy ? EASY : null, map: mapFor(seed), payload, dnsNeeded, weather });
   hintText = hint;
   pendingRoad = null;
   armed = null;
@@ -338,10 +346,11 @@ run = createRun({
   map: mapFor(initialSeed),
   payload,
   dnsNeeded: dnsNeededNow(),
+  weather: skyFor(initialSeed),
 });
 wireLegend();
 wireMute();
-applyBiome(actFor());
+applyBiome(actFor(), skyFor(initialSeed));
 renderAll();
 // after the first win, the start screen offers the payload choice —
 // unless the URL already pinned one (shared links, tests)

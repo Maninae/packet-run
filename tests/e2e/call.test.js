@@ -115,6 +115,29 @@ test('a "?" node opens its card; the choice lands and the run continues', async 
   await page.context().close();
 });
 
+test('the sky rides the seed: a rainy run says so, gentle runs stay clear', async () => {
+  const { weatherFor } = await import('../../js/config.js');
+  let rainy = null;
+  for (let i = 0; i < 300 && !rainy; i++) {
+    if (weatherFor(`SKY${i}`, 2).id === 'rain') rainy = `SKY${i}`;
+  }
+  assert.ok(rainy, 'found a rainy act-2 seed');
+  const page = await app.page(VIEWPORTS.portrait, { reducedMotion: 'reduce' });
+  await page.addInitScript(() => { localStorage.setItem('packet-run-wins', '4'); localStorage.setItem('packet-run-dns', '8'); });
+  await page.goto(`${app.origin}/?seed=${rainy}&payload=file`);
+  assert.match(await page.locator('#act-chip').textContent(), /Rain/);
+  let run = await page.evaluate(() => window.packetRun.run);
+  assert.equal(run.weather.id, 'rain');
+
+  // gentle mode: clear skies, honest display
+  await page.addInitScript(() => localStorage.setItem('packet-run-gentle', '1'));
+  await page.goto(`${app.origin}/?seed=${rainy}&payload=file`);
+  assert.doesNotMatch(await page.locator('#act-chip').textContent(), /Rain/);
+  run = await page.evaluate(() => window.packetRun.run);
+  assert.equal(run.weather.id, 'clear');
+  await page.context().close();
+});
+
 test('acts climb with wins: biome class, act chip, and gated hazards', async () => {
   const page = await app.page(VIEWPORTS.portrait, { reducedMotion: 'reduce' });
   await page.addInitScript(() => { localStorage.setItem('packet-run-wins', '4'); localStorage.setItem('packet-run-dns', '8'); });
