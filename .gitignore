@@ -1,2 +1,4 @@
 # kid playtest notes: initials only, never names — and even so, keep them local
 playtests/
+node_modules/
+.DS_Store
