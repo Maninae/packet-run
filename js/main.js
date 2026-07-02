@@ -95,6 +95,11 @@ function threatenedSet() {
 }
 
 function targetableSet() {
+  if (armed === 'duel-repair') {
+    return new Set(legalActions(run)
+      .filter((a) => a.type === 'duel-repair')
+      .map((a) => a.fragment));
+  }
   if (armed?.startsWith('pouch:')) {
     const index = Number(armed.split(':')[1]);
     return new Set(legalActions(run)
@@ -113,6 +118,7 @@ function targetableSet() {
 }
 
 function renderAll() {
+  document.body.classList.toggle('dueling', run.phase === 'duel');
   renderMeters(run);
   renderMap($('#map-layer'), scene());
   if (run.phase !== 'done') {
@@ -134,6 +140,7 @@ function renderAll() {
       || (run.phase === 'junction' && pendingRoad !== null)),
     goLabel: run.phase === 'dns' ? 'Look it up' : 'Onward',
     pouch: run.pouch,
+    duel: run.duel,
     onArm, onGo, onPouch,
     onWait: () => { if (!busy) dispatch({ type: 'wait' }); },
     onSend: (rate) => { if (!busy) dispatch({ type: 'send', rate }); },
@@ -172,6 +179,16 @@ function onPouch(index) {
 
 function onArm(tool) {
   if (busy) return;
+  if (tool === 'duel-checksum' || tool === 'brace' || tool === 'hold') {
+    armed = null;
+    dispatch({ type: tool });
+    return;
+  }
+  if (tool === 'duel-repair') {
+    armed = armed === 'duel-repair' ? null : 'duel-repair';
+    renderAll();
+    return;
+  }
   if (tool === 'skip') {
     // targeted like duplicate/retransmit — arm, then tap the frame to wave off
     armed = armed === 'skip' ? null : 'skip';
@@ -198,6 +215,13 @@ function onChipTap(id) {
     if (legalActions(run).some((a) => a.type === 'use-item' && a.index === index && a.fragment === id)) {
       armed = null;
       dispatch({ type: 'use-item', index, item, fragment: id });
+    }
+    return;
+  }
+  if (armed === 'duel-repair') {
+    if (legalActions(run).some((a) => a.type === 'duel-repair' && a.fragment === id)) {
+      armed = null;
+      dispatch({ type: 'duel-repair', fragment: id });
     }
     return;
   }

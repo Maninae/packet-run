@@ -167,6 +167,7 @@ export function generateMap(seed, { segments = GEN.segments, act = 3 } = {}) {
   }
   const budgets = (ACTS.find((a) => a.id === act) ?? {}).budgets ?? {};
   return {
+    ...(act === 5 ? { boss: 'static' } : {}), // the Act-5 dock is the Static's tunnel
     id: `gen-${seed}`,
     startBandwidth: budgets.startBandwidth ?? GEN.startBandwidth,
     startDeadline: budgets.startDeadline ?? GEN.startDeadline,

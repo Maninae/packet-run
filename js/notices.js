@@ -181,6 +181,25 @@ export async function playNotices(run, batch) {
           await delay(650);
         }
         break;
+      case 'duel-start':
+        sfx.static();
+        shake();
+        flashPrompt('static', '<strong>The Static is here.</strong> Four surges are coming — the last is the worst.');
+        await delay(1400);
+        break;
+      case 'duel-surge':
+        sfx.static();
+        shake();
+        flashPrompt('static', e.count === 2
+          ? 'The DOUBLE surge — two of yours scrambled at once!'
+          : 'Kzzt — a surge! One of yours is scrambled. Which? That\'s the game.');
+        await delay(900);
+        break;
+      case 'duel-won':
+        sfx.chime();
+        flashPrompt('checksum', 'The noise clears. The dock is right there.');
+        await delay(1000);
+        break;
       case 'siege-over':
         sfx.chime();
         flashPrompt('swarm', 'The flood breaks up — the road is yours again.');

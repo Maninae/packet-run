@@ -50,6 +50,8 @@ export function createRun({ seed, rng, mods = null, map = MAP_1A, payload = 'tcp
     congestion: null,       // open bottleneck window { capacity, maxRate, crossed }
     eventCard: null,        // open "?" card (index into config.EVENTS)
     siege: null,            // DDoS window { beat, pushes } — design/10
+    duel: null,             // Static duel window (design/10) — Act-5 dock
+    duelDone: false,
     eventsSeen: new Set(),  // "?" nodes already visited (per segment:node)
     belt: [...PAYLOADS[payload].belt], // actives AND passives share the slots (design/03)
     pouch: pouch.slice(0, 3), // one-shot consumables (design/03: max 3)
@@ -107,6 +109,29 @@ export function legalActions(run) {
   }
   // an open bottleneck locks everything but the send-rate choice — the
   // puzzle IS the beat (design/04)
+  if (run.phase === 'duel') {
+    const actions = [];
+    const spendable = run.duel.actionsLeft + run.duel.banked;
+    if (spendable > 0) {
+      if (run.bandwidth >= 1
+        && run.fragments.some((f) => f.status === 'with-party' && f.corrupted && !f.revealed)) {
+        actions.push({ type: 'duel-checksum' });
+      }
+      if (run.bandwidth >= 2) {
+        for (const f of run.fragments) {
+          if (f.corrupted && f.revealed) actions.push({ type: 'duel-repair', fragment: f.id });
+        }
+      }
+      // the arena provides the verbs — the duel closes the curriculum even
+      // for a player who skipped the kit. Brace banks a BASE action only.
+      if (run.duel.actionsLeft > 0) actions.push({ type: 'brace' });
+      run.pouch.forEach((item, index) => {
+        if (item === 'boost') actions.push({ type: 'use-item', index, item });
+      });
+    }
+    actions.push({ type: 'hold' });
+    return actions;
+  }
   if (run.siege) {
     // the swarm owns movement: push two through per beat, or wait it out;
     // rescues still work — at the flood surcharge (Duplicate stays
@@ -201,7 +226,65 @@ function fail(run, reason, killerConcept) {
   run.events.push({ type: 'run-failed', reason, killerConcept });
 }
 
+// ---- The Static duel (design/10): a 4-beat fight at the Act-5 dock. ----
+// The Static scrambles one hidden fragment per beat (two on beat 4); you
+// answer with up to two actions per beat. Brace banks a base action for any
+// LATER beat — banked actions spend on top of that beat's base two. The
+// clock ticks every beat. Then the standard render rules judge the result.
+
+function staticStrike(run, count) {
+  for (let i = 0; i < count; i++) {
+    const candidates = run.fragments.filter((f) => f.status === 'with-party' && !f.corrupted);
+    if (!candidates.length) break;
+    candidates[Math.floor(run.rng() * candidates.length)].corrupted = true;
+  }
+  run.events.push({ type: 'duel-surge', beat: run.duel.beat, count });
+}
+
+function startDuel(run) {
+  run.phase = 'duel';
+  run.duel = { beat: 1, actionsLeft: 2, banked: 0, pending: 0 };
+  run.events.push({ type: 'duel-start' });
+  staticStrike(run, 1);
+}
+
+function spendDuelAction(run) {
+  if (run.duel.actionsLeft > 0) run.duel.actionsLeft -= 1;
+  else run.duel.banked -= 1;
+}
+
+function maybeEndDuelBeat(run) {
+  if (run.duel.actionsLeft === 0 && run.duel.banked === 0) endDuelBeat(run);
+}
+
+function endDuelBeat(run) {
+  const duel = run.duel;
+  duel.banked += duel.pending;
+  duel.pending = 0;
+  run.deadline -= 1;
+  run.events.push({ type: 'duel-beat', beat: duel.beat, deadline: run.deadline });
+  if (run.deadline < 0) {
+    fail(run, 'deadline', 'latency');
+    return;
+  }
+  if (duel.beat >= 4) {
+    run.duel = null;
+    run.duelDone = true;
+    run.events.push({ type: 'duel-won' });
+    run.phase = 'node';
+    arriveAtDock(run);
+    return;
+  }
+  duel.beat += 1;
+  duel.actionsLeft = 2;
+  staticStrike(run, duel.beat === 4 ? 2 : 1);
+}
+
 function arriveAtDock(run) {
+  if (run.map.boss === 'static' && !run.duelDone) {
+    startDuel(run);
+    return;
+  }
   const payload = PAYLOADS[run.payload];
 
   // unneeded copies are discarded — the dock keeps only one of each number
@@ -579,6 +662,25 @@ export function act(run, action) {
     case 'choose-event':
       chooseEvent(run, action);
       break;
+    case 'brace':
+      run.duel.actionsLeft -= 1;
+      run.duel.pending += 1;
+      run.events.push({ type: 'brace', banked: run.duel.banked + run.duel.pending });
+      if (run.duel.actionsLeft === 0 && run.duel.banked === 0) endDuelBeat(run);
+      break;
+    case 'duel-checksum':
+      spendDuelAction(run);
+      applyChecksum(run);
+      if (run.phase === 'duel') maybeEndDuelBeat(run);
+      break;
+    case 'duel-repair':
+      spendDuelAction(run);
+      applyRepair(run, run.fragments.find((f) => f.id === action.fragment));
+      if (run.phase === 'duel') maybeEndDuelBeat(run);
+      break;
+    case 'hold':
+      endDuelBeat(run);
+      break;
     case 'use-item': {
       const item = run.pouch[action.index];
       run.pouch.splice(action.index, 1);
@@ -592,6 +694,7 @@ export function act(run, action) {
         run.fragments.find((x) => x.id === action.fragment).stamped = true;
       }
       run.events.push({ type: 'item-used', item, fragment: action.fragment ?? null });
+      if (run.phase === 'duel') { spendDuelAction(run); maybeEndDuelBeat(run); }
       break;
     }
     case 'lookup':

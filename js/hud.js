@@ -98,7 +98,33 @@ export const BELT_TOOLS = {
 
 export { rapidsIcon }; // re-exported for the prompt icon map
 
-export function renderBelt({ tools, legal, armed, canGo, goLabel = 'Onward', pouch, onArm, onGo, onWait, onSend, onPouch }) {
+function renderBeltDuel({ duel, legal, armed, pouch = [], onArm, onPouch }) {
+  const belt = $('#belt');
+  const can = (t) => legal.some((a) => a.type === t);
+  const pips = '●'.repeat(duel.actionsLeft) + '○'.repeat(Math.max(0, 2 - duel.actionsLeft));
+  belt.innerHTML = `
+    <button class="tool-btn" id="duel-checksum" ${can('duel-checksum') ? '' : 'disabled'}>
+      ${checksumIcon(20)}<span>Checksum</span><span class="cost"><span>${boltIcon(10)}1</span></span>
+    </button>
+    <button class="tool-btn ${armed === 'duel-repair' ? 'armed' : ''}" id="duel-repair" ${can('duel-repair') ? '' : 'disabled'}>
+      ${repairIcon(20)}<span>Repair</span><span class="cost"><span>${boltIcon(10)}2</span></span>
+    </button>
+    <button class="tool-btn" id="brace" ${can('brace') ? '' : 'disabled'}>
+      ${cloakIcon(20, 'var(--deadline)')}<span>Brace</span><span class="cost"><span>bank +1</span></span>
+    </button>
+    ${pouch.map((item, index) => legal.some((a) => a.type === 'use-item' && a.index === index)
+      ? `<button class="tool-btn pouch-btn" data-pouch="${index}">${POUCH_ICONS[item]()}</button>` : '').join('')}
+    <button class="go-btn" id="hold">Hold<br><span class="cost">${pips} · ${duel.banked} banked</span></button>`;
+  $('#duel-checksum')?.addEventListener('click', () => onArm('duel-checksum'));
+  $('#duel-repair')?.addEventListener('click', () => onArm('duel-repair'));
+  $('#brace')?.addEventListener('click', () => onArm('brace'));
+  $('#hold')?.addEventListener('click', () => onArm('hold'));
+  for (const btn of document.querySelectorAll('#belt [data-pouch]')) {
+    btn.addEventListener('click', () => onPouch(Number(btn.dataset.pouch)));
+  }
+}
+
+export function renderBelt({ tools, legal, armed, canGo, goLabel = 'Onward', pouch, duel, onArm, onGo, onWait, onSend, onPouch }) {
   const sendRates = legal.filter((a) => a.type === 'send').map((a) => a.rate);
   if (sendRates.length) {
     // the bottleneck owns the belt: rate buttons are the whole decision
@@ -108,6 +134,10 @@ export function renderBelt({ tools, legal, armed, canGo, goLabel = 'Onward', pou
     for (const btn of document.querySelectorAll('#belt .send-btn')) {
       btn.addEventListener('click', () => onSend(Number(btn.dataset.rate)));
     }
+    return;
+  }
+  if (duel) {
+    renderBeltDuel({ duel, legal, armed, pouch, onArm, onPouch });
     return;
   }
   renderBeltNormal({ tools, legal, armed, canGo, goLabel, pouch, onArm, onGo, onWait, onPouch });

@@ -115,6 +115,10 @@ export function computePrompt(run, { armed, hintText, pendingRoad }) {
     const alive = run.fragments.filter((f) => f.status === 'with-party').length;
     return ['jam', `The pipe is jammed — <strong>${run.congestion.crossed}/${alive}</strong> across. How many do you push this beat?`];
   }
+  if (run.phase === 'duel') {
+    const hidden = run.fragments.filter((f) => f.corrupted && !f.revealed).length;
+    return ['static', `<strong>Beat ${run.duel.beat} of 4.</strong> ${hidden ? `Something's scrambled — you can't tell what.` : `All clean — for now.`} ${run.duel.banked} banked. Brace to save strength; the last surge is the worst.`];
+  }
   if (run.siege) {
     const held = run.fragments.filter((f) => f.status === 'with-party').length;
     return ['swarm', `The swarm rages (beat ${run.siege.beat + 1} of 3) — tap two fragments to push through, or Wait it out. ${held} still held.`];
