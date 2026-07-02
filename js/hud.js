@@ -98,7 +98,7 @@ export const BELT_TOOLS = {
 
 export { rapidsIcon }; // re-exported for the prompt icon map
 
-export function renderBelt({ tools, legal, armed, canGo, goLabel = 'Onward', onArm, onGo, onWait, onSend }) {
+export function renderBelt({ tools, legal, armed, canGo, goLabel = 'Onward', pouch, onArm, onGo, onWait, onSend, onPouch }) {
   const sendRates = legal.filter((a) => a.type === 'send').map((a) => a.rate);
   if (sendRates.length) {
     // the bottleneck owns the belt: rate buttons are the whole decision
@@ -110,11 +110,22 @@ export function renderBelt({ tools, legal, armed, canGo, goLabel = 'Onward', onA
     }
     return;
   }
-  renderBeltNormal({ tools, legal, armed, canGo, goLabel, onArm, onGo, onWait });
+  renderBeltNormal({ tools, legal, armed, canGo, goLabel, pouch, onArm, onGo, onWait, onPouch });
 }
 
-function renderBeltNormal({ tools, legal, armed, canGo, goLabel, onArm, onGo, onWait }) {
-  const buttons = tools.map((name) => {
+const POUCH_ICONS = {
+  boost: () => boltIcon(20),
+  spare: () => copyIcon(20, 'var(--fragment)'),
+  stamp: () => `<svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 14.6 8.6 20.5 9.4 16.2 13.5 17.3 19.4 12 16.5 6.7 19.4 7.8 13.5 3.5 9.4 9.4 8.6z" fill="var(--star)"/></svg>`,
+};
+
+function renderBeltNormal({ tools, legal, armed, canGo, goLabel, pouch = [], onArm, onGo, onWait, onPouch }) {
+  const pouchButtons = pouch.map((item, index) =>
+    `<button class="tool-btn pouch-btn ${armed === `pouch:${index}` ? 'armed' : ''}"
+       data-pouch="${index}" aria-label="${item}" title="${item}">
+       ${POUCH_ICONS[item]()}<span class="cost"><span>1×</span></span>
+     </button>`).join('');
+  const buttons = pouchButtons + tools.map((name) => {
     const tool = BELT_TOOLS[name];
     if (tool.passive) {
       return `<button class="tool-btn passive" id="tool-${name}" disabled
@@ -137,6 +148,9 @@ function renderBeltNormal({ tools, legal, armed, canGo, goLabel, onArm, onGo, on
     if (!BELT_TOOLS[name].passive) {
       $(`#tool-${name}`).addEventListener('click', () => onArm(name));
     }
+  }
+  for (const btn of document.querySelectorAll('#belt [data-pouch]')) {
+    btn.addEventListener('click', () => onPouch(Number(btn.dataset.pouch)));
   }
   if (canWait) $('#wait').addEventListener('click', onWait);
   $('#go').addEventListener('click', onGo);

@@ -153,6 +153,14 @@ export const EVENTS = [
   },
 ];
 
+// The pouch (design/03): up to 3 one-shot consumables — game-flavor mercy,
+// never on the belt. Bought with Uptime between runs; found at Events later.
+export const POUCH = {
+  boost: { name: 'Signal Boost', line: '+3 energy, right now.', price: 2 },
+  spare: { name: 'Spare Fragment', line: 'A lost fragment pops back — instantly.', price: 3 },
+  stamp: { name: 'Priority Stamp', line: 'One fragment shrugs off the next sweep.', price: 3 },
+};
+
 // Weather is a biome SYSTEM (design/04): a seeded per-run sky that makes the
 // same map play differently. Overrides compose UNDER mods: gentle-mode
 // protection always beats the weather.

@@ -13,6 +13,10 @@
 import { HAZARDS, FOG, PAYLOADS, CONGESTION } from './config.js';
 
 function sweep(fragment) {
+  if (fragment.stamped) {
+    fragment.stamped = false; // the Priority Stamp shrugs it off (one hazard)
+    return true;              // saved
+  }
   if (fragment.hasCopy) {
     fragment.hasCopy = false; // the copy steps in and is consumed
     return true;              // saved

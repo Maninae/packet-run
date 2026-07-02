@@ -221,6 +221,18 @@ export async function playNotices(run, batch) {
         flashPrompt('bolt', 'The cache serves its copy from nearby — you skip ahead!');
         await delay(900);
         break;
+      case 'item-used': {
+        sfx.chime();
+        localStorage.setItem('packet-run-pouch', JSON.stringify(run.pouch));
+        const lines = {
+          boost: '<strong>+3 energy</strong> from the Signal Boost.',
+          spare: `<strong>#${e.fragment}</strong> pops back — good as new!`,
+          stamp: `<strong>#${e.fragment}</strong> wears the Priority Stamp — the next sweep can't touch it.`,
+        };
+        flashPrompt('bolt', lines[e.item]);
+        await delay(800);
+        break;
+      }
       case 'copies-discarded':
         flashPrompt('copy',
           `The dock keeps one of each number — spare ${names(e.fragments)} not needed.`);

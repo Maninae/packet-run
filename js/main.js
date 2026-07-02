@@ -3,7 +3,7 @@
 // resulting events into beats (animate the hop, flash the notices, re-render)
 // and routes taps back into engine actions.
 
-import { EASY, MAP_1A, BELT, ACTS, EVENTS, WEATHER, weatherFor } from './config.js';
+import { EASY, MAP_1A, BELT, ACTS, EVENTS, WEATHER, weatherFor, POUCH } from './config.js';
 import { createRun, legalActions, act, segmentRoads, roadDef } from './engine.js';
 import { generateMap } from './generator.js';
 import { randomSeed } from './rng.js';
@@ -33,6 +33,12 @@ let payload = 'tcp-file';
 const winsCount = () => Number(localStorage.getItem('packet-run-wins') ?? '0');
 const gentleOn = () => localStorage.getItem('packet-run-gentle') === '1';
 const playEasy = () => gentleOn() || winsCount() === 0;
+
+// Uptime (design/03): wins earn it (= stars); the shop turns it into
+// pouch consumables that ride along until used.
+const uptimeBalance = () => Number(localStorage.getItem('packet-run-uptime') ?? '0');
+const pouchStored = () => JSON.parse(localStorage.getItem('packet-run-pouch') ?? '[]');
+const savePouch = (items) => localStorage.setItem('packet-run-pouch', JSON.stringify(items.slice(0, 3)));
 
 // DNS cache: the address book's answer is remembered for 8 runs — the
 // lookup beat is rare BECAUSE caching is real (design/04)
@@ -89,6 +95,12 @@ function threatenedSet() {
 }
 
 function targetableSet() {
+  if (armed?.startsWith('pouch:')) {
+    const index = Number(armed.split(':')[1]);
+    return new Set(legalActions(run)
+      .filter((a) => a.type === 'use-item' && a.index === index && a.fragment != null)
+      .map((a) => a.fragment));
+  }
   if (run.siege && !armed) {
     return new Set(legalActions(run)
       .filter((a) => a.type === 'push')
@@ -121,7 +133,8 @@ function renderAll() {
     canGo: !busy && !run.siege && (run.phase === 'node' || run.phase === 'dns'
       || (run.phase === 'junction' && pendingRoad !== null)),
     goLabel: run.phase === 'dns' ? 'Look it up' : 'Onward',
-    onArm, onGo,
+    pouch: run.pouch,
+    onArm, onGo, onPouch,
     onWait: () => { if (!busy) dispatch({ type: 'wait' }); },
     onSend: (rate) => { if (!busy) dispatch({ type: 'send', rate }); },
   });
@@ -140,6 +153,21 @@ function onRoadTap(road) {
     pendingRoad = road;
     renderAll();
   }
+}
+
+function onPouch(index) {
+  if (busy) return;
+  const item = run.pouch[index];
+  if (item === 'boost') {
+    if (legalActions(run).some((a) => a.type === 'use-item' && a.index === index)) {
+      armed = null;
+      dispatch({ type: 'use-item', index, item });
+    }
+    return;
+  }
+  // spare/stamp aim at a fragment
+  armed = armed === `pouch:${index}` ? null : `pouch:${index}`;
+  renderAll();
 }
 
 function onArm(tool) {
@@ -164,6 +192,15 @@ function onArm(tool) {
 
 function onChipTap(id) {
   if (busy) return;
+  if (armed?.startsWith('pouch:')) {
+    const index = Number(armed.split(':')[1]);
+    const item = run.pouch[index];
+    if (legalActions(run).some((a) => a.type === 'use-item' && a.index === index && a.fragment === id)) {
+      armed = null;
+      dispatch({ type: 'use-item', index, item, fragment: id });
+    }
+    return;
+  }
   if (run.siege && !armed) {
     if (legalActions(run).some((a) => a.type === 'push' && a.fragment === id)) {
       dispatch({ type: 'push', fragment: id });
@@ -275,6 +312,7 @@ async function dispatch(action) {
     };
     if (run.outcome === 'rendered') {
       localStorage.setItem('packet-run-wins', String(winsCount() + 1));
+      localStorage.setItem('packet-run-uptime', String(uptimeBalance() + run.stars));
       await fillDock();
       sfx.win();
       showWin({ run, ...handlers });
@@ -323,7 +361,7 @@ function newRun(seed, { easy = playEasy(), hint = null } = {}) {
   applyBiome(actFor(), weather);
   const dnsNeeded = dnsNeededNow();
   if (!dnsNeeded) dnsSpend();
-  run = createRun({ seed, mods: easy ? EASY : null, map: mapFor(seed), payload, dnsNeeded, weather });
+  run = createRun({ seed, mods: easy ? EASY : null, map: mapFor(seed), payload, dnsNeeded, weather, pouch: pouchStored() });
   hintText = hint;
   pendingRoad = null;
   armed = null;
@@ -347,6 +385,7 @@ run = createRun({
   payload,
   dnsNeeded: dnsNeededNow(),
   weather: skyFor(initialSeed),
+  pouch: pouchStored(),
 });
 wireLegend();
 wireMute();
@@ -354,20 +393,33 @@ applyBiome(actFor(), skyFor(initialSeed));
 renderAll();
 // after the first win, the start screen offers the payload choice —
 // unless the URL already pinned one (shared links, tests)
-showStart({
-  seed: initialSeed,
-  showPicker: winsCount() > 0 && !urlParams.get('payload'),
-  payload,
-  gentle: gentleOn(),
-  onGentle: (on) => localStorage.setItem('packet-run-gentle', on ? '1' : '0'),
-  onDaily: () => {
-    unlockAudio();
-    newRun(dailySeed());
-  },
+function openStartScreen() {
+  showStart({
+    seed: initialSeed,
+    showPicker: winsCount() > 0 && !urlParams.get('payload'),
+    payload,
+    gentle: gentleOn(),
+    uptime: uptimeBalance(),
+    pouch: pouchStored(),
+    shop: winsCount() > 0 ? POUCH : null, // the shop opens once wins can fund it
+    onBuy: (item) => {
+      const price = POUCH[item].price;
+      if (uptimeBalance() < price || pouchStored().length >= 3) return;
+      localStorage.setItem('packet-run-uptime', String(uptimeBalance() - price));
+      savePouch([...pouchStored(), item]);
+      openStartScreen(); // re-render with the new balance
+    },
+    onGentle: (on) => localStorage.setItem('packet-run-gentle', on ? '1' : '0'),
+    onDaily: () => {
+      unlockAudio();
+      newRun(dailySeed());
+    },
   onPlay: (chosen) => {
-    unlockAudio();
-    if (chosen && chosen !== payload) payload = chosen;
-    newRun(initialSeed);
-  },
-});
+      unlockAudio();
+      if (chosen && chosen !== payload) payload = chosen;
+      newRun(initialSeed);
+    },
+  });
+}
+openStartScreen();
 window.addEventListener('resize', () => { if (!busy) renderAll(); });

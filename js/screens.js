@@ -44,7 +44,7 @@ function starsSVG(stars) {
 
 // After the first win, the kid picks what they're sending — two payloads,
 // two strategies. TCP/UDP are never named here (vocab rule, design/06).
-export function showStart({ seed, showPicker, payload = 'tcp-file', gentle, onPlay, onGentle, onDaily }) {
+export function showStart({ seed, showPicker, payload = 'tcp-file', gentle, uptime = 0, pouch = [], shop = null, onPlay, onGentle, onDaily, onBuy }) {
   const picker = showPicker
     ? `<div class="reward-cards payload-cards">
         <button class="reward-card" data-payload="tcp-file">
@@ -65,6 +65,14 @@ export function showStart({ seed, showPicker, payload = 'tcp-file', gentle, onPl
       It travels as 5 fragments — you're Pip, their guide.
       ${showPicker ? '' : 'Get all 5 across the internet before her bedtime.'}</p>
       ${picker}
+      ${shop ? `<div class="shop-row">
+        <span class="seed-note">UPTIME ★ ${uptime} · pouch ${pouch.length}/3</span>
+        <div class="btn-row">${Object.entries(shop).map(([key, item]) =>
+          `<button class="ghost-btn shop-btn" data-buy="${key}"
+             ${uptime >= item.price && pouch.length < 3 ? '' : 'disabled'}>
+             ${item.name} · ★${item.price}</button>`).join('')}
+        </div>
+      </div>` : ''}
       <div class="start-extras">
         <label class="gentle-toggle">
           <input type="checkbox" id="gentle" ${gentle ? 'checked' : ''}>
@@ -79,6 +87,9 @@ export function showStart({ seed, showPicker, payload = 'tcp-file', gentle, onPl
       $('#overlay').replaceChildren();
       onPlay(btn.dataset.payload);
     });
+  }
+  for (const btn of document.querySelectorAll('[data-buy]')) {
+    btn.addEventListener('click', () => onBuy(btn.dataset.buy));
   }
   $('#gentle').addEventListener('change', (e) => onGentle(e.target.checked));
   $('#daily').addEventListener('click', () => {

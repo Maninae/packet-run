@@ -115,6 +115,31 @@ test('a "?" node opens its card; the choice lands and the run continues', async 
   await page.context().close();
 });
 
+test('Uptime: a win pays stars; the shop stocks the pouch; the boost fires in-run', async () => {
+  const page = await app.page(VIEWPORTS.portrait, { reducedMotion: 'reduce' });
+  await page.addInitScript(() => {
+    localStorage.setItem('packet-run-wins', '1');
+    localStorage.setItem('packet-run-dns', '8');
+    localStorage.setItem('packet-run-uptime', '5');
+  });
+  await page.goto(`${app.origin}/?seed=CALL1&map=act1`);
+  // the shop is open: buy a Signal Boost (★2) → 3 left, pouch 1/3
+  await page.locator('[data-buy="boost"]').click();
+  assert.equal(await page.evaluate(() => localStorage.getItem('packet-run-uptime')), '3');
+  assert.match(await page.locator('.shop-row').textContent(), /UPTIME ★ 3 · pouch 1\/3/);
+
+  // start a message run; the pouch button sits in the belt — fire the boost
+  await page.locator('[data-payload="tcp-file"]').click();
+  const before = await page.evaluate(() => window.packetRun.run.bandwidth);
+  await page.locator('[data-pouch="0"]').click();
+  const run = await page.evaluate(() => window.packetRun.run);
+  assert.equal(run.bandwidth, before + 3, 'the boost landed');
+  assert.equal(run.pouch.length, 0);
+  assert.equal(await page.evaluate(() => localStorage.getItem('packet-run-pouch')), '[]',
+    'the used slot is gone from storage too');
+  await page.context().close();
+});
+
 test('the sky rides the seed: a rainy run says so, gentle runs stay clear', async () => {
   const { weatherFor } = await import('../../js/config.js');
   let rainy = null;

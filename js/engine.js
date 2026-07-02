@@ -10,7 +10,7 @@
 // rng is injectable for tests/simulation; defaults to the seeded PRNG.
 // Consumption order is documented in encounters.js — keep it stable.
 
-import { RUN, MAP_1A, BELT, TOOLS, PAYLOADS, CONGESTION, EVENTS } from './config.js';
+import { RUN, MAP_1A, BELT, TOOLS, PAYLOADS, CONGESTION, EVENTS, POUCH } from './config.js';
 import { seededRng } from './rng.js';
 import {
   duplicateLegal, applyDuplicate, retransmitLegal, applyRetransmit,
@@ -23,7 +23,7 @@ import { resolveImpact, rollFog } from './encounters.js';
 // reserved for documentation, so the game never prints a real host.
 export const DEST_ADDRESS = '203.0.113.7';
 
-export function createRun({ seed, rng, mods = null, map = MAP_1A, payload = 'tcp-file', dnsNeeded = false, weather = null }) {
+export function createRun({ seed, rng, mods = null, map = MAP_1A, payload = 'tcp-file', dnsNeeded = false, weather = null, pouch = [] }) {
   return {
     seed,
     rng: rng ?? seededRng(seed),
@@ -52,6 +52,7 @@ export function createRun({ seed, rng, mods = null, map = MAP_1A, payload = 'tcp
     siege: null,            // DDoS window { beat, pushes } — design/10
     eventsSeen: new Set(),  // "?" nodes already visited (per segment:node)
     belt: [...PAYLOADS[payload].belt], // actives AND passives share the slots (design/03)
+    pouch: pouch.slice(0, 3), // one-shot consumables (design/03: max 3)
     passives: new Set(),    // extra always-on machinery (test/meta injection)
     rewardOptions: null,    // pick-1-of-3, offered at mid-map junctions
     lastImpact: null,       // { kind, impactNode } — autopsy's killer
@@ -149,6 +150,21 @@ export function legalActions(run) {
       actions.push({ type: 'skip', fragment: f.id });
     }
   }
+  run.pouch.forEach((item, index) => {
+    if (item === 'boost') actions.push({ type: 'use-item', index, item });
+    if (item === 'spare') {
+      for (const f of run.fragments) {
+        if (f.status === 'lost') actions.push({ type: 'use-item', index, item, fragment: f.id });
+      }
+    }
+    if (item === 'stamp') {
+      for (const f of run.fragments) {
+        if (f.status === 'with-party' && !f.stamped) {
+          actions.push({ type: 'use-item', index, item, fragment: f.id });
+        }
+      }
+    }
+  });
   if (onBelt(run, 'checksum') && checksumLegal(run)) actions.push({ type: 'checksum' });
   for (const f of run.fragments) {
     if (onBelt(run, 'repair') && repairLegal(run, f)) {
@@ -563,6 +579,21 @@ export function act(run, action) {
     case 'choose-event':
       chooseEvent(run, action);
       break;
+    case 'use-item': {
+      const item = run.pouch[action.index];
+      run.pouch.splice(action.index, 1);
+      if (item === 'boost') run.bandwidth += 3;
+      if (item === 'spare') {
+        const f = run.fragments.find((x) => x.id === action.fragment);
+        f.status = 'with-party';
+        delete f.lag;
+      }
+      if (item === 'stamp') {
+        run.fragments.find((x) => x.id === action.fragment).stamped = true;
+      }
+      run.events.push({ type: 'item-used', item, fragment: action.fragment ?? null });
+      break;
+    }
     case 'lookup':
       // names → addresses: the address book answers, the clock ticks once
       run.deadline -= 1;

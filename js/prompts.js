@@ -79,6 +79,10 @@ const JUNCTION_HOOKS = {
 };
 
 export function computePrompt(run, { armed, hintText, pendingRoad }) {
+  if (armed?.startsWith('pouch:')) {
+    const item = run.pouch[Number(armed.split(':')[1])];
+    return ['bolt', `${item === 'spare' ? 'Spare Fragment: tap a LOST fragment to bring it back.' : 'Priority Stamp: tap a fragment to shield it from the next sweep.'}`];
+  }
   if (armed) return ['copy', `${TOOLTIPS[armed]}<br>Tap a fragment below.`];
   if (run.phase === 'dns') {
     return ['bolt', `Where does Grandma's live? Ask the address book — it costs a tick.`];
