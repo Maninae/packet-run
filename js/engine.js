@@ -331,6 +331,19 @@ function drawRewards(run) {
     const j = Math.floor(run.rng() * (i + 1));
     [pool[i], pool[j]] = [pool[j], pool[i]];
   }
+  // fairness by construction (1b rule, made structural): if corruption-class
+  // hazards lurk anywhere on this map, the draw must offer the missing half
+  // of the counter-kit — a static zone with no path to a Checksum isn't a
+  // challenge, it's a trap.
+  const corruptionAhead = run.map.segments.some((seg) =>
+    Object.values(seg.roads).some((r) => ['static', 'sniffer'].includes(r.hazard?.kind)));
+  if (corruptionAhead) {
+    const missing = ['checksum', 'repair'].find((t) => pool.includes(t));
+    if (missing && !pool.slice(0, 2).includes(missing)) {
+      pool.splice(pool.indexOf(missing), 1);
+      pool.unshift(missing);
+    }
+  }
   const options = pool.slice(0, 2).map((tool) => ({ kind: 'tool', tool }));
   while (options.length < 2) options.push({ kind: 'bandwidth', amount: BELT.resourceReward.bw });
   options.push({ kind: 'bandwidth', amount: BELT.resourceReward.bw });

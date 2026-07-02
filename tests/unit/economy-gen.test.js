@@ -168,7 +168,26 @@ test('maps are solvable: some policy wins nearly every map', () => {
 });
 
 test('both failure modes exist in the wild (loss AND lag both teach)', () => {
+  // deadline deaths: visible in disciplined play
   const total = (k) => Object.values(results).reduce((s, r) => s + r[k], 0);
-  assert.ok(total('failByLoss') > 0, 'packet-loss failures occur');
   assert.ok(total('failByDeadline') > 0, 'deadline failures occur');
+  // loss-class deaths: the fairness pass (kit guarantee + verified maps)
+  // rightly protects DISCIPLINED lines from traps — but stingy play, the
+  // kind kids actually produce, must still pay in fragments
+  let byLoss = 0;
+  for (let i = 0; i < 200 && byLoss === 0; i++) {
+    const run = createRun({ seed: `stingy-${i}`, map: generateMap(`stingy-${i}`) });
+    for (let guard = 0; guard < 150 && run.phase !== 'done'; guard++) {
+      const legal = legalActions(run);
+      if (run.phase === 'event') { act(run, legal[0]); continue; }
+      if (run.phase === 'reward') { act(run, legal.find((a) => a.kind === 'bandwidth')); continue; }
+      if (run.phase === 'junction') { act(run, { type: 'choose-road', road: 'short' }); continue; }
+      const sends = legal.filter((a) => a.type === 'send');
+      if (sends.length) { act(run, sends.at(-1)); continue; }
+      const p = legal.find((a) => a.type === 'push');
+      act(run, p ?? { type: 'onward' });
+    }
+    if (run.outcome === 'failed' && run.failure.reason !== 'deadline') byLoss++;
+  }
+  assert.ok(byLoss > 0, 'unprotected play must still lose fragments somewhere');
 });

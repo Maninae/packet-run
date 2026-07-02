@@ -22,6 +22,8 @@ function replayForScan(seed) {
     }
     if (run.phase === 'event') { act(run, legalActions(run)[0]); continue; }
     if (run.phase === 'junction') { act(run, { type: 'choose-road', road: 'short' }); continue; }
+    const pushAct = legalActions(run).find((a) => a.type === 'push');
+    if (pushAct) { act(run, pushAct); continue; }
     const legal = legalActions(run);
     const sends = legal.filter((a) => a.type === 'send');
     if (sends.length) { act(run, sends.at(-1)); continue; }

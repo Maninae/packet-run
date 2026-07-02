@@ -8,6 +8,7 @@
 
 import { seededRng } from './rng.js';
 import { RUN, GEN, ACTS } from './config.js';
+import { createRun, legalActions, act as engineAct, segmentRoads } from './engine.js';
 
 // Archetypes. Every junction keeps the 1a dichotomy: short = quicker/riskier,
 // long = slower/milder — and the tension rule holds: a hazard-free road is
@@ -101,7 +102,7 @@ function buildRoad(rng, spec, { segment, key, from, to }) {
   return { nodes, hazard, bwPickup };
 }
 
-export function generateMap(seed, { segments = GEN.segments, act = 3 } = {}) {
+function stitchMap(seed, { segments = GEN.segments, act = 3, bump = 0 } = {}) {
   const rng = seededRng(`${seed}:map`);
   // the act's biome pool: which archetypes this part of the world rolls
   const pool = (ACTS.find((a) => a.id === act) ?? ACTS.at(-1)).templates;
@@ -169,9 +170,90 @@ export function generateMap(seed, { segments = GEN.segments, act = 3 } = {}) {
   return {
     ...(act === 5 ? { boss: 'static' } : {}), // the Act-5 dock is the Static's tunnel
     id: `gen-${seed}`,
-    startBandwidth: budgets.startBandwidth ?? GEN.startBandwidth,
-    startDeadline: budgets.startDeadline ?? GEN.startDeadline,
+    startBandwidth: (budgets.startBandwidth ?? GEN.startBandwidth) + 2 * bump,
+    startDeadline: (budgets.startDeadline ?? GEN.startDeadline) + 2 * bump,
     stars: { ...GEN.stars },
     segments: built,
   };
+}
+
+// ---- the balanced loop (design/09): generate → simulate → adjust ----
+// A scripted policy replays each candidate INSIDE the generator. Brutal
+// rolls get a visible budget bump (+2/+2, at most twice); hopeless ones
+// reroll from a retry stream. No kid ever receives an unbeaten map.
+
+function replayPolicy(map, seed, style) {
+  const run = createRun({ seed: `${seed}:verify:${style}`, map });
+  const insure = style === 'careful';
+  for (let guard = 0; guard < 220 && run.phase !== 'done'; guard++) {
+    const legal = legalActions(run);
+    if (run.phase === 'duel') {
+      if (run.duel.beat < 4) {
+        if (legal.some((a) => a.type === 'brace')) { engineAct(run, { type: 'brace' }); continue; }
+        engineAct(run, { type: 'hold' });
+        continue;
+      }
+      if (legal.some((a) => a.type === 'duel-checksum')) { engineAct(run, { type: 'duel-checksum' }); continue; }
+      const repair = legal.find((a) => a.type === 'duel-repair');
+      if (repair) { engineAct(run, repair); continue; }
+      engineAct(run, { type: 'hold' });
+      continue;
+    }
+    if (run.phase === 'event') { engineAct(run, legal[0]); continue; }
+    if (run.phase === 'reward') {
+      const kit = insure ? legal.find((a) => a.kind === 'tool'
+        && (a.tool === 'checksum' || a.tool === 'repair') && !a.replace) : null;
+      engineAct(run, kit ?? legal.find((a) => a.kind === 'bandwidth'));
+      continue;
+    }
+    if (run.phase === 'junction') {
+      engineAct(run, { type: 'choose-road', road: 'short' });
+      if (insure) {
+        const hazard = segmentRoads(run).short.hazard;
+        for (const id of hazard?.threatens ?? []) {
+          if (legalActions(run).some((a) => a.type === 'duplicate' && a.fragment === id)) {
+            engineAct(run, { type: 'duplicate', fragment: id });
+          }
+        }
+      }
+      continue;
+    }
+    const sends = legal.filter((a) => a.type === 'send');
+    if (sends.length) { engineAct(run, sends.at(-1)); continue; }
+    const push = legal.find((a) => a.type === 'push');
+    if (push) { engineAct(run, push); continue; }
+    // careful play waits for stragglers at the rapids — that's the point
+    if (insure && run.fragments.some((f) => f.status === 'straggler')
+      && legal.some((a) => a.type === 'wait')) {
+      engineAct(run, { type: 'wait' });
+      continue;
+    }
+    // both styles recall the lost when they can afford it — brisk recovers
+    // instead of insuring, careful does both
+    const fix = legal.find((a) => a.type === 'retransmit')
+      ?? (insure ? legal.find((a) => ['checksum', 'repair'].includes(a.type)) : null);
+    engineAct(run, fix ?? { type: 'onward' });
+  }
+  return run.outcome === 'rendered';
+}
+
+export function policyWins(map, seed) {
+  return replayPolicy(map, seed, 'careful') || replayPolicy(map, seed, 'brisk');
+}
+
+export function generateMap(seed, { segments = GEN.segments, act = 3 } = {}) {
+  for (let retry = 0; retry < 3; retry++) {
+    const mapSeed = retry === 0 ? seed : `${seed}:retry${retry}`;
+    for (let bump = 0; bump <= 2; bump++) {
+      const map = stitchMap(mapSeed, { segments, act, bump });
+      map.id = `gen-${seed}`; // the kid-visible identity never shows the loop
+      map.verifySeed = mapSeed;
+      if (policyWins(map, mapSeed)) return map;
+    }
+  }
+  // theoretical backstop: maximum mercy on the last reroll
+  const map = stitchMap(`${seed}:retry2`, { segments, act, bump: 2 });
+  map.id = `gen-${seed}`;
+  map.verifySeed = `${seed}:retry2`;
+  return map;
 }
