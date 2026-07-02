@@ -26,8 +26,8 @@ test('map shape: 3 segments, every road priced, threats name real fragments', ()
       const { short, long } = segment.roads;
       assert.ok(short.nodes.length >= 3, 'short road has at least 2 hops');
       assert.ok(long.nodes.length > short.nodes.length
-        || long.hazard?.kind === 'congestion',
-        'the long road is slower: more hops, or a jam priced in beats');
+        || ['congestion', 'satellite'].includes(long.hazard?.kind),
+        'the long road is slower: more hops, or a beat-priced link');
       // roads share start and end nodes (junction to junction)
       assert.equal(short.nodes[0], long.nodes[0]);
       assert.equal(short.nodes.at(-1), long.nodes.at(-1));
@@ -40,7 +40,7 @@ test('map shape: 3 segments, every road priced, threats name real fragments', ()
             assert.equal(road.hazard.corrupts, 1, 'static zones scramble one');
           } else if (road.hazard.kind === 'sniffer') {
             assert.ok(road.hazard.impactNode, 'the sniffer lurks on a node');
-          } else if (road.hazard.kind === 'congestion') {
+          } else if (['congestion', 'trench', 'satellite'].includes(road.hazard.kind)) {
             assert.ok(road.hazard.impactNode, 'the jam sits on a node');
           } else if (road.hazard.kind === 'rapids') {
             assert.ok(road.hazard.straggles >= 1, 'rapids strand at least one');

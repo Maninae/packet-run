@@ -105,6 +105,7 @@ function threatWeight(road) {
   if (!road.hazard) return 0;
   if (['static', 'sniffer'].includes(road.hazard.kind)) return 1.5;
   if (road.hazard.kind === 'congestion') return 0.5;
+  if (road.hazard.kind === 'trench' || road.hazard.kind === 'satellite') return 0.5;
   return road.hazard.threatens?.length ?? 1;
 }
 

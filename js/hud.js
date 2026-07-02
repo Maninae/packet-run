@@ -5,7 +5,7 @@ import { RUN } from './config.js';
 import {
   boltIcon, clockIcon, copyIcon, retransmitIcon, stormIcon, drizzleIcon,
   staticIcon, checksumIcon, repairIcon, rerouteIcon, bufferIcon, rapidsIcon,
-  jamIcon, snifferIcon, cloakIcon, skipIcon, speakerIcon,
+  jamIcon, snifferIcon, cloakIcon, trenchIcon, satelliteIcon, skipIcon, speakerIcon,
 } from './icons.js';
 import { isMuted, toggleMute } from './sound.js';
 
@@ -30,6 +30,8 @@ const PROMPT_ICONS = {
   jam: () => jamIcon(22),
   sniffer: () => snifferIcon(22),
   cloak: () => cloakIcon(22),
+  trench: () => trenchIcon(22),
+  satellite: () => satelliteIcon(22),
   bolt: () => boltIcon(22),
   clock: () => clockIcon(22),
   copy: () => copyIcon(22, 'var(--copy)'),

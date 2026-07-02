@@ -42,6 +42,16 @@ const TEMPLATES = [
     short: { hops: 2, hazard: 'sniffer' },
     long: { hops: 3, hazard: 'drizzle', threat: 1 },
   },
+  { // H — the undersea trench: a giant pipe that pays +3 energy — unless
+    // the cable snaps (10%) and home must reissue from the junction
+    short: { hops: 2, hazard: 'trench' },
+    long: { hops: 3, hazard: 'drizzle', threat: 1 },
+  },
+  { // I — the satellite pass: the long way up — always a beat slower,
+    // sometimes solar-flaky, never harms a fragment
+    short: { hops: 2, hazard: 'drizzle', threat: 1 },
+    long: { hops: 2, hazard: 'satellite' },
+  },
 ];
 
 function shuffled(rng, array) {
@@ -64,6 +74,8 @@ function buildRoad(rng, spec, { segment, key, from, to }) {
       hazard = { kind: 'static', impactNode, corrupts: 1 };
     } else if (spec.hazard === 'sniffer') {
       hazard = { kind: 'sniffer', impactNode };
+    } else if (spec.hazard === 'trench' || spec.hazard === 'satellite') {
+      hazard = { kind: spec.hazard, impactNode };
     } else if (spec.hazard === 'congestion') {
       hazard = { kind: 'congestion', impactNode };
     } else if (spec.hazard === 'rapids') {

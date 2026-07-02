@@ -332,6 +332,11 @@ function onward(run) {
   if (def.hazard && to === def.hazard.impactNode && !run.impactResolved) {
     run.lastImpact = { kind: def.hazard.kind, impactNode: def.hazard.impactNode };
     resolveImpact(run, def.hazard, run.rng);
+    if (run.phase !== 'node') return; // a cable cut sent the party back
+    if (run.deadline < 0) {
+      fail(run, 'deadline', 'latency'); // satellite delays bite like any tick
+      return;
+    }
   }
 
   run.node = to;

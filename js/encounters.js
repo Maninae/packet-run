@@ -62,6 +62,34 @@ export function resolveImpact(run, hazard, rng) {
     run.events.push({ type: 'impact', kind: 'congestion', node: hazard.impactNode });
     return;
   }
+  // the trench: a huge seabed pipe — +3 bandwidth for crossing, but big
+  // pipes fail big: a rare cable cut forces a sender reissue back to the
+  // junction (the internet is physical; >99% of it is seabed fiber).
+  // rng: cutRoll. The satellite pass: always one beat slower (the long way
+  // up), sometimes solar-flaky. rng: flakeRoll.
+  if (hazard.kind === 'trench') {
+    const cut = rng() < 0.10;
+    run.impactResolved = true;
+    run.events.push({ type: 'impact', kind: 'trench', node: hazard.impactNode, cut });
+    if (cut) {
+      run.node = run.map.segments[run.segment].roads[run.road].nodes[0];
+      run.stepIndex = 0;
+      run.road = null;
+      run.impactResolved = false;
+      run.waitsUsed = 0;
+      run.phase = 'junction';
+    } else {
+      run.bandwidth += 3;
+    }
+    return;
+  }
+  if (hazard.kind === 'satellite') {
+    const flaky = rng() < 0.20;
+    run.deadline -= flaky ? 2 : 1;
+    run.impactResolved = true;
+    run.events.push({ type: 'impact', kind: 'satellite', node: hazard.impactNode, flaky, deadline: run.deadline });
+    return;
+  }
   // the sniffer: with the Cloak it's foiled outright — sealed fragments are
   // VISIBLE on the wire but unreadable (design/07; route-hiding is Tor, out
   // of scope). Unsealed, its tamper IS corruption: scrambled bits the

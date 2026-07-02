@@ -32,6 +32,25 @@ async function impactNotice(e) {
     await delay(1000);
     return;
   }
+  if (e.kind === 'trench') {
+    if (e.cut) {
+      sfx.fail();
+      flashPrompt('trench', 'SNAP — the cable is cut! Home reissues the party from the junction.');
+    } else {
+      sfx.chime();
+      flashPrompt('trench', 'The deep-sea cable hums — <strong>+3 energy</strong> from the giant pipe.');
+    }
+    await delay(1000);
+    return;
+  }
+  if (e.kind === 'satellite') {
+    sfx.mud();
+    flashPrompt('satellite', e.flaky
+      ? 'Up and over by satellite — and solar weather adds a tick. Space is far.'
+      : 'Up and over by satellite — the long way costs a tick.');
+    await delay(900);
+    return;
+  }
   if (e.kind === 'congestion') {
     sfx.mud();
     flashPrompt('jam', 'A jam! This pipe only fits so many per beat — start small.');

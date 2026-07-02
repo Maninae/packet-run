@@ -53,6 +53,26 @@ export function cloakIcon(size = 20, color = 'var(--copy)') {
   </svg>`;
 }
 
+export function trenchIcon(size = 18) {
+  return `<svg width="${size}" height="${size}" viewBox="0 0 20 20" aria-hidden="true">
+    <path d="M2 6 q3-2.5 6 0 t6 0 t4 0" fill="none" stroke="var(--fragment)"
+          stroke-width="1.6" stroke-linecap="round" opacity="0.7"/>
+    <path d="M2 13 h16" stroke="var(--pip)" stroke-width="2.6" stroke-linecap="round"/>
+    <path d="M2 16 h16" stroke="var(--pip)" stroke-width="1.4" stroke-linecap="round" opacity="0.5"/>
+  </svg>`;
+}
+
+export function satelliteIcon(size = 18) {
+  return `<svg width="${size}" height="${size}" viewBox="0 0 20 20" aria-hidden="true">
+    <rect x="7.5" y="7.5" width="5" height="5" rx="1" fill="var(--fragment)"
+          transform="rotate(45 10 10)"/>
+    <path d="M3 5 l3.5 3.5 M17 15 l-3.5-3.5" stroke="var(--fragment)" stroke-width="1.8"
+          stroke-linecap="round"/>
+    <path d="M2.5 8.5 q-1-3 2-5.5 M17.5 11.5 q1 3 -2 5.5" fill="none"
+          stroke="var(--fragment)" stroke-width="1.4" stroke-linecap="round" opacity="0.6"/>
+  </svg>`;
+}
+
 export function jamIcon(size = 18) {
   return `<svg width="${size}" height="${size}" viewBox="0 0 20 20" aria-hidden="true">
     <path d="M2 5 h5 q3 0 4 3 q1 3 4 3 h3" fill="none" stroke="var(--hazard)"

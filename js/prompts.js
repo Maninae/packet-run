@@ -37,6 +37,12 @@ function describeRoad(run, key) {
       ? `${hops} hops, a sniffer listening — your Cloak seals you`
       : `${hops} hops, a sniffer listening — it can tamper with bits`;
   }
+  if (road.hazard.kind === 'trench') {
+    return `${hops} hops through the deep-sea cable — a huge pipe, and big pipes can snap`;
+  }
+  if (road.hazard.kind === 'satellite') {
+    return `${hops} hops by satellite — the long way up always costs a beat`;
+  }
   return `${hops} hops, a ${road.hazard.kind} eyeing ${names(road.hazard.threatens)}`;
 }
 
@@ -49,7 +55,7 @@ export function scaryRoad(run) {
 
 const HAZARD_PROMPT_ICONS = {
   drizzle: 'drizzle', static: 'static', rapids: 'rapids', storm: 'storm',
-  congestion: 'jam', sniffer: 'sniffer',
+  congestion: 'jam', sniffer: 'sniffer', trench: 'trench', satellite: 'satellite',
 };
 
 function iconFor(run, key) {
@@ -62,6 +68,8 @@ const JUNCTION_HOOKS = {
   rapids: (road) => ['rapids', `Rapids on the ${road} road — the party will scatter. Tap a road to look closer.`],
   congestion: (road) => ['jam', `A jammed pipe on the ${road} road — slow, but nothing gets lost. Tap a road to look closer.`],
   sniffer: (road) => ['sniffer', `A sniffer lurks on the ${road} road. Tap a road to look closer.`],
+  trench: (road) => ['trench', `The ${road} road dives through the deep-sea cable. Tap a road to look closer.`],
+  satellite: (road) => ['satellite', `The ${road} road goes up and over by satellite. Tap a road to look closer.`],
 };
 
 export function computePrompt(run, { armed, hintText, pendingRoad }) {
@@ -120,6 +128,12 @@ export function computePrompt(run, { armed, hintText, pendingRoad }) {
       return run.belt.includes('cloak')
         ? ['cloak', `A sniffer ahead — let it look. Your seal holds.`]
         : ['sniffer', `A sniffer ahead — it can scramble what it touches. A Cloak or the Checksum kit answers it.`];
+    }
+    if (hazard.kind === 'trench') {
+      return ['trench', `The deep-sea cable ahead — most of the internet crosses oceans this way. Ride it.`];
+    }
+    if (hazard.kind === 'satellite') {
+      return ['satellite', `The satellite pass ahead — space is far, and the clock knows it.`];
     }
     const approach = def.nodes[def.nodes.indexOf(hazard.impactNode) - 1];
     const icon = hazard.kind === 'storm' ? 'storm' : 'drizzle';

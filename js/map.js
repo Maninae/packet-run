@@ -5,11 +5,14 @@
 // Fog-of-detail: shape always visible; hazard clouds and junction chips only
 // for the CURRENT segment; threat glyphs are FORECASTS (design/07).
 
-import { stormIcon, drizzleIcon, staticIcon, rapidsIcon, jamIcon, snifferIcon, clockIcon } from './icons.js';
+import {
+  stormIcon, drizzleIcon, staticIcon, rapidsIcon, jamIcon, snifferIcon,
+  trenchIcon, satelliteIcon, clockIcon,
+} from './icons.js';
 
 const HAZARD_ICONS = {
   storm: stormIcon, drizzle: drizzleIcon, static: staticIcon, rapids: rapidsIcon,
-  congestion: jamIcon, sniffer: snifferIcon,
+  congestion: jamIcon, sniffer: snifferIcon, trench: trenchIcon, satellite: satelliteIcon,
 };
 
 const NS = 'http://www.w3.org/2000/svg';
@@ -215,6 +218,12 @@ function drawGlyphChip(svg, { x, y, kind, threatens, hops, straggles, road, scen
         : kind === 'congestion'
           ? `<text x="9" y="-1" text-anchor="middle" font-size="11" font-weight="800"
                fill="var(--hazard)" font-family="var(--font)">jam</text>`
+        : kind === 'trench'
+          ? `<text x="9" y="-1" text-anchor="middle" font-size="11" font-weight="800"
+               fill="var(--safe)" font-family="var(--font)">+3</text>`
+        : kind === 'satellite'
+          ? `<text x="9" y="-1" text-anchor="middle" font-size="11" font-weight="800"
+               fill="var(--hazard)" font-family="var(--font)">slow</text>`
           : `<text x="9" y="-1" text-anchor="middle" font-size="12" font-weight="800"
                fill="var(--hazard)" font-family="var(--font)">${nums}</text>`;
   g.innerHTML = `
