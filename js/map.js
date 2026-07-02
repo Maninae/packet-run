@@ -5,7 +5,9 @@
 // Fog-of-detail: shape always visible; hazard clouds and junction chips only
 // for the CURRENT segment; threat glyphs are FORECASTS (design/07).
 
-import { stormIcon, drizzleIcon, clockIcon } from './icons.js';
+import { stormIcon, drizzleIcon, staticIcon, clockIcon } from './icons.js';
+
+const HAZARD_ICONS = { storm: stormIcon, drizzle: drizzleIcon, static: staticIcon };
 
 const NS = 'http://www.w3.org/2000/svg';
 export const VIEWBOX = [0, 0, 390, 560];
@@ -177,7 +179,7 @@ function drawHazardCloud(svg, nodes, road, key) {
   const side = key === 'short' ? -1 : 1;
   const g = el('g', { transform: `translate(${m.x + side * 26},${m.y - 8})` });
   const bob = el('g', { class: 'hazard-cloud' });
-  bob.innerHTML = `<g transform="translate(-14,-14)">${road.hazard.kind === 'storm' ? stormIcon(28) : drizzleIcon(28)}</g>`;
+  bob.innerHTML = `<g transform="translate(-14,-14)">${HAZARD_ICONS[road.hazard.kind](28)}</g>`;
   g.append(bob);
   svg.append(g);
 }
@@ -196,13 +198,16 @@ function drawGlyphChip(svg, { x, y, kind, threatens, hops, road, scene }) {
     `<circle cx="${(i - (hops - 1) / 2) * 8}" cy="13" r="2.4" fill="var(--ink-soft)"/>`
   ).join('');
   const icon = kind
-    ? `<g transform="translate(-28,-11)">${kind === 'storm' ? stormIcon(20) : drizzleIcon(20)}</g>`
+    ? `<g transform="translate(-28,-11)">${HAZARD_ICONS[kind](20)}</g>`
     : '';
-  const label = kind
-    ? `<text x="9" y="-1" text-anchor="middle" font-size="12" font-weight="800"
-         fill="var(--hazard)" font-family="var(--font)">${nums}</text>`
-    : `<text x="0" y="-1" text-anchor="middle" font-size="11" font-weight="700"
-         fill="var(--safe)" font-family="var(--font)">quiet</text>`;
+  const label = !kind
+    ? `<text x="0" y="-1" text-anchor="middle" font-size="11" font-weight="700"
+         fill="var(--safe)" font-family="var(--font)">quiet</text>`
+    : kind === 'static'
+      ? `<text x="9" y="-1" text-anchor="middle" font-size="13" font-weight="800"
+           fill="var(--danger)" font-family="var(--font)">#?</text>`
+      : `<text x="9" y="-1" text-anchor="middle" font-size="12" font-weight="800"
+           fill="var(--hazard)" font-family="var(--font)">${nums}</text>`;
   g.innerHTML = `
     <rect x="-37" y="-16" width="74" height="38" rx="10" fill="var(--surface)"
           stroke="var(--wire-lit)" stroke-width="2"/>

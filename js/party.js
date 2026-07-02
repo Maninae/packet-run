@@ -65,14 +65,22 @@ function drawFragment(ctx, x, y, size, fragment) {
     ctx.fill();
     ctx.globalAlpha = 1;
   }
-  ctx.shadowColor = cssVar('--fragment-glow');
+  const glitched = fragment.corrupted && fragment.revealed;
+  ctx.shadowColor = glitched ? cssVar('--fragment-corrupt') : cssVar('--fragment-glow');
   ctx.shadowBlur = 10;
-  ctx.fillStyle = cssVar('--fragment');
+  ctx.fillStyle = glitched ? cssVar('--fragment-corrupt') : cssVar('--fragment');
   ctx.beginPath();
   ctx.roundRect(-half, -half, size, size, 5);
   ctx.fill();
   ctx.shadowBlur = 0;
-  ctx.fillStyle = '#062733';
+  if (glitched) {
+    // dithered noise flecks (design/08): the bits are visibly wrong
+    ctx.fillStyle = 'rgba(10, 16, 13, 0.55)';
+    for (let i = 0; i < 5; i++) {
+      ctx.fillRect(-half + ((i * 7 + 2) % size), -half + ((i * 11 + 3) % size), 3, 1.6);
+    }
+  }
+  ctx.fillStyle = glitched ? '#2b0713' : '#062733';
   ctx.font = `800 ${size * 0.62}px ${cssVar('--font') || 'system-ui'}`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
@@ -222,6 +230,10 @@ export function renderPartyRow(container, fragments, opts = {}) {
     if (f.status === 'lost') {
       chip.classList.add('lost');
       chip.setAttribute('aria-label', `Fragment ${f.id} — lost`);
+    }
+    if (f.corrupted && f.revealed) {
+      chip.classList.add('glitched');
+      chip.setAttribute('aria-label', `Fragment ${f.id} — scrambled`);
     }
     if (opts.threatened?.has(f.id)) chip.classList.add('threatened');
     if (opts.targetable?.has(f.id)) chip.classList.add('targetable');

@@ -34,10 +34,14 @@ test('map shape: 3 segments, every road priced, threats name real fragments', ()
         if (road.hazard) {
           assert.ok(road.nodes.includes(road.hazard.impactNode));
           assert.notEqual(road.hazard.impactNode, road.nodes[0]);
-          for (const id of road.hazard.threatens) {
-            assert.ok(id >= 1 && id <= RUN.partySize);
+          if (road.hazard.kind === 'static') {
+            assert.equal(road.hazard.corrupts, 1, 'static zones scramble one');
+          } else {
+            for (const id of road.hazard.threatens) {
+              assert.ok(id >= 1 && id <= RUN.partySize);
+            }
+            assert.ok(new Set(road.hazard.threatens).size === road.hazard.threatens.length);
           }
-          assert.ok(new Set(road.hazard.threatens).size === road.hazard.threatens.length);
         }
       }
       assert.ok(short.hazard || long.hazard, 'at least one road per junction is risky');

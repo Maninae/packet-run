@@ -99,10 +99,17 @@ function lossLine(run) {
     return `The ${kind} got ${missing.join(' and ')} — the message couldn't finish.
       This happens on the real internet all the time.`;
   }
+  if (run.failure.reason === 'corrupted-payload') {
+    return 'A scrambled fragment reached the dock — the message came out garbled.';
+  }
   return 'Bedtime came before the message did.';
 }
 
-const CONCEPT_NAMES = { 'packet-loss': 'packet loss', latency: 'lag' };
+const CONCEPT_NAMES = {
+  'packet-loss': 'packet loss',
+  latency: 'lag',
+  corruption: 'scrambled data',
+};
 
 // The loss autopsy card (design/06): what killed → which concept → which tool
 // might have saved you → the real-internet line → hint retry.

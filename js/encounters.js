@@ -23,7 +23,18 @@ function sweep(fragment) {
 
 // Resolves a hazard impact against the party. Mutates fragments, appends the
 // impact event, marks the run's impact as resolved.
+// 'static' scrambles ONE hidden fragment (no gust; corruption ignores copies —
+// Duplicate insures against loss, Checksum/Repair own corruption). The event
+// reports only the COUNT: which fragment is the Checksum's job to find.
 export function resolveImpact(run, hazard, rng) {
+  if (hazard.kind === 'static') {
+    const candidates = run.fragments.filter((f) => f.status === 'with-party');
+    const victim = candidates[Math.floor(rng() * candidates.length)];
+    victim.corrupted = true;
+    run.impactResolved = true;
+    run.events.push({ type: 'impact', kind: 'static', node: hazard.impactNode, scrambled: 1 });
+    return;
+  }
   const byId = new Map(run.fragments.map((f) => [f.id, f]));
   const swept = [];
   const saved = [];
@@ -42,7 +53,7 @@ export function resolveImpact(run, hazard, rng) {
   }
 
   run.impactResolved = true;
-  run.events.push({ type: 'impact', kind: hazard.kind, swept, saved, gust });
+  run.events.push({ type: 'impact', kind: hazard.kind, node: hazard.impactNode, swept, saved, gust });
 }
 
 // Rolls the fog outcome for the final stretch; returns the Deadline cost.

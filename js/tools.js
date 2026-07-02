@@ -38,3 +38,29 @@ export function applyRetransmit(run, fragment) {
   fragment.status = 'returning'; // catches up at the next node (any node, incl. the dock)
   run.events.push({ type: 'retransmit', fragment: fragment.id });
 }
+
+// Checksum: scans the whole party. Offered only while something scrambled is
+// still hidden — the impact announces THAT, the Checksum finds WHICH.
+export function checksumLegal(run) {
+  return canAfford(run, 'checksum') &&
+    run.fragments.some((f) => f.status === 'with-party' && f.corrupted && !f.revealed);
+}
+
+export function applyChecksum(run) {
+  run.bandwidth -= TOOLS.checksum.bw;
+  const found = run.fragments.filter((f) => f.status === 'with-party' && f.corrupted);
+  for (const f of found) f.revealed = true;
+  run.events.push({ type: 'checksum', found: found.map((f) => f.id) });
+}
+
+// Repair: fixes one fragment the Checksum has revealed.
+export function repairLegal(run, fragment) {
+  return canAfford(run, 'repair') && fragment.corrupted && fragment.revealed;
+}
+
+export function applyRepair(run, fragment) {
+  run.bandwidth -= TOOLS.repair.bw;
+  fragment.corrupted = false;
+  fragment.revealed = false;
+  run.events.push({ type: 'repair', fragment: fragment.id });
+}

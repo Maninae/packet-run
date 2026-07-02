@@ -34,6 +34,34 @@ export function drizzleIcon(size = 18) {
   </svg>`;
 }
 
+export function staticIcon(size = 18) {
+  return `<svg width="${size}" height="${size}" viewBox="0 0 20 20" aria-hidden="true">
+    <path d="M4 10 l2.5-3 2 2 2.5-4 2 3 3-2" fill="none" stroke="var(--danger)"
+          stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M3.5 14 l3-2 2 1.5 3-3 2.5 2 2.5-1.5" fill="none" stroke="var(--danger)"
+          stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" opacity="0.6"/>
+    <circle cx="5" cy="6" r="1" fill="var(--danger)"/>
+    <circle cx="15.5" cy="16" r="1" fill="var(--danger)" opacity="0.7"/>
+  </svg>`;
+}
+
+export function checksumIcon(size = 20, color = 'var(--safe)') {
+  return `<svg width="${size}" height="${size}" viewBox="0 0 20 20" aria-hidden="true">
+    <circle cx="8.5" cy="8.5" r="5.5" fill="none" stroke="${color}" stroke-width="2"/>
+    <path d="M13 13 L17.5 17.5" stroke="${color}" stroke-width="2" stroke-linecap="round"/>
+    <path d="M6 8.5 l1.8 1.8 3-3.4" fill="none" stroke="${color}" stroke-width="1.8"
+          stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>`;
+}
+
+export function repairIcon(size = 20, color = 'var(--pip)') {
+  return `<svg width="${size}" height="${size}" viewBox="0 0 20 20" aria-hidden="true">
+    <path d="M12.5 3.5 a4.5 4.5 0 0 0-5.2 6.2 L3 14 a1.8 1.8 0 0 0 2.5 2.5 l4.3-4.3
+             a4.5 4.5 0 0 0 6.2-5.2 l-2.8 2.8 -2.5-0.7 -0.7-2.5 z"
+          fill="none" stroke="${color}" stroke-width="1.9" stroke-linejoin="round"/>
+  </svg>`;
+}
+
 export function copyIcon(size = 12, color = 'currentColor') {
   return `<svg width="${size}" height="${size}" viewBox="0 0 14 14" aria-hidden="true">
     <rect x="1.5" y="4" width="8" height="8.5" rx="2" fill="none" stroke="${color}" stroke-width="1.6"/>

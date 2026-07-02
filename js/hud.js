@@ -3,7 +3,8 @@
 
 import { RUN } from './config.js';
 import {
-  boltIcon, clockIcon, copyIcon, retransmitIcon, stormIcon, drizzleIcon, speakerIcon,
+  boltIcon, clockIcon, copyIcon, retransmitIcon, stormIcon, drizzleIcon,
+  staticIcon, checksumIcon, repairIcon, speakerIcon,
 } from './icons.js';
 import { isMuted, toggleMute } from './sound.js';
 
@@ -24,10 +25,13 @@ export function renderMeters(run) {
 const PROMPT_ICONS = {
   storm: () => stormIcon(22),
   drizzle: () => drizzleIcon(22),
+  static: () => staticIcon(22),
   bolt: () => boltIcon(22),
   clock: () => clockIcon(22),
   copy: () => copyIcon(22, 'var(--copy)'),
   retransmit: () => retransmitIcon(22),
+  checksum: () => checksumIcon(22),
+  repair: () => repairIcon(22),
 };
 
 export function setPrompt(icon, html) {
@@ -44,25 +48,42 @@ export function flashPrompt(icon, html) {
   p.classList.add('flash');
 }
 
-// Belt: Duplicate + Duplicate targets / Retransmit / Onward. Disabled state
-// comes from the engine's legal actions (unaffordable = greyed, build card #11).
-export function renderBelt({ legal, armed, canGo, onArm, onGo }) {
-  const canDup = legal.some((a) => a.type === 'duplicate');
-  const canRetx = legal.some((a) => a.type === 'retransmit');
-  $('#belt').innerHTML = `
-    <button class="tool-btn ${armed === 'duplicate' ? 'armed' : ''}" id="tool-duplicate"
-      ${canDup ? '' : 'disabled'}>
-      ${copyIcon(20, 'var(--copy)')}<span>Duplicate</span>
-      <span class="cost"><span>${boltIcon(11)}3</span></span>
-    </button>
-    <button class="tool-btn ${armed === 'retransmit' ? 'armed' : ''}" id="tool-retransmit"
-      ${canRetx ? '' : 'disabled'}>
-      ${retransmitIcon(20)}<span>Retransmit</span>
-      <span class="cost"><span>${boltIcon(11)}2</span><span>${clockIcon(11)}1</span></span>
-    </button>
-    <button class="go-btn" id="go" ${canGo ? '' : 'disabled'}>Onward</button>`;
-  $('#tool-duplicate').addEventListener('click', () => onArm('duplicate'));
-  $('#tool-retransmit').addEventListener('click', () => onArm('retransmit'));
+// The belt is icon-first (design/06): icon + cost badges; the tool's name and
+// tooltip land in the prompt when armed. Disabled state comes from the
+// engine's legal actions (unaffordable/no-target = greyed, build card #11).
+const BELT_TOOLS = {
+  duplicate: {
+    label: 'Duplicate', icon: () => copyIcon(22, 'var(--copy)'),
+    costs: () => `<span>${boltIcon(11)}3</span>`,
+  },
+  retransmit: {
+    label: 'Retransmit', icon: () => retransmitIcon(22),
+    costs: () => `<span>${boltIcon(11)}2</span><span>${clockIcon(11)}1</span>`,
+  },
+  checksum: {
+    label: 'Checksum', icon: () => checksumIcon(22),
+    costs: () => `<span>${boltIcon(11)}1</span>`,
+  },
+  repair: {
+    label: 'Repair', icon: () => repairIcon(22),
+    costs: () => `<span>${boltIcon(11)}2</span>`,
+  },
+};
+
+export function renderBelt({ tools, legal, armed, canGo, onArm, onGo }) {
+  const buttons = tools.map((name) => {
+    const tool = BELT_TOOLS[name];
+    const enabled = legal.some((a) => a.type === name);
+    return `<button class="tool-btn ${armed === name ? 'armed' : ''}" id="tool-${name}"
+      aria-label="${tool.label}" title="${tool.label}" ${enabled ? '' : 'disabled'}>
+      ${tool.icon()}<span class="cost">${tool.costs()}</span>
+    </button>`;
+  }).join('');
+  $('#belt').innerHTML =
+    `${buttons}<button class="go-btn" id="go" ${canGo ? '' : 'disabled'}>Onward</button>`;
+  for (const name of tools) {
+    $(`#tool-${name}`).addEventListener('click', () => onArm(name));
+  }
   $('#go').addEventListener('click', onGo);
 }
 

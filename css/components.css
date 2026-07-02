@@ -171,6 +171,24 @@
   transform: translateY(-2px);
 }
 
+/* revealed corruption: the fragment visibly glitches (design/08) */
+.fragment-chip.glitched {
+  border-color: var(--fragment-corrupt);
+  color: var(--fragment-corrupt);
+  background: repeating-linear-gradient(
+    -45deg,
+    color-mix(in srgb, var(--fragment-corrupt) 22%, var(--surface)) 0 3px,
+    var(--surface) 3px 6px
+  );
+  animation: glitch-jitter 0.5s steps(2) infinite;
+}
+
+@keyframes glitch-jitter {
+  0% { transform: translate(0.5px, -0.5px); }
+  50% { transform: translate(-0.5px, 0.5px); }
+  100% { transform: translate(0.5px, 0); }
+}
+
 .fragment-chip .copy-badge {
   position: absolute;
   top: -7px;
@@ -200,8 +218,8 @@
 }
 
 .tool-btn {
-  min-width: 76px;
-  min-height: 60px;
+  min-width: 56px;
+  min-height: 56px;
   border: var(--stroke-w) solid var(--wire-lit);
   border-radius: var(--radius);
   background: var(--surface);
@@ -233,8 +251,8 @@
 }
 
 .go-btn {
-  min-width: 108px;
-  min-height: 60px;
+  min-width: 96px;
+  min-height: 56px;
   border: none;
   border-radius: var(--radius);
   background: var(--road-pick);

@@ -13,6 +13,8 @@ export const RUN = {
 export const TOOLS = {
   retransmit: { bw: 2, deadline: 1 }, // recall one lost fragment; catches up next node
   duplicate: { bw: 3, deadline: 0 },  // preemptive, targeted; one copy per fragment; no copying copies
+  checksum: { bw: 1, deadline: 0 },   // scan the party: reveals which fragment is scrambled
+  repair: { bw: 2, deadline: 0 },     // fix one REVEALED scrambled fragment
 };
 
 // Map schema (v2, Phase 1b): a run map = stacked SEGMENTS, each a 2-road

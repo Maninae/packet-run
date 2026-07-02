@@ -25,6 +25,10 @@ const TEMPLATES = [
     short: { hops: 3, hazard: 'storm', threat: 2, pickup: true },
     long: { hops: 4, hazard: 'drizzle', threat: 1 },
   },
+  { // D — the Static's domain: hidden corruption quick vs mild long road
+    short: { hops: 2, hazard: 'static' },
+    long: { hops: 3, hazard: 'drizzle', threat: 1 },
+  },
 ];
 
 function shuffled(rng, array) {
@@ -41,12 +45,16 @@ function buildRoad(rng, spec, { segment, key, from, to }) {
   const nodes = [from, ...inner, to];
   let hazard = null;
   if (spec.hazard) {
-    const threatens = shuffled(rng, Array.from({ length: RUN.partySize }, (_, i) => i + 1))
-      .slice(0, spec.threat)
-      .sort((a, b) => a - b);
     // impact sits mid-road: hop 1 on 2-hop roads, hop 2 otherwise
     const impactNode = nodes[Math.min(2, spec.hops - 1)];
-    hazard = { kind: spec.hazard, impactNode, threatens };
+    if (spec.hazard === 'static') {
+      hazard = { kind: 'static', impactNode, corrupts: 1 };
+    } else {
+      const threatens = shuffled(rng, Array.from({ length: RUN.partySize }, (_, i) => i + 1))
+        .slice(0, spec.threat)
+        .sort((a, b) => a - b);
+      hazard = { kind: spec.hazard, impactNode, threatens };
+    }
   }
   const bwPickup = spec.pickup ? { node: nodes.at(-2), amount: 2 } : null;
   return { nodes, hazard, bwPickup };

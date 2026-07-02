@@ -9,6 +9,7 @@ import { TOOLS } from './config.js';
 const CONCEPT_LINES = {
   'packet-loss': 'Real senders insure important data with redundancy.',
   latency: 'On the real internet, data that arrives too late gets dropped.',
+  corruption: 'Real receivers checksum every packet and toss the scrambled ones.',
 };
 
 // kid-facing "what might have saved you" lines (≤2 short sentences each)
@@ -25,9 +26,12 @@ const TOOL_LINES = {
     'The long road spends 7 ticks before anything goes wrong. Short roads leave slack.',
   'spend-fewer-ticks':
     'Every Retransmit costs a tick. Spend them where they count.',
+  'checksum-then-repair':
+    'Checksum finds the scrambled fragment — Repair fixes it before the dock.',
 };
 
 function suggestFor(run) {
+  if (run.failure.reason === 'corrupted-payload') return 'checksum-then-repair';
   if (run.failure.reason === 'missing-fragments') {
     const usedDuplicate = run.events.some((e) => e.type === 'duplicate');
     if (!usedDuplicate) return 'duplicate-before-storm';
@@ -63,9 +67,16 @@ export function deriveAutopsy(run) {
       suggestion: null, toolLine: null, conceptLine: null };
   }
 
-  const killerNode = run.failure.reason === 'missing-fragments'
-    ? (run.lastImpact ? `${run.lastImpact.kind}-${run.lastImpact.impactNode}` : 'unknown')
-    : (hops.at(-1)?.to ?? run.node);
+  let killerNode;
+  if (run.failure.reason === 'missing-fragments') {
+    killerNode = run.lastImpact
+      ? `${run.lastImpact.kind}-${run.lastImpact.impactNode}` : 'unknown';
+  } else if (run.failure.reason === 'corrupted-payload') {
+    const staticHit = run.events.findLast((e) => e.type === 'impact' && e.kind === 'static');
+    killerNode = staticHit ? `static-${staticHit.node}` : 'unknown';
+  } else {
+    killerNode = hops.at(-1)?.to ?? run.node;
+  }
   const suggestion = suggestFor(run);
   return {
     ...base,

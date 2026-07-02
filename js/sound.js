@@ -74,6 +74,14 @@ export const sfx = {
     voice({ freq: 1318, dur: 0.3, at: 0.09, gain: 0.25 });
   },
   mud: () => voice({ type: 'triangle', freq: 180, to: 120, dur: 0.35, gain: 0.3 }), // fog cost
+  static: () => {                                                            // the Static strikes
+    noise({ dur: 0.45, from: 2400, to: 400, gain: 0.22 });
+    voice({ type: 'square', freq: 110, to: 70, dur: 0.4, gain: 0.14 });
+  },
+  scan: () => {                                                              // checksum sweep
+    voice({ type: 'sine', freq: 740, dur: 0.09, gain: 0.22 });
+    voice({ type: 'sine', freq: 990, dur: 0.12, at: 0.11, gain: 0.22 });
+  },
   slot: (i) => {                                                             // dock fill, rising
     const scale = [523, 587, 659, 784, 880];
     voice({ type: 'triangle', freq: scale[i % 5], dur: 0.22, gain: 0.35 });

@@ -22,7 +22,7 @@ function play(seed, { pickRoad, insure }) {
       const road = pickRoad(run);
       act(run, { type: 'choose-road', road });
       const hazard = segmentRoads(run)[road].hazard;
-      if (hazard && insure(run, hazard)) {
+      if (hazard?.threatens && insure(run, hazard)) {
         for (const id of hazard.threatens) {
           if (legalActions(run).some((a) => a.type === 'duplicate' && a.fragment === id)) {
             act(run, { type: 'duplicate', fragment: id });
@@ -31,8 +31,10 @@ function play(seed, { pickRoad, insure }) {
       }
       continue;
     }
-    const retx = legalActions(run).find((a) => a.type === 'retransmit');
-    act(run, retx ?? { type: 'onward' });
+    // the response beat: fix what's broken before moving (all temperaments)
+    const fix = legalActions(run).find((a) =>
+      a.type === 'retransmit' || a.type === 'checksum' || a.type === 'repair');
+    act(run, fix ?? { type: 'onward' });
   }
   return run;
 }
@@ -52,8 +54,7 @@ const POLICIES = {
   wanderer: {
     pickRoad: (run) => {
       const { short, long } = segmentRoads(run);
-      const threat = (r) => r.hazard?.threatens.length ?? 0;
-      return threat(long) < threat(short) ? 'long' : 'short';
+      return threatWeight(long) < threatWeight(short) ? 'long' : 'short';
     },
     insure: () => false,
   },
@@ -63,11 +64,17 @@ const POLICIES = {
       const { long } = segmentRoads(run);
       const hopsLeft = (run.map.segments.length - run.segment) * 4;
       if (run.deadline < hopsLeft) return 'short';
-      return (long.hazard?.threatens.length ?? 0) <= 1 && long.bwPickup ? 'long' : 'short';
+      return threatWeight(long) <= 1 && long.bwPickup ? 'long' : 'short';
     },
-    insure: (run, hazard) => hazard.threatens.length >= 2 && run.bandwidth >= 8,
+    insure: (run, hazard) => (hazard.threatens?.length ?? 0) >= 2 && run.bandwidth >= 8,
   },
 };
+
+// a static zone weighs like one threatened fragment (~3 BW to answer)
+function threatWeight(road) {
+  if (!road.hazard) return 0;
+  return road.hazard.threatens?.length ?? 1;
+}
 
 const results = {};
 for (const [name, policy] of Object.entries(POLICIES)) {

@@ -12,7 +12,10 @@
 
 import { RUN, MAP_1A } from './config.js';
 import { seededRng } from './rng.js';
-import { duplicateLegal, applyDuplicate, retransmitLegal, applyRetransmit } from './tools.js';
+import {
+  duplicateLegal, applyDuplicate, retransmitLegal, applyRetransmit,
+  checksumLegal, applyChecksum, repairLegal, applyRepair,
+} from './tools.js';
 import { resolveImpact, rollFog } from './encounters.js';
 
 export function createRun({ seed, rng, mods = null, map = MAP_1A }) {
@@ -27,6 +30,8 @@ export function createRun({ seed, rng, mods = null, map = MAP_1A }) {
       id: i + 1,
       status: 'with-party', // 'with-party' | 'lost' | 'returning'
       hasCopy: false,
+      corrupted: false,     // the Static's work — hidden until…
+      revealed: false,      // …Checksum finds it (then Repair can fix it)
     })),
     phase: 'junction',      // 'junction' | 'node' | 'done'
     segment: 0,             // index into map.segments
@@ -67,6 +72,10 @@ export function legalActions(run) {
   for (const f of run.fragments) {
     if (retransmitLegal(run, f)) actions.push({ type: 'retransmit', fragment: f.id });
   }
+  if (checksumLegal(run)) actions.push({ type: 'checksum' });
+  for (const f of run.fragments) {
+    if (repairLegal(run, f)) actions.push({ type: 'repair', fragment: f.id });
+  }
   actions.push({ type: 'onward' });
   return actions;
 }
@@ -95,6 +104,11 @@ function arriveAtDock(run) {
   const needed = Math.ceil(RUN.partySize * RUN.renderThresholdRatio);
   if (delivered < needed) {
     fail(run, 'missing-fragments', 'packet-loss');
+    return;
+  }
+  // receiver-side check: real docks checksum on arrival — and it's too late
+  if (run.fragments.some((f) => f.status === 'with-party' && f.corrupted)) {
+    fail(run, 'corrupted-payload', 'corruption');
     return;
   }
   const { threeStar, twoStar } = run.map.stars;
@@ -175,6 +189,12 @@ export function act(run, action) {
       break;
     case 'retransmit':
       applyRetransmit(run, run.fragments.find((f) => f.id === action.fragment));
+      break;
+    case 'checksum':
+      applyChecksum(run);
+      break;
+    case 'repair':
+      applyRepair(run, run.fragments.find((f) => f.id === action.fragment));
       break;
     case 'onward':
       onward(run);

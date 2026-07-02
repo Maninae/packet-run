@@ -18,6 +18,7 @@
   --fragment: #6ee7ff;       /* fragment bodies */
   --fragment-glow: rgba(110, 231, 255, 0.4);
   --fragment-lost: #3a5a66;
+  --fragment-corrupt: #ff5d8f; /* scrambled bits — glitch pink */
   --copy: #b58cff;           /* duplicate = translucent twin, violet */
 
   --wire: #2e4438;

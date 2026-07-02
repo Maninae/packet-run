@@ -37,9 +37,20 @@ window.packetRun = {
 };
 
 const TOOLTIPS = {
-  duplicate: 'Send a spare copy of one fragment, just in case. The dock only keeps one of each number.',
-  retransmit: 'A fragment got lost? Ask home to send it again. Costs 2 energy and a tick of the clock.',
+  duplicate: '<strong>Duplicate</strong>: send a spare copy of one fragment, just in case. The dock only keeps one of each number.',
+  retransmit: '<strong>Retransmit</strong>: a fragment got lost? Ask home to send it again. Costs 2 energy and a tick of the clock.',
+  repair: '<strong>Repair</strong>: fix the scrambled fragment the Checksum found. Costs 2 energy.',
 };
+
+// Checksum enters the belt only on maps the Static haunts (vocabulary gating:
+// the tutorial region keeps its two-tool simplicity — design/03 curriculum)
+function beltToolsFor(map) {
+  const hasStatic = map.segments.some((s) =>
+    Object.values(s.roads).some((r) => r.hazard?.kind === 'static'));
+  return hasStatic
+    ? ['duplicate', 'retransmit', 'checksum', 'repair']
+    : ['duplicate', 'retransmit'];
+}
 
 const names = (ids) => ids.map((n) => `<strong>#${n}</strong>`).join(' and ');
 
@@ -52,17 +63,22 @@ function describeRoad(key) {
   const road = segmentRoads(run)[key];
   const hops = road.nodes.length - 1;
   if (!road.hazard) return `${hops} hops and quiet — the long way around`;
+  if (road.hazard.kind === 'static') {
+    return `${hops} hops, static that scrambles one fragment`;
+  }
   return `${hops} hops, a ${road.hazard.kind} eyeing ${names(road.hazard.threatens)}`;
 }
 
 function scaryRoad() {
   const roads = segmentRoads(run);
-  const threat = (k) => roads[k].hazard?.threatens.length ?? 0;
+  const threat = (k) => roads[k].hazard
+    ? (roads[k].hazard.threatens?.length ?? 1) : 0;
   return threat('short') >= threat('long') ? 'short' : 'long';
 }
 
 function iconFor(key) {
-  return hazardOf(key)?.kind === 'drizzle' ? 'drizzle' : 'storm';
+  const kind = hazardOf(key)?.kind;
+  return kind === 'drizzle' ? 'drizzle' : kind === 'static' ? 'static' : 'storm';
 }
 
 function computePrompt() {
@@ -75,6 +91,9 @@ function computePrompt() {
     }
     const scary = scaryRoad();
     const hazard = hazardOf(scary);
+    if (hazard.kind === 'static') {
+      return ['static', `The Static haunts the ${scary} road — it scrambles bits. Tap a road to look closer.`];
+    }
     return [iconFor(scary),
       `A ${hazard.kind} on the ${scary} road is eyeing ${names(hazard.threatens)}. Tap a road to look closer.`];
   }
@@ -84,12 +103,23 @@ function computePrompt() {
   const hazard = def.hazard;
   const lost = run.fragments.filter((f) => f.status === 'lost').map((f) => f.id);
   if (!run.impactResolved && hazard) {
+    if (hazard.kind === 'static') {
+      return ['static', `The Static is ahead — it scrambles one fragment's bits. Copies won't help; Checksum will, after.`];
+    }
     const approach = def.nodes[def.nodes.indexOf(hazard.impactNode) - 1];
     const icon = hazard.kind === 'storm' ? 'storm' : 'drizzle';
     if (run.node === approach) {
       return [icon, `The ${hazard.kind} is right ahead — it's eyeing ${names(hazard.threatens)}. Last chance for copies.`];
     }
     return [icon, `The ${hazard.kind} waits ahead, eyeing ${names(hazard.threatens)}. Duplicate now, or ride.`];
+  }
+  const hidden = run.fragments.some((f) => f.corrupted && !f.revealed);
+  if (hidden) {
+    return ['checksum', `Something's scrambled — you can't tell which. Checksum finds it for 1 energy.`];
+  }
+  const glitched = run.fragments.filter((f) => f.corrupted && f.revealed).map((f) => f.id);
+  if (glitched.length) {
+    return ['repair', `${names(glitched)} is scrambled. Repair fixes it — the dock rejects garbled fragments.`];
   }
   if (lost.length) {
     return ['retransmit', `Still missing ${names(lost)}. Retransmit calls them back — the clock is ticking.`];
@@ -158,6 +188,7 @@ function renderAll() {
     onChipTap,
   });
   renderBelt({
+    tools: beltToolsFor(run.map),
     legal: busy ? [] : legalActions(run),
     armed,
     canGo: !busy && (run.phase === 'node' || (run.phase === 'junction' && pendingRoad !== null)),
@@ -182,6 +213,14 @@ function onRoadTap(road) {
 
 function onArm(tool) {
   if (busy) return;
+  if (tool === 'checksum') {
+    // a scan, not a targeted verb: fires on the whole party immediately
+    if (legalActions(run).some((a) => a.type === 'checksum')) {
+      armed = null;
+      dispatch({ type: 'checksum' });
+    }
+    return;
+  }
   armed = armed === tool ? null : tool;
   renderAll();
 }
@@ -234,6 +273,17 @@ async function animateBatch(batch) {
   for (const e of batch) {
     switch (e.type) {
       case 'impact': {
+        if (e.kind === 'static') {
+          sfx.static();
+          const stage = $('#stage');
+          stage.classList.remove('shake');
+          void stage.offsetWidth;
+          stage.classList.add('shake');
+          flashPrompt('static',
+            'Kzzt! The Static scrambled one of your fragments — you can\'t tell which.');
+          await delay(1000);
+          break;
+        }
         if (e.swept.length) {
           sfx.sweep();
           const stage = $('#stage');
@@ -261,6 +311,16 @@ async function animateBatch(batch) {
       case 'rejoin':
         sfx.chime();
         flashPrompt('retransmit', `${names(e.fragments)} caught back up!`);
+        await delay(700);
+        break;
+      case 'checksum':
+        sfx.scan();
+        flashPrompt('checksum', `Found it — ${names(e.found)} is scrambled! Repair can fix it.`);
+        await delay(900);
+        break;
+      case 'repair':
+        sfx.chime();
+        flashPrompt('repair', `<strong>#${e.fragment}</strong> is clean again.`);
         await delay(700);
         break;
       case 'pickup':
