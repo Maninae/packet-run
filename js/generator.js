@@ -15,7 +15,7 @@ import { RUN, GEN } from './config.js';
 const TEMPLATES = [
   { // A — the 1a read: big telegraphed storm vs long drizzle
     short: { hops: 2, hazard: 'storm', threat: 2 },
-    long: { hops: 4, hazard: 'drizzle', threat: 1 },
+    long: { hops: 3, hazard: 'drizzle', threat: 1 },
   },
   { // B — tempo: light risk quick vs clear-but-longer with a relay
     short: { hops: 2, hazard: 'drizzle', threat: 1 },
@@ -54,9 +54,16 @@ function buildRoad(rng, spec, { segment, key, from, to }) {
 
 export function generateMap(seed, { segments = GEN.segments } = {}) {
   const rng = seededRng(`${seed}:map`);
+  // pacing + economy constraint: at most 2 heavy (storm) segments per map —
+  // a full-insurance temperament must stay affordable at these budgets
+  const picks = Array.from({ length: segments },
+    () => Math.floor(rng() * TEMPLATES.length));
+  const stormy = picks.filter((p) => TEMPLATES[p].short.hazard === 'storm').length;
+  if (stormy === segments) picks[1] = 1; // swap the middle for the tempo segment
+
   const built = [];
   for (let i = 0; i < segments; i++) {
-    const template = TEMPLATES[Math.floor(rng() * TEMPLATES.length)];
+    const template = TEMPLATES[picks[i]];
     const from = i === 0 ? 'src' : `j${i}`;
     const to = i === segments - 1 ? 'dock' : `j${i + 1}`;
     built.push({

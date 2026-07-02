@@ -51,8 +51,8 @@ export const MAP_1A = {
 export const GEN = {
   segments: 3,
   startBandwidth: 16,
-  startDeadline: 15,
-  stars: { threeStar: 13, twoStar: 11 },
+  startDeadline: 13, // scarcity is the point: recovery must COST something vs insurance
+  stars: { threeStar: 13, twoStar: 10 },
 };
 
 export const HAZARDS = {
