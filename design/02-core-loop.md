@@ -95,9 +95,10 @@ Multi-segment runs (map schema v2 in `js/config.js`; generator in `js/generator.
 
 | Value | v0 | Note |
 |---|---|---|
-| Segments per run | 3 | template stitching from 3 archetypes (A storm-read / B tempo / C paid-risk); ≤2 storm segments per map so full insurance stays affordable |
+| Segments per run | 3 | template stitching from 6 archetypes (A storm-read / B tempo / C paid-risk / D Static / E rapids / F bottleneck); ≤2 storm segments per map (full insurance stays affordable); never opens with the Static (a reward beat precedes corruption); ≤1 jammed pipe per run (cognitive-load gating) |
 | Starting Bandwidth | 16 | pickups +2 ride template B/C roads; ≥1 guaranteed per map |
-| Starting Deadline | 13 | all-short ≈ 7 hops, all-long ≈ 10 — recovery must *cost* |
+| Starting Deadline | 14 | recovery must *cost* — 13 starved the patient temperament once beat-priced pipe roads joined the pool |
+| Congestion pipe | capacity 2–3 hidden, rates 1→2→4, success doubles / overshoot halves | slow start + AIMD by feel; nothing lost — beats are the price; the pipe rides the LONG road slot (safe-but-slow personality) |
 | Delivery stars | ★★★ ≥14 · ★★ ≥10 | recovery lines can reach ★★/★★★; full insurance must not coin-flip into ★★★ (was ≥13 until 1b review measured the guardian temperament there 46% of the time) |
 
 **Verified temperaments** (tests/unit/economy-gen.test.js, 1500 runs each — the executable EV-check): guardian (insure everything) 95% wins, always ★; daredevil (short + recover) 72%; wanderer (mild roads + recover) 76%, mostly ★★★ — the jackpot line; strategist (adaptive) ~100%, mid pay. No temperament dominates; both failure modes (loss, lag) occur in the wild.

@@ -5,7 +5,7 @@ import { RUN } from './config.js';
 import {
   boltIcon, clockIcon, copyIcon, retransmitIcon, stormIcon, drizzleIcon,
   staticIcon, checksumIcon, repairIcon, rerouteIcon, bufferIcon, rapidsIcon,
-  skipIcon, speakerIcon,
+  jamIcon, skipIcon, speakerIcon,
 } from './icons.js';
 import { isMuted, toggleMute } from './sound.js';
 
@@ -27,6 +27,7 @@ const PROMPT_ICONS = {
   storm: () => stormIcon(22),
   drizzle: () => drizzleIcon(22),
   static: () => staticIcon(22),
+  jam: () => jamIcon(22),
   bolt: () => boltIcon(22),
   clock: () => clockIcon(22),
   copy: () => copyIcon(22, 'var(--copy)'),
@@ -86,7 +87,22 @@ export const BELT_TOOLS = {
 
 export { rapidsIcon }; // re-exported for the prompt icon map
 
-export function renderBelt({ tools, legal, armed, canGo, goLabel = 'Onward', onArm, onGo, onWait }) {
+export function renderBelt({ tools, legal, armed, canGo, goLabel = 'Onward', onArm, onGo, onWait, onSend }) {
+  const sendRates = legal.filter((a) => a.type === 'send').map((a) => a.rate);
+  if (sendRates.length) {
+    // the bottleneck owns the belt: rate buttons are the whole decision
+    const sendButtons = sendRates.map((rate) =>
+      `<button class="go-btn send-btn" data-rate="${rate}">Send ${rate}</button>`).join('');
+    document.querySelector('#belt').innerHTML = sendButtons;
+    for (const btn of document.querySelectorAll('#belt .send-btn')) {
+      btn.addEventListener('click', () => onSend(Number(btn.dataset.rate)));
+    }
+    return;
+  }
+  renderBeltNormal({ tools, legal, armed, canGo, goLabel, onArm, onGo, onWait });
+}
+
+function renderBeltNormal({ tools, legal, armed, canGo, goLabel, onArm, onGo, onWait }) {
   const buttons = tools.map((name) => {
     const tool = BELT_TOOLS[name];
     if (tool.passive) {

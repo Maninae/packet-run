@@ -10,7 +10,7 @@
 //   resolveImpact: gustRoll, then gustPick (only if the gust fired)
 //   rollFog: fogRoll
 
-import { HAZARDS, FOG, PAYLOADS } from './config.js';
+import { HAZARDS, FOG, PAYLOADS, CONGESTION } from './config.js';
 
 function sweep(fragment) {
   if (fragment.hasCopy) {
@@ -47,6 +47,19 @@ export function resolveImpact(run, hazard, rng) {
     run.impactResolved = true;
     run.waitsUsed = 0;
     run.events.push({ type: 'impact', kind: 'rapids', node: hazard.impactNode, stragglers });
+    return;
+  }
+  // congestion: the bottleneck window opens — capacity rolls hidden (the
+  // event never says it; overshooting is how you find out). rng: capacityRoll.
+  if (hazard.kind === 'congestion') {
+    const [lo, hi] = CONGESTION.capacities;
+    run.congestion = {
+      capacity: lo + Math.floor(rng() * (hi - lo + 1)),
+      maxRate: CONGESTION.startMax,
+      crossed: 0,
+    };
+    run.impactResolved = true;
+    run.events.push({ type: 'impact', kind: 'congestion', node: hazard.impactNode });
     return;
   }
   if (hazard.kind === 'static') {

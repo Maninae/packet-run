@@ -10,7 +10,7 @@
 // rng is injectable for tests/simulation; defaults to the seeded PRNG.
 // Consumption order is documented in encounters.js — keep it stable.
 
-import { RUN, MAP_1A, BELT, TOOLS, PAYLOADS } from './config.js';
+import { RUN, MAP_1A, BELT, TOOLS, PAYLOADS, CONGESTION } from './config.js';
 import { seededRng } from './rng.js';
 import {
   duplicateLegal, applyDuplicate, retransmitLegal, applyRetransmit,
@@ -46,6 +46,7 @@ export function createRun({ seed, rng, mods = null, map = MAP_1A, payload = 'tcp
     stepIndex: 0,           // index into the chosen road's node list
     impactResolved: false,  // per segment — resets at each junction
     waitsUsed: 0,           // per rapids window (max 2 — design/04)
+    congestion: null,       // open bottleneck window { capacity, maxRate, crossed }
     belt: [...PAYLOADS[payload].belt], // actives AND passives share the slots (design/03)
     passives: new Set(),    // extra always-on machinery (test/meta injection)
     rewardOptions: null,    // pick-1-of-3, offered at mid-map junctions
@@ -89,6 +90,13 @@ export function legalActions(run) {
       }
     });
     return actions;
+  }
+  // an open bottleneck locks everything but the send-rate choice — the
+  // puzzle IS the beat (design/04)
+  if (run.congestion) {
+    return CONGESTION.rates
+      .filter((rate) => rate <= run.congestion.maxRate)
+      .map((rate) => ({ type: 'send', rate }));
   }
   // tools stay available at junction beats too (mid-map junctions: rescue or
   // insure BEFORE committing to a road) — only movement needs a chosen road
@@ -238,6 +246,7 @@ function reroute(run) {
   run.road = null;
   run.impactResolved = false;
   run.waitsUsed = 0;
+  run.congestion = null; // a reissued party re-meets the jam fresh
   run.phase = 'junction';
 }
 
@@ -385,6 +394,34 @@ export function act(run, action) {
     case 'take-reward':
       takeReward(run, action);
       break;
+    case 'send': {
+      // one beat of pushing through the pipe: costs a tick; the pipe carries
+      // up to its capacity — success doubles the ceiling, overshoot halves it
+      run.deadline -= 1;
+      stutterBleed(run);
+      if (run.deadline < 0) {
+        fail(run, 'deadline', 'latency');
+        break;
+      }
+      const window = run.congestion;
+      const alive = run.fragments.filter((f) => f.status === 'with-party').length;
+      const sent = Math.min(action.rate, alive - window.crossed);
+      const across = Math.min(sent, window.capacity);
+      const bounced = sent - across;
+      window.crossed += across;
+      window.maxRate = bounced > 0
+        ? Math.max(1, Math.floor(action.rate / 2))
+        : Math.min(CONGESTION.rates.at(-1), window.maxRate * 2);
+      run.events.push({
+        type: 'send', rate: action.rate, crossed: across, bounced,
+        totalCrossed: window.crossed, deadline: run.deadline,
+      });
+      if (window.crossed >= alive) {
+        run.congestion = null;
+        run.events.push({ type: 'congestion-cleared' });
+      }
+      break;
+    }
     case 'lookup':
       // names → addresses: the address book answers, the clock ticks once
       run.deadline -= 1;

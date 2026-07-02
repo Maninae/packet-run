@@ -33,6 +33,11 @@ const TEMPLATES = [
     short: { hops: 2, hazard: 'rapids', straggles: 2 },
     long: { hops: 4, hazard: 'drizzle', threat: 1 },
   },
+  { // F — the bottleneck: risk a fragment quickly, or take the safe jam
+    // slowly (the pipe loses nothing — beats are its price)
+    short: { hops: 2, hazard: 'drizzle', threat: 1 },
+    long: { hops: 2, hazard: 'congestion' },
+  },
 ];
 
 function shuffled(rng, array) {
@@ -53,6 +58,8 @@ function buildRoad(rng, spec, { segment, key, from, to }) {
     const impactNode = nodes[Math.min(2, spec.hops - 1)];
     if (spec.hazard === 'static') {
       hazard = { kind: 'static', impactNode, corrupts: 1 };
+    } else if (spec.hazard === 'congestion') {
+      hazard = { kind: 'congestion', impactNode };
     } else if (spec.hazard === 'rapids') {
       hazard = { kind: 'rapids', impactNode, straggles: spec.straggles };
     } else {
@@ -78,6 +85,12 @@ export function generateMap(seed, { segments = GEN.segments } = {}) {
   // must precede any corruption zone
   while (TEMPLATES[picks[0]].short.hazard === 'static') {
     picks[0] = (picks[0] + 1) % TEMPLATES.length;
+  }
+  // one send-rate puzzle per run at most (cognitive-load gating, design/04;
+  // and stacked pipes would starve the clock)
+  let jams = 0;
+  for (let i = 0; i < picks.length; i++) {
+    if (TEMPLATES[picks[i]].long.hazard === 'congestion' && ++jams > 1) picks[i] = 1;
   }
 
   const built = [];

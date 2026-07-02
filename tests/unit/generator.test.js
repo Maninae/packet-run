@@ -25,7 +25,9 @@ test('map shape: 3 segments, every road priced, threats name real fragments', ()
     for (const [s, segment] of map.segments.entries()) {
       const { short, long } = segment.roads;
       assert.ok(short.nodes.length >= 3, 'short road has at least 2 hops');
-      assert.ok(long.nodes.length > short.nodes.length, 'long is longer than short');
+      assert.ok(long.nodes.length > short.nodes.length
+        || long.hazard?.kind === 'congestion',
+        'the long road is slower: more hops, or a jam priced in beats');
       // roads share start and end nodes (junction to junction)
       assert.equal(short.nodes[0], long.nodes[0]);
       assert.equal(short.nodes.at(-1), long.nodes.at(-1));
@@ -36,6 +38,8 @@ test('map shape: 3 segments, every road priced, threats name real fragments', ()
           assert.notEqual(road.hazard.impactNode, road.nodes[0]);
           if (road.hazard.kind === 'static') {
             assert.equal(road.hazard.corrupts, 1, 'static zones scramble one');
+          } else if (road.hazard.kind === 'congestion') {
+            assert.ok(road.hazard.impactNode, 'the jam sits on a node');
           } else if (road.hazard.kind === 'rapids') {
             assert.ok(road.hazard.straggles >= 1, 'rapids strand at least one');
           } else {
@@ -72,7 +76,10 @@ test('engine walks a generated map: junction per segment, tools reset each storm
     // duplicates are legal again before EACH segment's impact
     const canDup = legalActions(run).some((a) => a.type === 'duplicate');
     assert.ok(canDup || run.bandwidth < 3, `segment ${segment}: preemptive play available`);
-    while (run.phase === 'node') act(run, { type: 'onward' });
+    while (run.phase === 'node') {
+      const sends = legalActions(run).filter((a) => a.type === 'send');
+      act(run, sends.length ? sends.at(-1) : { type: 'onward' });
+    }
     if (run.phase === 'reward') {
       act(run, legalActions(run).find((a) => a.kind === 'bandwidth'));
     }
@@ -91,7 +98,8 @@ test('fog fires exactly once, at the end of the run', () => {
       } else if (run.phase === 'junction') {
         act(run, { type: 'choose-road', road: 'short' });
       } else {
-        act(run, { type: 'onward' });
+        const sends = legalActions(run).filter((a) => a.type === 'send');
+        act(run, sends.length ? sends.at(-1) : { type: 'onward' });
       }
     }
     const fogs = run.events.filter((e) => e.type === 'fog-reveal');

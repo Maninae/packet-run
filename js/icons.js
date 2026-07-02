@@ -34,6 +34,17 @@ export function drizzleIcon(size = 18) {
   </svg>`;
 }
 
+export function jamIcon(size = 18) {
+  return `<svg width="${size}" height="${size}" viewBox="0 0 20 20" aria-hidden="true">
+    <path d="M2 5 h5 q3 0 4 3 q1 3 4 3 h3" fill="none" stroke="var(--hazard)"
+          stroke-width="2" stroke-linecap="round"/>
+    <path d="M2 15 h5 q3 0 4-3 q1-3 4-3 h3" fill="none" stroke="var(--hazard)"
+          stroke-width="2" stroke-linecap="round"/>
+    <circle cx="4.5" cy="10" r="1.5" fill="var(--fragment)"/>
+    <circle cx="8" cy="10" r="1.5" fill="var(--fragment)" opacity="0.7"/>
+  </svg>`;
+}
+
 export function skipIcon(size = 20, color = 'var(--deadline)') {
   return `<svg width="${size}" height="${size}" viewBox="0 0 20 20" aria-hidden="true">
     <path d="M4 4 l7 6 -7 6 z" fill="${color}"/>

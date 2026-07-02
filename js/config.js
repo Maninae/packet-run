@@ -82,12 +82,22 @@ export const MAP_1A = {
 export const GEN = {
   segments: 3,
   startBandwidth: 16,
-  startDeadline: 13, // scarcity is the point: recovery must COST something vs insurance
+  startDeadline: 14, // scarce but survivable: 13 starved the patient temperament
+                     // once jammed pipes (beat-priced roads) joined the pool
   stars: { threeStar: 14, twoStar: 10 }, // 14: full-insurance play must not coin-flip into ★★★ (1b review)
 };
 
 export const HAZARDS = {
   gustChance: 0.15, // each hazard: one extra, unnamed fragment swept on impact (recoverable)
+};
+
+// The bottleneck (design/04): send-rate ladder, hidden pipe capacity.
+// Success doubles the ceiling, overshoot halves it — slow start/AIMD by feel.
+export const CONGESTION = {
+  rates: [1, 2, 4],
+  startMax: 1,        // slow start: the first beat probes with one
+  capacities: [2, 3], // seeded, hidden until you overshoot (floor 2: the pipe
+                      // road is safe-but-slow, never a 5-beat trap — sim-tuned)
 };
 
 export const FOG = {

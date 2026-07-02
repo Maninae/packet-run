@@ -33,6 +33,8 @@ function replayForScan(seed) {
     }
     if (run.phase === 'junction') { act(run, { type: 'choose-road', road: 'short' }); continue; }
     const legal = legalActions(run);
+    const sends = legal.filter((a) => a.type === 'send');
+    if (sends.length) { act(run, sends.at(-1)); continue; }
     const checksum = legal.find((a) => a.type === 'checksum');
     if (checksum) { act(run, checksum); continue; }
     const repair = legal.find((a) => a.type === 'repair');

@@ -29,6 +29,8 @@ function playCall(seed, style) {
       continue;
     }
     const legal = legalActions(run);
+    const sends = legal.filter((a) => a.type === 'send');
+    if (sends.length) { act(run, sends.at(-1)); continue; }
     if (style === 'tempo') {
       // the UDP-correct read: save what's cheap (a lag-1 frame costs one
       // tick), acknowledge everything unsavable instantly

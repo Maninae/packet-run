@@ -80,6 +80,9 @@ function describeRoad(key) {
   if (road.hazard.kind === 'rapids') {
     return `${hops} hops, rapids — ${road.hazard.straggles} fragments will fall behind`;
   }
+  if (road.hazard.kind === 'congestion') {
+    return `${hops} hops, a jammed pipe — it only fits a few at a time`;
+  }
   return `${hops} hops, a ${road.hazard.kind} eyeing ${names(road.hazard.threatens)}`;
 }
 
@@ -90,7 +93,9 @@ function scaryRoad() {
   return threat('short') >= threat('long') ? 'short' : 'long';
 }
 
-const HAZARD_PROMPT_ICONS = { drizzle: 'drizzle', static: 'static', rapids: 'rapids', storm: 'storm' };
+const HAZARD_PROMPT_ICONS = {
+  drizzle: 'drizzle', static: 'static', rapids: 'rapids', storm: 'storm', congestion: 'jam',
+};
 
 function iconFor(key) {
   return HAZARD_PROMPT_ICONS[hazardOf(key)?.kind] ?? 'storm';
@@ -115,12 +120,19 @@ function computePrompt() {
     if (hazard.kind === 'rapids') {
       return ['rapids', `Rapids on the ${scary} road — the party will scatter. Tap a road to look closer.`];
     }
+    if (hazard.kind === 'congestion') {
+      return ['jam', `A jammed pipe on the ${scary} road — slow, but nothing gets lost. Tap a road to look closer.`];
+    }
     return [iconFor(scary),
       `A ${hazard.kind} on the ${scary} road is eyeing ${names(hazard.threatens)}. Tap a road to look closer.`];
   }
   if (run.phase === 'done') return ['bolt', ''];
   if (run.phase === 'reward') {
     return ['bolt', 'A relay station! Pick one reward for your belt.'];
+  }
+  if (run.congestion) {
+    const alive = run.fragments.filter((f) => f.status === 'with-party').length;
+    return ['jam', `The pipe is jammed — <strong>${run.congestion.crossed}/${alive}</strong> across. How many do you push this beat?`];
   }
 
   const def = roadDef(run);
@@ -143,6 +155,9 @@ function computePrompt() {
     }
     if (hazard.kind === 'rapids') {
       return ['rapids', `Rapids ahead — some of the party will fall behind. Waiting costs time; leaving them costs more.`];
+    }
+    if (hazard.kind === 'congestion') {
+      return ['jam', `A jam ahead — the pipe only fits so many per beat. Start small and feel it out.`];
     }
     const approach = def.nodes[def.nodes.indexOf(hazard.impactNode) - 1];
     const icon = hazard.kind === 'storm' ? 'storm' : 'drizzle';
@@ -237,6 +252,7 @@ function renderAll() {
     goLabel: run.phase === 'dns' ? 'Look it up' : 'Onward',
     onArm, onGo,
     onWait: () => { if (!busy) dispatch({ type: 'wait' }); },
+    onSend: (rate) => { if (!busy) dispatch({ type: 'send', rate }); },
   });
   const [icon, html] = computePrompt();
   if (html) setPrompt(icon, html);
@@ -332,6 +348,12 @@ async function animateBatch(batch) {
   for (const e of batch) {
     switch (e.type) {
       case 'impact': {
+        if (e.kind === 'congestion') {
+          sfx.mud();
+          flashPrompt('jam', 'A jam! This pipe only fits so many per beat — start small.');
+          await delay(900);
+          break;
+        }
         if (e.kind === 'rapids') {
           sfx.splash();
           const list = e.stragglers
@@ -432,6 +454,22 @@ async function animateBatch(batch) {
         sfx.whoosh();
         flashPrompt('bolt', 'You told home to try a different road — the party reappears at the junction.');
         await delay(900);
+        break;
+      case 'send':
+        if (e.bounced > 0) {
+          sfx.sweep();
+          flashPrompt('jam', `Too many at once! <strong>${e.bounced}</strong> bounced back — ease off.`);
+          await delay(800);
+        } else {
+          sfx.bloop();
+          flashPrompt('jam', `<strong>${e.crossed}</strong> slipped through — the pipe holds. Push harder?`);
+          await delay(650);
+        }
+        break;
+      case 'congestion-cleared':
+        sfx.chime();
+        flashPrompt('jam', `Everyone's through — the pipe flows again!`);
+        await delay(800);
         break;
       case 'dns-lookup':
         sfx.chime();

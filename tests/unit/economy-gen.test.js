@@ -51,8 +51,11 @@ function play(seed, { pickRoad, insure, avoidStatic }) {
       continue;
     }
     // the response beat: fix what's broken before moving (all temperaments);
-    // at rapids, wait while the clock allows, else press on and retransmit
+    // at rapids, wait while the clock allows, else press on and retransmit;
+    // at a jammed pipe, probe-double (the AIMD play)
     const legal = legalActions(run);
+    const sends = legal.filter((a) => a.type === 'send');
+    if (sends.length) { act(run, sends.at(-1)); continue; }
     const waitAct = legal.find((a) => a.type === 'wait');
     if (waitAct && run.deadline > 4) { act(run, waitAct); continue; }
     const fix = legal.find((a) =>
@@ -95,10 +98,12 @@ const POLICIES = {
   },
 };
 
-// a static zone weighs a bit over one fragment: fixable only with the kit
+// a static zone weighs a bit over one fragment: fixable only with the kit;
+// a jam risks no fragments at all — just beats
 function threatWeight(road) {
   if (!road.hazard) return 0;
   if (road.hazard.kind === 'static') return 1.5;
+  if (road.hazard.kind === 'congestion') return 0.5;
   return road.hazard.threatens?.length ?? 1;
 }
 
