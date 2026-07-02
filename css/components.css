@@ -162,8 +162,11 @@
   box-shadow: 0 0 10px var(--hazard-soft);
 }
 
+/* targetable uses an OUTLINE so a threatened chip keeps its amber border —
+   the eye must still link "the storm names #2/#4" to "tap the right one" */
 .fragment-chip.targetable {
-  border-color: var(--road-pick);
+  outline: var(--stroke-w) solid var(--road-pick);
+  outline-offset: 2px;
   box-shadow: 0 0 12px rgba(123, 216, 143, 0.35);
   transform: translateY(-2px);
 }

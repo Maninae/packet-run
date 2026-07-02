@@ -58,6 +58,16 @@ export function showStart({ seed, onPlay }) {
   });
 }
 
+// Panic-copying wins but wastes energy — make the waste legible (fun-gate
+// review, Gate 2) without scolding: it's the star meter's tuition.
+function wasteLine(run) {
+  const tossed = run.events.find((e) => e.type === 'copies-discarded');
+  if (!tossed) return '';
+  const n = tossed.fragments.length;
+  return `<p class="stat-line">The dock tossed ${n} spare ${n === 1 ? 'copy' : 'copies'}
+    it never needed — energy you can keep next time.</p>`;
+}
+
 export function showWin({ run, onNewRun, onSameSeed }) {
   const slack = run.deadline;
   $('#overlay').innerHTML = `
@@ -70,6 +80,7 @@ export function showWin({ run, onNewRun, onSameSeed }) {
       ${grandmaSVG()}
       <p class="stat-line">All 5 fragments made it with ${slack} tick${slack === 1 ? '' : 's'}
         of bedtime to spare and ${run.bandwidth} energy left.</p>
+      ${wasteLine(run)}
       <div class="btn-row">
         <button class="primary-btn new-run">New run</button>
         <button class="ghost-btn same-seed">Same seed</button>

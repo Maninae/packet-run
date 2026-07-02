@@ -67,6 +67,10 @@ function computePrompt() {
   if (lost.length) {
     return ['retransmit', `Still missing ${names(lost)}. Retransmit calls them back — the clock is ticking.`];
   }
+  const returning = run.fragments.filter((f) => f.status === 'returning').map((f) => f.id);
+  if (returning.length) {
+    return ['retransmit', `${names(returning)} is catching up. Onward to Grandma's!`];
+  }
   if (run.fogCost !== null && run.fogCost > 0) {
     return ['clock', `Mud on the last stretch — it'll cost <strong>+${run.fogCost}</strong>. Onward!`];
   }

@@ -82,7 +82,7 @@ export function wireLegend() {
     const pop = document.createElement('div');
     pop.className = 'legend-pop';
     pop.innerHTML = [
-      [stormIcon(20), 'Storm — sweeps away the fragments it names'],
+      [stormIcon(20), 'Storm — the fragments it names are at risk'],
       [drizzleIcon(20), 'Drizzle — a lighter storm, one fragment at risk'],
       ['<svg width="20" height="8" viewBox="0 0 40 8">' +
         [0, 1, 2, 3].map((i) => `<circle cx="${5 + i * 10}" cy="4" r="3" fill="var(--ink-soft)"/>`).join('') +

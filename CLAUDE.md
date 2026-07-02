@@ -4,10 +4,10 @@ Browser roguelite RPG teaching networking foundations to ages 9–12. You play *
 
 ## Status & next step
 
-- **The design is CONVERGED** (2026-07-01, seven independent review rounds) and lives in [`design/`](design/README.md) — **read `design/README.md` first** (module map + locked decision log), then the module you need. `design/CLAUDE.md` has the rules for editing design docs.
-- **Current phase: Phase 1a — the 90-second fun-proof** ([design/09-build-plan.md](design/09-build-plan.md), including the 18-item build card that answers every builder question).
-- **Gate 1 (before any game code):** a static **mobile-portrait layout mock** of the hardest screen — map + party + belt + two resource meters on a 6" portrait screen ([design/08-art.md](design/08-art.md)). Desktop derives from portrait, never vice versa.
-- **Gate 2 (after 1a is playable):** the fun gate — does insure-vs-recover-vs-avoid feel like a real call? If not at any tuning, **stop and redesign; do not proceed to 1b.**
+- **The design is CONVERGED** (2026-07-01, seven review rounds) and lives in [`design/`](design/README.md) — **read `design/README.md` first** (module map + decision log + review/gate log). `design/CLAUDE.md` has the rules for editing design docs.
+- **Gate 1 PASSED** (2026-07-01): portrait-first layout proven at 390×844; desktop derives from it.
+- **Phase 1a is PLAYABLE and Gate 2 PASSED** (2026-07-01): fresh-context fun review = "PASS — fun gate cleared"; accuracy audit = 0 violations. 29 unit + 14 E2E tests green (`npm test`, `npm run test:e2e`).
+- **Current phase: Phase 1b** ([design/09-build-plan.md](design/09-build-plan.md)): run logging + loss autopsy, protected first session, corruption + reorder encounters (Checksum/Repair/Buffer/Re-route), belt slots + pick-1-of-3, seeded procedural maps, paper-spec The Static + one elite. Kid playtests become non-negotiable from here.
 
 ## Architecture
 
