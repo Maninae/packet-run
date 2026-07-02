@@ -53,7 +53,10 @@ the event stream. The perspective view is a rendering swap:
    any rebuild. This is Gate P1.
 2. Landscape two-pane layout for the CURRENT top-down view (independent,
    ships first — desktop players get a real layout while the chase-cam
-   develops).
+   develops). **SHIPPED 2026-07-02**: map pane west (journey flows
+   west→east, transposed from the portrait layout in js/map-layout.js),
+   rail east (meters/prompt/party/belt, css/landscape.css); portrait
+   untouched; breakpoint min-width 900px + landscape orientation.
 3. Perspective renderer for one act (Act 1 neighborhood) behind a `?view=road`
    flag; full-motion E2E from day one (testing lore: reduced-motion hides
    animation crashes).
