@@ -18,6 +18,7 @@ A browser roguelite RPG for ages 9–12 (easy mode younger, depth for adults). Y
 | [08-art.md](08-art.md) | Drawn-in-code art system, Pip's visual language, biome palettes |
 | [09-build-plan.md](09-build-plan.md) | Phases with honest sizing, playtest cadence, post-v1 list, risks |
 | [10-bosses.md](10-bosses.md) | Paper specs (1b deliverable): The Static 4-beat duel, DDoS Swarm siege — built Phases 3–5 |
+| [11-perspective-view.md](11-perspective-view.md) | Chase-cam art direction (Owen, 2026-07-02): landscape-first layout + third-person perspective view over the same headless engine — next major milestone, Gate P1 = static mock |
 
 ## Status
 
