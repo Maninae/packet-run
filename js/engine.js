@@ -10,7 +10,7 @@
 // rng is injectable for tests/simulation; defaults to the seeded PRNG.
 // Consumption order is documented in encounters.js — keep it stable.
 
-import { RUN, MAP_1A, BELT, TOOLS, PAYLOADS, CONGESTION } from './config.js';
+import { RUN, MAP_1A, BELT, TOOLS, PAYLOADS, CONGESTION, EVENTS } from './config.js';
 import { seededRng } from './rng.js';
 import {
   duplicateLegal, applyDuplicate, retransmitLegal, applyRetransmit,
@@ -47,6 +47,8 @@ export function createRun({ seed, rng, mods = null, map = MAP_1A, payload = 'tcp
     impactResolved: false,  // per segment — resets at each junction
     waitsUsed: 0,           // per rapids window (max 2 — design/04)
     congestion: null,       // open bottleneck window { capacity, maxRate, crossed }
+    eventCard: null,        // open "?" card (index into config.EVENTS)
+    eventsSeen: new Set(),  // "?" nodes already visited (per segment:node)
     belt: [...PAYLOADS[payload].belt], // actives AND passives share the slots (design/03)
     passives: new Set(),    // extra always-on machinery (test/meta injection)
     rewardOptions: null,    // pick-1-of-3, offered at mid-map junctions
@@ -76,6 +78,13 @@ const onBelt = (run, tool) => run.belt.includes(tool);
 export function legalActions(run) {
   if (run.phase === 'done') return [];
   if (run.phase === 'dns') return [{ type: 'lookup' }];
+  if (run.phase === 'event') {
+    return EVENTS[run.eventCard].options
+      .map((o, option) => ({ o, option }))
+      .filter(({ o }) => (run.bandwidth + (o.effects.bw ?? 0) >= 0)
+        && (run.deadline + Math.min(0, o.effects.deadline ?? 0) >= 0))
+      .map(({ option }) => ({ type: 'choose-event', option }));
+  }
   if (run.phase === 'reward') {
     const actions = [];
     run.rewardOptions.forEach((option, index) => {
@@ -148,6 +157,7 @@ function isLegal(run, action) {
     (a.road ?? null) === (action.road ?? null) &&
     (a.fragment ?? null) === (action.fragment ?? null) &&
     (a.index ?? null) === (action.index ?? null) &&
+    (a.option ?? null) === (action.option ?? null) &&
     (a.replace ?? null) === (action.replace ?? null));
 }
 
@@ -361,18 +371,66 @@ function onward(run) {
     run.events.push({ type: 'fog-reveal', cost: run.fogCost });
   }
 
+  // a "?" node: the card opens (once per node per segment)
+  const eventKey = `${run.segment}:${to}`;
+  if (def.event?.node === to && !run.eventsSeen.has(eventKey)) {
+    run.eventsSeen.add(eventKey);
+    run.eventCard = def.event.card;
+    run.phase = 'event';
+    run.events.push({ type: 'event-opened', card: def.event.card, node: to });
+    return;
+  }
+
   if (finalHop) {
     arriveAtDock(run);
   } else if (to === def.nodes.at(-1)) {
-    // end of segment: reward beat, then the next junction; tool windows reset
-    run.segment += 1;
-    run.stepIndex = 0;
-    run.road = null;
-    run.impactResolved = false;
-    run.events.push({ type: 'junction-reached', segment: run.segment, node: to });
-    run.rewardOptions = drawRewards(run);
-    run.phase = 'reward';
-    run.events.push({ type: 'reward-offered', options: run.rewardOptions });
+    arriveAtSegmentEnd(run, to);
+  }
+}
+
+// end of segment: reward beat, then the next junction; tool windows reset
+function arriveAtSegmentEnd(run, node) {
+  run.segment += 1;
+  run.stepIndex = 0;
+  run.road = null;
+  run.impactResolved = false;
+  run.events.push({ type: 'junction-reached', segment: run.segment, node });
+  run.rewardOptions = drawRewards(run);
+  run.phase = 'reward';
+  run.events.push({ type: 'reward-offered', options: run.rewardOptions });
+}
+
+// resolve a "?" card choice: every option is priced (design/04)
+function chooseEvent(run, action) {
+  const card = EVENTS[run.eventCard];
+  const cardIndex = run.eventCard;
+  const effects = card.options[action.option].effects;
+  run.eventCard = null;
+  run.phase = 'node';
+  run.events.push({ type: 'event-chosen', card: cardIndex, option: action.option });
+
+  if (effects.bw) run.bandwidth += effects.bw;
+  if (effects.deadline) run.deadline += effects.deadline;
+  if (effects.risk && run.rng() < effects.risk.p) {
+    const candidates = run.fragments.filter((f) => f.status === 'with-party');
+    if (candidates.length) {
+      const victim = candidates[Math.floor(run.rng() * candidates.length)];
+      victim.status = 'straggler';
+      victim.lag = effects.risk.straggle;
+      run.waitsUsed = 0;
+      run.events.push({ type: 'event-hiccup', fragment: victim.id, lag: victim.lag });
+    }
+  }
+  if (effects.teleport) {
+    // the cache's copy: the rest of THIS road is skipped — the serving node
+    // is closer than home (that's the whole CDN idea, design/07)
+    const def = roadDef(run);
+    const end = def.nodes.at(-1);
+    run.stepIndex = def.nodes.length - 1;
+    run.node = end;
+    run.events.push({ type: 'cache-jump', to: end });
+    if (end === 'dock') arriveAtDock(run);
+    else arriveAtSegmentEnd(run, end);
   }
 }
 
@@ -438,6 +496,9 @@ export function act(run, action) {
       }
       break;
     }
+    case 'choose-event':
+      chooseEvent(run, action);
+      break;
     case 'lookup':
       // names → addresses: the address book answers, the clock ticks once
       run.deadline -= 1;

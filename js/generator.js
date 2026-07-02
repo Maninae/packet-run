@@ -128,11 +128,27 @@ export function generateMap(seed, { segments = GEN.segments, act = 3 } = {}) {
       },
     });
   }
-  // budget guarantee: at least one relay on the map
+  // budget guarantee: at least one relay on the map (BEFORE event placement,
+  // so a guaranteed relay can never land on a "?" node)
   const hasPickup = built.some((s) => s.roads.short.bwPickup || s.roads.long.bwPickup);
   if (!hasPickup) {
     const road = built.at(-1).roads.long;
     road.bwPickup = { node: road.nodes.at(-2), amount: 2 };
+  }
+
+  // a "?" node on ~a third of maps: seeded, never on an impact/pickup node
+  if (rng() < 0.35) {
+    const segment = built[Math.floor(rng() * built.length)];
+    const roadKey = rng() < 0.5 ? 'short' : 'long';
+    const road = segment.roads[roadKey];
+    const candidates = road.nodes.slice(1, -1)
+      .filter((n) => n !== road.hazard?.impactNode && n !== road.bwPickup?.node);
+    if (candidates.length) {
+      road.event = {
+        node: candidates[Math.floor(rng() * candidates.length)],
+        card: Math.floor(rng() * 3),
+      };
+    }
   }
   return {
     id: `gen-${seed}`,

@@ -3,6 +3,7 @@
 // Pure: (run, ui) → [icon, html]. Transient notices live in notices.js.
 
 import { segmentRoads, roadDef } from './engine.js';
+import { EVENTS } from './config.js';
 
 export const TOOLTIPS = {
   duplicate: '<strong>Duplicate</strong>: send a spare copy of one fragment, just in case. The dock only keeps one of each number.',
@@ -93,6 +94,9 @@ export function computePrompt(run, { armed, hintText, pendingRoad }) {
   if (run.phase === 'done') return ['bolt', ''];
   if (run.phase === 'reward') {
     return ['bolt', 'A relay station! Pick one reward for your belt.'];
+  }
+  if (run.phase === 'event') {
+    return ['bolt', EVENTS[run.eventCard].title];
   }
   if (run.congestion) {
     const alive = run.fragments.filter((f) => f.status === 'with-party').length;

@@ -139,6 +139,10 @@ test('a generated 3-segment map plays end to end through the UI', async () => {
   let junctions = 0;
   for (let guard = 0; guard < 60; guard++) {
     if (await page.locator('.win-screen, .loss-screen').count()) break;
+    if (await page.locator('[data-event-option]').count()) {
+      await page.locator('[data-event-option]:enabled').first().click();
+      continue;
+    }
     if (await page.locator('.reward-card').count()) {
       await page.locator('[data-reward-kind="bandwidth"]').first().click();
       continue;

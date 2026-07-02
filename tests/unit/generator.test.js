@@ -78,7 +78,8 @@ test('engine walks a generated map: junction per segment, tools reset each storm
     // duplicates are legal again before EACH segment's impact
     const canDup = legalActions(run).some((a) => a.type === 'duplicate');
     assert.ok(canDup || run.bandwidth < 3, `segment ${segment}: preemptive play available`);
-    while (run.phase === 'node') {
+    while (run.phase === 'node' || run.phase === 'event') {
+      if (run.phase === 'event') { act(run, legalActions(run)[0]); continue; }
       const sends = legalActions(run).filter((a) => a.type === 'send');
       act(run, sends.length ? sends.at(-1) : { type: 'onward' });
     }
@@ -95,7 +96,9 @@ test('fog fires exactly once, at the end of the run', () => {
     const map = generateMap(`fog-${i}`);
     const run = createRun({ seed: `fog-${i}`, map });
     while (run.phase !== 'done') {
-      if (run.phase === 'reward') {
+      if (run.phase === 'event') {
+        act(run, legalActions(run)[0]);
+      } else if (run.phase === 'reward') {
         act(run, legalActions(run).find((a) => a.kind === 'bandwidth'));
       } else if (run.phase === 'junction') {
         act(run, { type: 'choose-road', road: 'short' });
@@ -105,10 +108,14 @@ test('fog fires exactly once, at the end of the run', () => {
       }
     }
     const fogs = run.events.filter((e) => e.type === 'fog-reveal');
-    assert.equal(fogs.length, 1, 'exactly one fog reveal');
-    const fogIndex = run.events.findIndex((e) => e.type === 'fog-reveal');
-    const lastHop = run.events.map((e) => e.type).lastIndexOf('hop');
-    assert.ok(fogIndex > 0 && fogIndex >= lastHop - 4, 'fog is an endgame beat');
+    // a cache-jump straight to the dock legitimately skips the misty stretch
+    const cacheJumped = run.events.some((e) => e.type === 'cache-jump' && e.to === 'dock');
+    assert.equal(fogs.length, cacheJumped ? 0 : 1, 'one fog reveal (unless cached past it)');
+    if (fogs.length) {
+      const fogIndex = run.events.findIndex((e) => e.type === 'fog-reveal');
+      const lastHop = run.events.map((e) => e.type).lastIndexOf('hop');
+      assert.ok(fogIndex > 0 && fogIndex >= lastHop - 4, 'fog is an endgame beat');
+    }
   }
 });
 

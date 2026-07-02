@@ -326,6 +326,21 @@ export function renderMap(svg, scene) {
     }
   }
 
+  // "?" nodes are part of the SHAPE: visible from the start, mystery intact
+  for (const segment of scene.map.segments) {
+    for (const road of Object.values(segment.roads)) {
+      if (!road.event) continue;
+      const n = nodes[road.event.node];
+      if (!n) continue;
+      const q = el('g', { transform: `translate(${n.x},${n.y})` });
+      q.innerHTML = `
+        <circle r="9" fill="var(--surface-2)" stroke="var(--pip)" stroke-width="2"/>
+        <text y="4" text-anchor="middle" font-size="11" font-weight="800"
+              fill="var(--pip)" font-family="var(--font)">?</text>`;
+      svg.append(q);
+    }
+  }
+
   // hazard details are fog-of-detail: current segment only (design/07)
   const current = scene.map.segments[scene.segment];
   if (current) {

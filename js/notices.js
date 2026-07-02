@@ -194,6 +194,16 @@ export async function playNotices(run, batch) {
           await delay(600);
         }
         break;
+      case 'event-hiccup':
+        sfx.splash();
+        flashPrompt('rapids', `The old router hiccuped — <strong>#${e.fragment}</strong> fell a beat behind.`);
+        await delay(900);
+        break;
+      case 'cache-jump':
+        sfx.chime();
+        flashPrompt('bolt', 'The cache serves its copy from nearby — you skip ahead!');
+        await delay(900);
+        break;
       case 'copies-discarded':
         flashPrompt('copy',
           `The dock keeps one of each number — spare ${names(e.fragments)} not needed.`);

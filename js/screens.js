@@ -211,6 +211,27 @@ export function showReward({ options, belt, beltFull, onTake }) {
   }
 }
 
+// A "?" card (design/04): pure text + one choice, both options priced.
+export function showEvent({ card, legalOptions, onChoose }) {
+  $('#overlay').innerHTML = `
+    <div class="screen event-screen">
+      <h2>${card.title}</h2>
+      <p>${card.text}</p>
+      <div class="reward-cards">${card.options.map((option, i) =>
+        `<button class="reward-card" data-event-option="${i}"
+           ${legalOptions.includes(i) ? '' : 'disabled'}>
+           <strong>${option.label}</strong>
+         </button>`).join('')}
+      </div>
+    </div>`;
+  for (const btn of document.querySelectorAll('[data-event-option]')) {
+    btn.addEventListener('click', () => {
+      $('#overlay').replaceChildren();
+      onChoose(Number(btn.dataset.eventOption));
+    });
+  }
+}
+
 export function showLoss({ run, autopsy, onNewRun, onSameSeed, onHint }) {
   $('#overlay').innerHTML = `
     <div class="screen loss-screen">

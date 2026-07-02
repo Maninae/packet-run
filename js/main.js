@@ -3,7 +3,7 @@
 // resulting events into beats (animate the hop, flash the notices, re-render)
 // and routes taps back into engine actions.
 
-import { EASY, MAP_1A, BELT, ACTS } from './config.js';
+import { EASY, MAP_1A, BELT, ACTS, EVENTS } from './config.js';
 import { createRun, legalActions, act, segmentRoads, roadDef } from './engine.js';
 import { generateMap } from './generator.js';
 import { randomSeed } from './rng.js';
@@ -11,7 +11,7 @@ import { logRun, deriveAutopsy } from './autopsy.js';
 import { renderMap } from './map.js';
 import { renderParty, renderPartyRow, animateHop, startIdle, stopIdle } from './party.js';
 import { renderMeters, setPrompt, flashPrompt, renderBelt, wireLegend, wireMute } from './hud.js';
-import { showStart, showWin, showLoss, showReward } from './screens.js';
+import { showStart, showWin, showLoss, showReward, showEvent } from './screens.js';
 import { computePrompt, hazardOf, scaryRoad } from './prompts.js';
 import { playNotices } from './notices.js';
 import { unlockAudio, sfx } from './sound.js';
@@ -235,6 +235,14 @@ async function dispatch(action) {
   await animateBatch(run.events.slice(start));
   busy = false;
   renderAll();
+  if (run.phase === 'event') {
+    showEvent({
+      card: EVENTS[run.eventCard],
+      legalOptions: legalActions(run).map((a) => a.option),
+      onChoose: (option) => dispatch({ type: 'choose-event', option }),
+    });
+    return;
+  }
   if (run.phase === 'reward') {
     showReward({
       options: run.rewardOptions,

@@ -86,6 +86,35 @@ test('a brand-new player gets the simple message start (no picker)', async () =>
   await page.context().close();
 });
 
+test('a "?" node opens its card; the choice lands and the run continues', async () => {
+  const { generateMap } = await import('../../js/generator.js');
+  let seed = null;
+  for (let i = 0; i < 1500 && !seed; i++) {
+    const map = generateMap(`Q${i}`, { act: 1 }); // wins=1 plays act 1
+    if (map.segments[0].roads.short.event) seed = `Q${i}`;
+  }
+  assert.ok(seed, 'found an event-on-first-short-road seed');
+  const page = await app.page(VIEWPORTS.portrait, { reducedMotion: 'reduce' });
+  await page.addInitScript(() => { localStorage.setItem('packet-run-wins', '1'); localStorage.setItem('packet-run-dns', '8'); });
+  await page.goto(`${app.origin}/?seed=${seed}&payload=file`);
+  await page.getByRole('button', { name: /deliver/i }).click();
+  const chip = page.locator('[data-road-chip="short"]');
+  await chip.click();
+  await chip.click();
+  for (let g = 0; g < 8; g++) {
+    if (await page.locator('[data-event-option]').count()) break;
+    await page.locator('#go:enabled').click();
+  }
+  assert.ok(await page.locator('.event-screen').count(), 'the card opened');
+  const before = await page.evaluate(() => window.packetRun.run);
+  assert.equal(before.phase, 'event');
+  await page.locator('[data-event-option]:enabled').first().click();
+  const after = await page.evaluate(() => window.packetRun.run);
+  assert.notEqual(after.phase, 'event', 'the card resolved');
+  assert.ok(after.events.some((e) => e.type === 'event-chosen'));
+  await page.context().close();
+});
+
 test('acts climb with wins: biome class, act chip, and gated hazards', async () => {
   const page = await app.page(VIEWPORTS.portrait, { reducedMotion: 'reduce' });
   await page.addInitScript(() => { localStorage.setItem('packet-run-wins', '4'); localStorage.setItem('packet-run-dns', '8'); });

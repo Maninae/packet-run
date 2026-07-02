@@ -120,6 +120,37 @@ export const EASY = {
   fogOutcomes: [{ deadlineCost: 0, p: 1 }],
 };
 
+// "?" node event cards (design/04): pure text + one choice, always priced.
+// Effects vocabulary: bw / deadline deltas, teleport (the CDN lesson:
+// the cache is CLOSER than home — you never build it, design/07),
+// risk {p, straggle} (an old router hiccups).
+export const EVENTS = [
+  {
+    title: 'A cache waystation!',
+    text: 'This node keeps a copy of messages like yours. Its dock is much closer than the long way round.',
+    options: [
+      { label: 'Take the cache’s copy (−2 energy)', effects: { bw: -2, teleport: true } },
+      { label: 'Walk on and keep the energy', effects: {} },
+    ],
+  },
+  {
+    title: 'A community mesh relay',
+    text: 'Neighbors linked their houses into a little network — and they’ll happily boost a traveler.',
+    options: [
+      { label: '+2 energy', effects: { bw: 2 } },
+      { label: '+1 tick on the clock', effects: { deadline: 1 } },
+    ],
+  },
+  {
+    title: 'A dusty old router',
+    text: 'It still works… mostly. Reboot it first, or push through and hope?',
+    options: [
+      { label: 'Reboot it (−1 tick, safe)', effects: { deadline: -1 } },
+      { label: 'Push through (it might hiccup)', effects: { risk: { p: 0.25, straggle: 1 } } },
+    ],
+  },
+];
+
 // Acts are BIOMES (design/04): places with their own hazard mix — and the
 // act ladder is the curriculum (cognitive-load gating: congestion Act 2 at
 // the earliest, the ocean systems Act 3). Template letters index

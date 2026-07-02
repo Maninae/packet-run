@@ -21,6 +21,7 @@ function play(seed, { pickRoad, insure, avoidStatic }) {
     Object.values(s.roads).some((r) => ['static', 'sniffer'].includes(r.hazard?.kind)));
   const run = createRun({ seed, map });
   while (run.phase !== 'done') {
+    if (run.phase === 'event') { act(run, legalActions(run)[0]); continue; }
     if (run.phase === 'reward') {
       // temperaments that will CROSS a static zone kit up; the guardian
       // routes around the uninsurable instead

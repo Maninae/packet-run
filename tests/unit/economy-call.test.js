@@ -14,6 +14,7 @@ function playCall(seed, style) {
   // tempo-vs-clinging contrast must hold where gaps actually occur
   const run = createRun({ seed, map: generateMap(seed, { act: 2 }), payload: 'udp-call' });
   for (let guard = 0; guard < 120 && run.phase !== 'done'; guard++) {
+    if (run.phase === 'event') { act(run, legalActions(run)[0]); continue; }
     if (run.phase === 'reward') {
       act(run, legalActions(run).find((a) => a.kind === 'bandwidth'));
       continue;
