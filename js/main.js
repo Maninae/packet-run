@@ -12,6 +12,8 @@ import { renderMap } from './map.js';
 import { renderParty, renderPartyRow, animateHop, startIdle, stopIdle } from './party.js';
 import { renderMeters, setPrompt, flashPrompt, renderBelt, wireLegend, wireMute } from './hud.js';
 import { showStart, showWin, showLoss, showReward } from './screens.js';
+import { computePrompt, hazardOf, scaryRoad } from './prompts.js';
+import { playNotices } from './notices.js';
 import { unlockAudio, sfx } from './sound.js';
 
 const $ = (sel) => document.querySelector(sel);
@@ -24,7 +26,6 @@ let armed = null;       // tool waiting for a fragment tap
 let busy = false;       // input locked while beats resolve
 let hintText = null;    // autopsy tool-line carried into a hint retry
 let payload = 'tcp-file';
-let stutterNoticed = false; // one stutter notice per run, not per beat
 
 // Protected first session (design/06, the Balatro move): world RNG runs easy
 // until the first win. Silent — no training-wheels label. Gentle mode is the
@@ -55,155 +56,6 @@ window.packetRun = {
   },
 };
 
-const TOOLTIPS = {
-  duplicate: '<strong>Duplicate</strong>: send a spare copy of one fragment, just in case. The dock only keeps one of each number.',
-  retransmit: '<strong>Retransmit</strong>: a fragment got lost? Ask home to send it again. Costs 2 energy and a tick of the clock.',
-  repair: '<strong>Repair</strong>: fix the scrambled fragment the Checksum found. Costs 2 energy.',
-  skip: '<strong>Skip</strong>: wave goodbye to a late fragment. A live call can\'t wait for stragglers.',
-};
-
-const names = (ids) => ids.map((n) => `<strong>#${n}</strong>`).join(' and ');
-
-function hazardOf(road) {
-  return segmentRoads(run)[road]?.hazard ?? null;
-}
-
-// junction read, derived from the current segment (works on any map)
-function describeRoad(key) {
-  const road = segmentRoads(run)[key];
-  const hops = road.nodes.length - 1;
-  if (!road.hazard) return `${hops} hops and quiet — the long way around`;
-  if (road.hazard.kind === 'static') {
-    const unkitted = !run.belt.includes('checksum') || !run.belt.includes('repair');
-    return `${hops} hops, static that scrambles one fragment${unkitted ? " — your belt can't fix that" : ''}`;
-  }
-  if (road.hazard.kind === 'rapids') {
-    return `${hops} hops, rapids — ${road.hazard.straggles} fragments will fall behind`;
-  }
-  if (road.hazard.kind === 'congestion') {
-    return `${hops} hops, a jammed pipe — it only fits a few at a time`;
-  }
-  if (road.hazard.kind === 'sniffer') {
-    return run.belt.includes('cloak')
-      ? `${hops} hops, a sniffer listening — your Cloak seals you`
-      : `${hops} hops, a sniffer listening — it can tamper with bits`;
-  }
-  return `${hops} hops, a ${road.hazard.kind} eyeing ${names(road.hazard.threatens)}`;
-}
-
-function scaryRoad() {
-  const roads = segmentRoads(run);
-  const threat = (k) => roads[k].hazard
-    ? (roads[k].hazard.threatens?.length ?? roads[k].hazard.straggles ?? 1) : 0;
-  return threat('short') >= threat('long') ? 'short' : 'long';
-}
-
-const HAZARD_PROMPT_ICONS = {
-  drizzle: 'drizzle', static: 'static', rapids: 'rapids', storm: 'storm',
-  congestion: 'jam', sniffer: 'sniffer',
-};
-
-function iconFor(key) {
-  return HAZARD_PROMPT_ICONS[hazardOf(key)?.kind] ?? 'storm';
-}
-
-function computePrompt() {
-  if (armed) return ['copy', `${TOOLTIPS[armed]}<br>Tap a fragment below.`];
-  if (run.phase === 'dns') {
-    return ['bolt', `Where does Grandma's live? Ask the address book — it costs a tick.`];
-  }
-  if (run.phase === 'junction') {
-    if (hintText && !pendingRoad) return ['storm', `Hint: ${hintText}`];
-    if (pendingRoad) {
-      return [iconFor(pendingRoad),
-        `The ${pendingRoad} road: ${describeRoad(pendingRoad)}. Tap again to take it.`];
-    }
-    const scary = scaryRoad();
-    const hazard = hazardOf(scary);
-    if (hazard.kind === 'static') {
-      return ['static', `The Static haunts the ${scary} road — it scrambles bits. Tap a road to look closer.`];
-    }
-    if (hazard.kind === 'rapids') {
-      return ['rapids', `Rapids on the ${scary} road — the party will scatter. Tap a road to look closer.`];
-    }
-    if (hazard.kind === 'congestion') {
-      return ['jam', `A jammed pipe on the ${scary} road — slow, but nothing gets lost. Tap a road to look closer.`];
-    }
-    if (hazard.kind === 'sniffer') {
-      return ['sniffer', `A sniffer lurks on the ${scary} road. Tap a road to look closer.`];
-    }
-    return [iconFor(scary),
-      `A ${hazard.kind} on the ${scary} road is eyeing ${names(hazard.threatens)}. Tap a road to look closer.`];
-  }
-  if (run.phase === 'done') return ['bolt', ''];
-  if (run.phase === 'reward') {
-    return ['bolt', 'A relay station! Pick one reward for your belt.'];
-  }
-  if (run.congestion) {
-    const alive = run.fragments.filter((f) => f.status === 'with-party').length;
-    return ['jam', `The pipe is jammed — <strong>${run.congestion.crossed}/${alive}</strong> across. How many do you push this beat?`];
-  }
-
-  const def = roadDef(run);
-  const hazard = def.hazard;
-  const lost = run.fragments.filter((f) => f.status === 'lost').map((f) => f.id);
-  const stragglers = run.fragments.filter((f) => f.status === 'straggler');
-  if (stragglers.length) {
-    const list = stragglers
-      .map((f) => `<strong>#${f.id}</strong> ${f.lag} beat${f.lag > 1 ? 's' : ''}`)
-      .join(', ');
-    return ['rapids', `Behind: ${list}. Wait for them, or press on without them.`];
-  }
-  const gaps = run.fragments.filter((f) => f.status === 'expired' || (f.status === 'lost' && run.payload === 'udp-call'));
-  if (gaps.length && run.belt.includes('skip')) {
-    return ['rapids', `The call is stuttering over ${names(gaps.map((f) => f.id))}. Skip to steady it — a live call keeps moving.`];
-  }
-  if (!run.impactResolved && hazard) {
-    if (hazard.kind === 'static') {
-      return ['static', `The Static is ahead — it scrambles one fragment's bits. Copies won't help; Checksum will, after.`];
-    }
-    if (hazard.kind === 'rapids') {
-      return ['rapids', `Rapids ahead — some of the party will fall behind. Waiting costs time; leaving them costs more.`];
-    }
-    if (hazard.kind === 'congestion') {
-      return ['jam', `A jam ahead — the pipe only fits so many per beat. Start small and feel it out.`];
-    }
-    if (hazard.kind === 'sniffer') {
-      return run.belt.includes('cloak')
-        ? ['cloak', `A sniffer ahead — let it look. Your seal holds.`]
-        : ['sniffer', `A sniffer ahead — it can scramble what it touches. A Cloak or the Checksum kit answers it.`];
-    }
-    const approach = def.nodes[def.nodes.indexOf(hazard.impactNode) - 1];
-    const icon = hazard.kind === 'storm' ? 'storm' : 'drizzle';
-    if (run.node === approach) {
-      return [icon, `The ${hazard.kind} is right ahead — it's eyeing ${names(hazard.threatens)}. Last chance for copies.`];
-    }
-    return [icon, `The ${hazard.kind} waits ahead, eyeing ${names(hazard.threatens)}. Duplicate now, or ride.`];
-  }
-  const hidden = run.fragments.some((f) => f.corrupted && !f.revealed);
-  if (hidden) {
-    if (!run.belt.includes('checksum')) {
-      return ['static', `Something's scrambled — and nothing on your belt can find it. The dock will catch it.`];
-    }
-    return ['checksum', `Something's scrambled — you can't tell which. Checksum finds it for 1 energy.`];
-  }
-  const glitched = run.fragments.filter((f) => f.corrupted && f.revealed).map((f) => f.id);
-  if (glitched.length) {
-    return ['repair', `${names(glitched)} is scrambled. Repair fixes it — the dock rejects garbled fragments.`];
-  }
-  if (lost.length && run.belt.includes('retransmit')) {
-    return ['retransmit', `Still missing ${names(lost)}. Retransmit calls them back — the clock is ticking.`];
-  }
-  const returning = run.fragments.filter((f) => f.status === 'returning').map((f) => f.id);
-  if (returning.length) {
-    return ['retransmit', `${names(returning)} is catching up. Onward to Grandma's!`];
-  }
-  if (run.fogCost !== null && run.fogCost > 0) {
-    return ['clock', `Mud on the last stretch — it'll cost <strong>+${run.fogCost}</strong>. Onward!`];
-  }
-  return ['bolt', `Everyone's together. Onward to Grandma's!`];
-}
-
 function scene() {
   const atJunction = run.phase === 'junction';
   return {
@@ -231,9 +83,9 @@ function scene() {
 function threatenedSet() {
   if (run.impactResolved) return new Set();
   const road = (run.phase === 'junction' && !run.road && !pendingRoad)
-    ? scaryRoad()
+    ? scaryRoad(run)
     : (run.road ?? pendingRoad ?? 'short');
-  return new Set(hazardOf(road)?.threatens ?? []);
+  return new Set(hazardOf(run, road)?.threatens ?? []);
 }
 
 function targetableSet() {
@@ -268,7 +120,7 @@ function renderAll() {
     onWait: () => { if (!busy) dispatch({ type: 'wait' }); },
     onSend: (rate) => { if (!busy) dispatch({ type: 'send', rate }); },
   });
-  const [icon, html] = computePrompt();
+  const [icon, html] = computePrompt(run, { armed, hintText, pendingRoad });
   if (html) setPrompt(icon, html);
 }
 
@@ -359,172 +211,7 @@ async function animateBatch(batch) {
     renderParty($('#live-layer'), { map: run.map, nodeId: hop.to, fragments: run.fragments });
   }
 
-  for (const e of batch) {
-    switch (e.type) {
-      case 'impact': {
-        if (e.kind === 'sniffer') {
-          if (e.foiled) {
-            sfx.pop();
-            flashPrompt('cloak', 'The sniffer watched your sealed fragments pass — and read nothing.');
-          } else {
-            sfx.static();
-            flashPrompt('sniffer', 'The sniffer touched one of your fragments — something\'s scrambled.');
-          }
-          await delay(1000);
-          break;
-        }
-        if (e.kind === 'congestion') {
-          sfx.mud();
-          flashPrompt('jam', 'A jam! This pipe only fits so many per beat — start small.');
-          await delay(900);
-          break;
-        }
-        if (e.kind === 'rapids') {
-          sfx.splash();
-          const list = e.stragglers
-            .map((s) => `<strong>#${s.fragment}</strong>`).join(' and ');
-          flashPrompt('rapids', `Splash! The rapids scattered the party — ${list} fell behind.`);
-          await delay(1000);
-          break;
-        }
-        if (e.kind === 'static') {
-          sfx.static();
-          const stage = $('#stage');
-          stage.classList.remove('shake');
-          void stage.offsetWidth;
-          stage.classList.add('shake');
-          flashPrompt('static',
-            'Kzzt! The Static scrambled one of your fragments — you can\'t tell which.');
-          await delay(1000);
-          break;
-        }
-        if (e.swept.length) {
-          sfx.sweep();
-          const stage = $('#stage');
-          stage.classList.remove('shake');
-          void stage.offsetWidth;
-          stage.classList.add('shake');
-          flashPrompt(e.kind === 'storm' ? 'storm' : 'drizzle',
-            `The ${e.kind} hit! It swept ${names(e.swept)}.`);
-          await delay(900);
-        }
-        if (e.saved.length) {
-          sfx.pop();
-          flashPrompt('copy', `A copy stepped in — ${names(e.saved)} ${e.saved.length > 1 ? 'are' : 'is'} safe!`);
-          await delay(900);
-        }
-        if (e.gust) {
-          if (e.gust.saved) sfx.pop(); else sfx.sweep();
-          flashPrompt(e.gust.saved ? 'copy' : 'storm', e.gust.saved
-            ? `A gust hit <strong>#${e.gust.fragment}</strong> — its copy took the hit!`
-            : `A gust swept <strong>#${e.gust.fragment}</strong> too!`);
-          await delay(900);
-        }
-        break;
-      }
-      case 'rejoin':
-        sfx.chime();
-        flashPrompt('retransmit', `${names(e.fragments)} caught back up!`);
-        await delay(700);
-        break;
-      case 'checksum':
-        sfx.scan();
-        flashPrompt('checksum', `Found it — ${names(e.found)} is scrambled! Repair can fix it.`);
-        await delay(900);
-        break;
-      case 'repair':
-        sfx.chime();
-        flashPrompt('repair', `<strong>#${e.fragment}</strong> is clean again.`);
-        await delay(700);
-        break;
-      case 'pickup':
-        sfx.chime();
-        flashPrompt('bolt', `A friendly relay tops you up — <strong>+${e.amount} energy</strong>.`);
-        await delay(700);
-        break;
-      case 'fog-reveal': {
-        if (e.cost > 0) sfx.mud();
-        const line = e.cost === 0
-          ? 'The mist clears — the last stretch looks smooth!'
-          : e.cost === 1
-            ? 'The mist clears — a muddy stretch ahead will cost <strong>+1 tick</strong>.'
-            : 'The mist clears — deep mud ahead: <strong>+2 ticks</strong>.';
-        flashPrompt('clock', line);
-        await delay(900);
-        break;
-      }
-      case 'stragglers-lost':
-        sfx.sweep();
-        flashPrompt('rapids', `You pressed on — ${names(e.fragments)} fell too far behind.`);
-        await delay(900);
-        break;
-      case 'skip':
-        sfx.bloop();
-        flashPrompt('rapids', `You waved <strong>#${e.fragment}</strong> goodbye — the call moves on.`);
-        await delay(600);
-        break;
-      case 'stutter':
-        if (!stutterNoticed) {
-          stutterNoticed = true;
-          sfx.mud();
-          flashPrompt('rapids',
-            `The call is stuttering over the missing frames — Skip them to steady it.`);
-          await delay(900);
-        }
-        break;
-      case 'wait':
-        sfx.bloop();
-        break;
-      case 'reroute':
-        sfx.whoosh();
-        flashPrompt('bolt', 'You told home to try a different road — the party reappears at the junction.');
-        await delay(900);
-        break;
-      case 'send':
-        if (e.bounced > 0) {
-          sfx.sweep();
-          flashPrompt('jam', `Too many at once! <strong>${e.bounced}</strong> bounced back — ease off.`);
-          await delay(800);
-        } else {
-          sfx.bloop();
-          flashPrompt('jam', `<strong>${e.crossed}</strong> slipped through — the pipe holds. Push harder?`);
-          await delay(650);
-        }
-        break;
-      case 'congestion-cleared':
-        sfx.chime();
-        flashPrompt('jam', `Everyone's through — the pipe flows again!`);
-        await delay(800);
-        break;
-      case 'handshake':
-        flashPrompt('cloak', 'Sealing handshake… one tick. Your fragments now travel encrypted.');
-        await delay(800);
-        break;
-      case 'dns-lookup':
-        sfx.chime();
-        localStorage.setItem('packet-run-dns', '8');
-        flashPrompt('bolt',
-          `Found it — Grandma's is at <strong>${e.address}</strong>! Your device will remember for a while.`);
-        await delay(1100);
-        break;
-      case 'reward-taken':
-        if (e.kind === 'tool') {
-          sfx.chime();
-          flashPrompt('bolt', `<strong>${e.tool[0].toUpperCase()}${e.tool.slice(1)}</strong> joins your belt${e.replaced ? ` — ${e.replaced} swapped out` : ''}.`);
-          await delay(800);
-        } else {
-          sfx.chime();
-          flashPrompt('bolt', `<strong>+${e.amount} energy</strong> banked.`);
-          await delay(600);
-        }
-        break;
-      case 'copies-discarded':
-        flashPrompt('copy',
-          `The dock keeps one of each number — spare ${names(e.fragments)} not needed.`);
-        await delay(800);
-        break;
-    }
-  }
+  await playNotices(run, batch);
 }
 
 // The payoff beat: fragments slot in BY NUMBER, one rising note each —
@@ -603,7 +290,6 @@ function newRun(seed, { easy = playEasy(), hint = null } = {}) {
   pendingRoad = null;
   armed = null;
   busy = false;
-  stutterNoticed = false;
   $('#overlay').replaceChildren();
   const url = new URL(window.location);
   url.searchParams.set('seed', seed);
