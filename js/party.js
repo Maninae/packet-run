@@ -94,7 +94,8 @@ function setupCanvas(canvas) {
 
 // Draw the party standing at a node. `fragments` uses the engine shape:
 // [{ id, status: 'with-party' | 'lost' | 'returning', hasCopy }]
-export function renderParty(canvas, { nodeId, fragments }) {
+// `now` drives a gentle idle bob — the party feels alive while you think.
+export function renderParty(canvas, { nodeId, fragments }, now = 0) {
   const { ctx, w, h, t } = setupCanvas(canvas);
   ctx.clearRect(0, 0, w, h);
 
@@ -103,11 +104,35 @@ export function renderParty(canvas, { nodeId, fragments }) {
 
   for (const f of present) {
     const off = FRAG_OFFSETS[(f.id - 1) % FRAG_OFFSETS.length];
-    const [x, y] = t.apply(node.x + off.x, node.y + off.y);
+    const bob = now ? Math.sin(now / 480 + f.id * 1.7) * 2.2 : 0;
+    const [x, y] = t.apply(node.x + off.x, node.y + off.y + bob);
     drawFragment(ctx, x, y, 17 * t.scale, f);
   }
-  const [px, py] = t.apply(node.x + PIP_OFFSET.x, node.y + PIP_OFFSET.y);
+  const pipBob = now ? Math.sin(now / 620) * 3.5 : 0;
+  const [px, py] = t.apply(node.x + PIP_OFFSET.x, node.y + PIP_OFFSET.y + pipBob);
   drawPip(ctx, px, py, t.scale);
+}
+
+// Idle loop: keeps the standing party bobbing between beats. The hop
+// animation owns the canvas while it runs — callers stop the idle first.
+let idleRaf = null;
+
+export function startIdle(canvas, getScene) {
+  stopIdle();
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    renderParty(canvas, getScene());
+    return;
+  }
+  const loop = (now) => {
+    renderParty(canvas, getScene(), now);
+    idleRaf = requestAnimationFrame(loop);
+  };
+  idleRaf = requestAnimationFrame(loop);
+}
+
+export function stopIdle() {
+  if (idleRaf) cancelAnimationFrame(idleRaf);
+  idleRaf = null;
 }
 
 // The hop: fragments scatter onto lanes and RACE — different speeds, arriving

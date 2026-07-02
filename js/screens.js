@@ -44,7 +44,7 @@ function starsSVG(stars) {
 export function showStart({ seed, onPlay }) {
   $('#overlay').innerHTML = `
     <div class="screen start-screen">
-      ${pipAvatar(72)}
+      <div class="float">${pipAvatar(72)}</div>
       <h1>Packet Run</h1>
       <p><strong>Grandma's birthday message is ready to go.</strong><br>
       It travels as 5 fragments — you're Pip, their guide.

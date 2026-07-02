@@ -41,6 +41,18 @@ export function copyIcon(size = 12, color = 'currentColor') {
   </svg>`;
 }
 
+export function speakerIcon(size = 18, on = true) {
+  const waves = on
+    ? `<path d="M10.5 5.5 q3 2.5 0 5 M12.5 3.5 q5 4.5 0 9" fill="none"
+         stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>`
+    : `<path d="M10.5 5.5 15 10.5 M15 5.5 10.5 10.5" fill="none"
+         stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>`;
+  return `<svg width="${size}" height="${size}" viewBox="0 0 16 16" aria-hidden="true">
+    <path d="M2 6 h2.5 L8 3 v10 L4.5 10 H2 z" fill="currentColor"/>
+    ${waves}
+  </svg>`;
+}
+
 // Pip's canonical spark shape (r=10, centered at 0,0) — one geometry shared
 // by the SVG avatar and the canvas live layer (via Path2D), so Pip never drifts.
 export const PIP_SPARK_D =

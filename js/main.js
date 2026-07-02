@@ -7,9 +7,10 @@ import { MAP_1A } from './config.js';
 import { createRun, legalActions, act } from './engine.js';
 import { randomSeed } from './rng.js';
 import { renderMap } from './map.js';
-import { renderParty, renderPartyRow, animateHop } from './party.js';
-import { renderMeters, setPrompt, flashPrompt, renderBelt, wireLegend } from './hud.js';
+import { renderParty, renderPartyRow, animateHop, startIdle, stopIdle } from './party.js';
+import { renderMeters, setPrompt, flashPrompt, renderBelt, wireLegend, wireMute } from './hud.js';
 import { showStart, showWin, showLoss } from './screens.js';
+import { unlockAudio, sfx } from './sound.js';
 
 const $ = (sel) => document.querySelector(sel);
 const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -101,7 +102,10 @@ function renderAll() {
   renderMeters(run);
   renderMap($('#map-layer'), scene());
   if (run.phase !== 'done') {
-    renderParty($('#live-layer'), { nodeId: run.node, fragments: run.fragments });
+    startIdle($('#live-layer'), () => ({ nodeId: run.node, fragments: run.fragments }));
+  } else {
+    stopIdle();
+    renderParty($('#live-layer'), { nodeId: run.node, fragments: [] });
   }
   renderPartyRow($('#party'), run.fragments, {
     threatened: threatenedSet(),
@@ -162,6 +166,7 @@ async function animateBatch(batch) {
   const rejoin = batch.find((e) => e.type === 'rejoin');
 
   if (hop && !reduced()) {
+    sfx.whoosh();
     const sweptIds = impact
       ? [...impact.swept, ...(impact.gust && !impact.gust.saved ? [impact.gust.fragment] : [])]
       : [];
@@ -177,21 +182,30 @@ async function animateBatch(batch) {
         fate: sweptIds.includes(f.id) ? 'swept' : savedIds.includes(f.id) ? 'saved' : 'arrives',
       }));
     await animateHop($('#live-layer'), { from: hop.from, to: hop.to, racers });
+    // settle into the standing cluster while the notices play
+    renderParty($('#live-layer'), { nodeId: hop.to, fragments: run.fragments });
   }
 
   for (const e of batch) {
     switch (e.type) {
       case 'impact': {
         if (e.swept.length) {
+          sfx.sweep();
+          const stage = $('#stage');
+          stage.classList.remove('shake');
+          void stage.offsetWidth;
+          stage.classList.add('shake');
           flashPrompt(e.kind === 'storm' ? 'storm' : 'drizzle',
             `The ${e.kind} hit! It swept ${names(e.swept)}.`);
           await delay(900);
         }
         if (e.saved.length) {
+          sfx.pop();
           flashPrompt('copy', `A copy stepped in — ${names(e.saved)} ${e.saved.length > 1 ? 'are' : 'is'} safe!`);
           await delay(900);
         }
         if (e.gust) {
+          if (e.gust.saved) sfx.pop(); else sfx.sweep();
           flashPrompt(e.gust.saved ? 'copy' : 'storm', e.gust.saved
             ? `A gust hit <strong>#${e.gust.fragment}</strong> — its copy took the hit!`
             : `A gust swept <strong>#${e.gust.fragment}</strong> too!`);
@@ -200,14 +214,17 @@ async function animateBatch(batch) {
         break;
       }
       case 'rejoin':
+        sfx.chime();
         flashPrompt('retransmit', `${names(e.fragments)} caught back up!`);
         await delay(700);
         break;
       case 'pickup':
+        sfx.chime();
         flashPrompt('bolt', `A friendly relay tops you up — <strong>+${e.amount} energy</strong>.`);
         await delay(700);
         break;
       case 'fog-reveal': {
+        if (e.cost > 0) sfx.mud();
         const line = e.cost === 0
           ? 'The mist clears — the last stretch looks smooth!'
           : e.cost === 1
@@ -217,26 +234,50 @@ async function animateBatch(batch) {
         await delay(900);
         break;
       }
+      case 'copies-discarded':
+        flashPrompt('copy',
+          `The dock keeps one of each number — spare ${names(e.fragments)} not needed.`);
+        await delay(800);
+        break;
     }
   }
+}
+
+// The payoff beat: fragments slot in BY NUMBER, one rising note each —
+// the auto-sort is the lesson (numbering makes reassembly possible).
+async function fillDock() {
+  flashPrompt('bolt', 'Slotting in by number — that\'s how the message rebuilds.');
+  for (let i = 1; i <= 5; i++) {
+    renderMap($('#map-layer'), { ...scene(), dockFilled: i });
+    sfx.slot(i - 1);
+    await delay(240);
+  }
+  await delay(400);
 }
 
 async function dispatch(action) {
   busy = true;
   renderAll();
+  stopIdle();
   const start = run.events.length;
   act(run, action);
   await animateBatch(run.events.slice(start));
   busy = false;
   renderAll();
   if (run.phase === 'done') {
-    await delay(600);
     const handlers = {
       onNewRun: () => newRun(randomSeed()),
       onSameSeed: () => newRun(run.seed),
     };
-    if (run.outcome === 'rendered') showWin({ run, ...handlers });
-    else showLoss({ run, ...handlers });
+    if (run.outcome === 'rendered') {
+      await fillDock();
+      sfx.win();
+      showWin({ run, ...handlers });
+    } else {
+      await delay(500);
+      sfx.fail();
+      showLoss({ run, ...handlers });
+    }
   }
 }
 
@@ -257,6 +298,7 @@ function newRun(seed) {
 const initialSeed = new URLSearchParams(window.location.search).get('seed') || randomSeed();
 run = createRun({ seed: initialSeed });
 wireLegend();
+wireMute();
 renderAll();
-showStart({ seed: initialSeed, onPlay: () => renderAll() });
+showStart({ seed: initialSeed, onPlay: () => { unlockAudio(); renderAll(); } });
 window.addEventListener('resize', () => { if (!busy) renderAll(); });

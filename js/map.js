@@ -71,7 +71,8 @@ function drawRoad(svg, road, scene) {
     points: roadPoints(road), fill: 'none',
     stroke: picked ? 'var(--road-pick)' : 'var(--wire-lit)',
     'stroke-width': 2, 'stroke-linecap': 'round', 'stroke-linejoin': 'round',
-    'stroke-dasharray': '1 11', class: 'road-signal',
+    'stroke-dasharray': '1 11',
+    class: `road-signal${scene.chosenRoad === road ? ' flowing' : ''}`,
   });
   svg.append(base, signal);
   if (scene.onRoadTap && !scene.chosenRoad) {
@@ -133,11 +134,12 @@ function drawHazardCloud(svg, road, kind) {
   const [a, b] = GEO.hazardSegments[road];
   const m = midpoint(a, b);
   const side = road === 'short' ? -1 : 1;
-  const g = el('g', {
-    transform: `translate(${m.x + side * 26},${m.y - 8})`,
-    class: 'hazard-cloud',
-  });
-  g.innerHTML = `<g transform="translate(-14,-14)">${kind === 'storm' ? stormIcon(28) : drizzleIcon(28)}</g>`;
+  // position on the outer g (attribute transform); the CSS bob animates the
+  // inner g — a CSS transform would otherwise OVERRIDE the positioning
+  const g = el('g', { transform: `translate(${m.x + side * 26},${m.y - 8})` });
+  const bob = el('g', { class: 'hazard-cloud' });
+  bob.innerHTML = `<g transform="translate(-14,-14)">${kind === 'storm' ? stormIcon(28) : drizzleIcon(28)}</g>`;
+  g.append(bob);
   svg.append(g);
 }
 
@@ -190,6 +192,22 @@ function drawFog(svg, scene) {
   svg.append(g);
 }
 
+// Ambient meadow: fixed positions (no per-render twinkle-jump), sparse and dim.
+const AMBIENT_DOTS = Array.from({ length: 26 }, (_, i) => {
+  const gold = ((i * 2654435761) >>> 0) / 4294967296;
+  const gold2 = ((i * 40503 + 12345) % 65536) / 65536;
+  return { x: 24 + gold * 342, y: 30 + gold2 * 500, r: 1 + (i % 3) * 0.6, glow: i % 5 === 0 };
+});
+
+function drawAmbient(svg) {
+  const g = el('g', { class: 'ambient' });
+  g.innerHTML = AMBIENT_DOTS.map((d) =>
+    `<circle cx="${d.x.toFixed(1)}" cy="${d.y.toFixed(1)}" r="${d.r}"
+       fill="${d.glow ? 'var(--safe)' : 'var(--wire-lit)'}" opacity="${d.glow ? 0.5 : 0.28}"/>`
+  ).join('');
+  svg.append(g);
+}
+
 export function renderMap(svg, scene) {
   svg.setAttribute('viewBox', GEO.viewBox.join(' '));
   svg.replaceChildren();
@@ -201,6 +219,7 @@ export function renderMap(svg, scene) {
      </filter>`;
   svg.append(defs);
 
+  drawAmbient(svg);
   drawRoad(svg, 'short', scene);
   drawRoad(svg, 'long', scene);
   drawFog(svg, scene); // mist covers the final stretch's wires, never the nodes

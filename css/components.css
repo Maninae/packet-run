@@ -242,6 +242,46 @@
 
 .go-btn:disabled { opacity: 0.35; }
 
+/* ---------- juice ---------- */
+
+.road-signal.flowing { animation: dash-march 0.8s linear infinite; }
+@keyframes dash-march { to { stroke-dashoffset: -12; } }
+
+.hazard-cloud {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: cloud-bob 3.2s ease-in-out infinite alternate;
+}
+@keyframes cloud-bob { from { transform: translateY(-2px); } to { transform: translateY(2.5px); } }
+
+#stage.shake { animation: stage-shake 0.4s ease; }
+@keyframes stage-shake {
+  20% { transform: translate(-4px, 2px); }
+  45% { transform: translate(4px, -2px); }
+  70% { transform: translate(-3px, -1px); }
+  100% { transform: none; }
+}
+
+.tool-btn:active:not(:disabled), .go-btn:active:not(:disabled),
+.primary-btn:active, .ghost-btn:active { transform: scale(0.95); }
+
+.meter .pip { transition: background 0.25s ease, border-color 0.25s ease; }
+
+.float { animation: pip-float 2.6s ease-in-out infinite alternate; }
+@keyframes pip-float { from { transform: translateY(-4px); } to { transform: translateY(5px); } }
+
+.mute-btn {
+  min-width: 34px;
+  min-height: 34px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ink-faint);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 /* ---------- prompt notices ---------- */
 
 #prompt.flash { animation: prompt-flash 0.45s ease; }

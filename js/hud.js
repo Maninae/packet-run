@@ -3,8 +3,9 @@
 
 import { RUN } from './config.js';
 import {
-  boltIcon, clockIcon, copyIcon, retransmitIcon, stormIcon, drizzleIcon,
+  boltIcon, clockIcon, copyIcon, retransmitIcon, stormIcon, drizzleIcon, speakerIcon,
 } from './icons.js';
+import { isMuted, toggleMute } from './sound.js';
 
 const $ = (sel) => document.querySelector(sel);
 
@@ -63,6 +64,13 @@ export function renderBelt({ legal, armed, canGo, onArm, onGo }) {
   $('#tool-duplicate').addEventListener('click', () => onArm('duplicate'));
   $('#tool-retransmit').addEventListener('click', () => onArm('retransmit'));
   $('#go').addEventListener('click', onGo);
+}
+
+export function wireMute() {
+  const btn = document.querySelector('#mute');
+  const paint = () => { btn.innerHTML = speakerIcon(18, !isMuted()); };
+  btn.addEventListener('click', () => { toggleMute(); paint(); });
+  paint();
 }
 
 // The glyph legend: a tap-toggled popover, never a modal (design/06).
