@@ -1,0 +1,63 @@
+/* components.css — reusable UI pieces. Portrait-first: this layout is designed
+   for a 6" phone screen; desktop derives from it (design/06, 08). */
+
+#game {
+  display: grid;
+  grid-template-rows: auto 1fr auto; /* meters / map+live / belt */
+  height: 100dvh;
+  max-width: 480px;                  /* portrait column even on desktop, for now */
+  margin: 0 auto;
+}
+
+#meters {
+  display: flex;
+  gap: var(--space);
+  padding: var(--space);
+}
+
+.meter {
+  flex: 1;
+  height: 20px;
+  border: var(--stroke-w) solid var(--wire);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+#map-layer, #live-layer {
+  grid-row: 2;
+  width: 100%;
+  height: 100%;
+}
+
+#live-layer { pointer-events: none; } /* canvas juice sits over the SVG map */
+
+.legend-chip {
+  position: absolute;
+  top: calc(var(--space) * 6);
+  right: var(--space);
+  min-width: var(--touch-min);
+  min-height: var(--touch-min);
+  border: var(--stroke-w) solid var(--wire);
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--ink-soft);
+  font-size: 18px;
+}
+
+#belt {
+  display: flex;
+  gap: var(--space);
+  padding: var(--space);
+  justify-content: center;
+}
+
+#belt button {
+  min-width: var(--touch-min);
+  min-height: var(--touch-min);
+  border: var(--stroke-w) solid var(--wire);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--ink);
+}
+
+#belt button:disabled { opacity: 0.4; } /* unaffordable = greyed (build card #11) */

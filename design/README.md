@@ -1,0 +1,46 @@
+# Packet Run — modular game design
+
+**One-liner:** You're a message trying to get home. You shatter into packets, journey across the physical internet — storms, corruption, congestion, sniffers, oceans — and if enough of you arrives, in one piece and in order, the message *renders*.
+
+A browser roguelite RPG for ages 9–12 (easy mode younger, depth for adults). You play **Pip**, the spirit of the message, leading your packet-fragments like a party across dungeon-style maps of the real world's network terrain. Static vanilla HTML/CSS/JS, GitHub Pages, art drawn in code. Standalone — not a fork of Follow the Drop.
+
+## Module map
+
+| Doc | Contents |
+|---|---|
+| [01-vision.md](01-vision.md) | Concept, audience, north star (intrinsic integration), locked vision decisions |
+| [02-core-loop.md](02-core-loop.md) | Run structure, embodiment, map & routing, encounter rhythm, resources, **v0 numbers + Phase 1a run trace** |
+| [03-toolbelt.md](03-toolbelt.md) | The toolbelt system: active tools, passives, pouch, upgrades, archetypes, meta-progression |
+| [04-encounters.md](04-encounters.md) | Encounter library, **world regions (biomes)**, weather, events, elites & bosses |
+| [05-payloads.md](05-payloads.md) | Payload types as strategic identity (TCP vs UDP kits), render payoffs |
+| [06-experience.md](06-experience.md) | Fun levers, retention stack, loss autopsy, kid usability, vocabulary budget |
+| [07-accuracy.md](07-accuracy.md) | The accuracy spine — calibration, falsehood list, mechanics-level rules (dev-facing law) |
+| [08-art.md](08-art.md) | Drawn-in-code art system, Pip's visual language, biome palettes |
+| [09-build-plan.md](09-build-plan.md) | Phases with honest sizing, playtest cadence, post-v1 list, risks |
+
+## Status
+
+**Design CONVERGED (2026-07-01, seven review rounds)** — round 7 returned zero high-impact findings, zero accuracy flags, and a Phase 1a greenlight: *"a builder can start without asking a question."* Next step when Owen's ready: the mobile-portrait layout sketch ([08-art.md](08-art.md)), then the Phase 1a fun-proof ([09-build-plan.md](09-build-plan.md)). Remaining tunables (star-band width, five-line non-dominance) are playtest work, scheduled in-doc.
+
+## Decision log
+
+- **2026-07-01 — game, not explainer.** Roguelike delivery-run; mastery by playing.
+- **2026-07-01 — audience 9–12** primary; easy mode for younger; foundations-level teaching (calibration in [07-accuracy.md](07-accuracy.md)).
+- **2026-07-01 — turn/step-based** with juicy animation (real-time congestion beat cut; replaced by turn-based send-rate puzzle).
+- **2026-07-01 — toolbelt RPG, not a card deck** (Owen). You're the packet with persistent tools; randomness lives in the world, not your hand. *"The network holds the deck; you hold the tools."* Rationale in [01-vision.md](01-vision.md).
+- **2026-07-01 — embodiment: message-spirit + party** (Owen). Pip leads visible fragments; Integrity = bodies, not a bar.
+- **2026-07-01 — map: shape visible, fog on details** (Owen). Node skeleton shown; hazard glyphs only ~1 hop ahead.
+- **2026-07-01 — world regions / dungeon-style levels** (Owen). Campaign acts = parts of the world with different weather and **infrastructure density** — including an underconnected region where scarcity is the challenge (digital divide, taught respectfully).
+- **2026-07-01 — name: Packet Run** (working title — rename freely).
+
+## Review-round log
+
+| Round | Lens | Verdict | Fate of findings |
+|---|---|---|---|
+| 1 | Roguelite craft + ed-game (fresh) | — | Actions layer, resource tension, turn-based congestion, autopsy, tighter MVP → adopted |
+| 2 | Same, cold read | — | Deck spec, hint-glyph routing, UDP freshness, MVP split, fixed round-1's false encryption claim → adopted |
+| 3 | Same, cold read (deck version) | MAJOR REVISIONS | Direction-level findings transferred to toolbelt model: **numbers**, UDP kit spec, CDN accuracy fix, boss debt, autopsy data model → adopted; deck-specific findings mooted by toolbelt pivot |
+| 4 | Same, cold read (modular dir) | MAJOR REVISIONS | EV-broke the 1a economy (avoid dominated; Duplicate was a lottery) → storms now telegraph targets, both roads priced, new pricing table. TTL contradiction + TTL-is-time risk → clock renamed **Deadline**, Lord TTL → **Lord Lag**. Backtrack → **Re-route** (sender reissue). Scope re-audited to 5–8 months + cut ladder. Phase 1a build card answers all 14 builder-guess items |
+| 5 | Same, cold read | **MINOR POLISH — greenlit 1a** with 3 fixes | Flat-exchange pricing table → fog variance (0/−1/−2) + gust tail + delivery stars, so lines have personalities, not a dominant answer. Trace/table hop mismatch fixed. Fog reveal specced (build card #15–18). Multi-path reframed as added capacity. Scanner labeled QoL-not-teaching. Vocab rule restated (≤1/run, ≤3/act). Scope ceiling 6–10 months |
+| 6 | Same, cold read | MINOR POLISH — "otherwise converged" | Star-threshold retune (★★ ≥8) + honest tuning-target framing (≥3 distinct viable personalities; rounds 4–6 each EV-broke a table version). TCP Stack → **Auto-Resend Rig** with Act-5 "…its name is TCP" reveal (vocab leak fixed). Threat glyphs pinned as *forecasts, not prophecy* (accuracy spine). The Static = one recurring villain, many haunts. Multi-path base rate defined. Relay fiction on the BW pickup |
+| 7 | Same, cold read | **CONVERGED** | Zero high-impact changes, zero accuracy flags; EV table verified within the stated bar; Phase 1a build card "answers all 18 items." Minor tunables (star-band razor, Multi-path prose ambiguity → clarified, payload-assignment copy) noted as scheduled playtest work |

@@ -1,0 +1,40 @@
+/* base.css — design tokens (source of truth for the look; design/08-art.md).
+   Placeholder values: real palette work happens with the portrait mock (Gate 1). */
+
+:root {
+  /* Act 1 "Home & Neighborhood" placeholder family — meadow register */
+  --bg: #101418;
+  --surface: #1a2129;
+  --ink: #eef3f6;
+  --ink-soft: #9fb0bc;
+
+  --pip: #ffd166;          /* Pip the message-spark */
+  --fragment: #6ecbff;     /* fragment bodies */
+  --fragment-corrupt: #e05a7a;
+  --wire: #33414d;
+  --hazard: #e0955a;       /* one hue family for hazards, everywhere */
+  --safe: #7bd88f;
+
+  --stroke-w: 2px;         /* 2px rounded stroke, everywhere */
+  --radius: 10px;
+  --space: 8px;
+
+  --touch-min: 44px;       /* minimum touch target (design/06) */
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}

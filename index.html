@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Packet Run</title>
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+</head>
+<body>
+  <!-- Portrait-first shell (design/08-art.md): map + party + belt + meters on a 6" screen.
+       Gate 1: the static portrait mock must be approved before game logic lands here. -->
+  <main id="game">
+    <header id="meters">
+      <div id="meter-bandwidth" class="meter" aria-label="Bandwidth"></div>
+      <div id="meter-deadline" class="meter" aria-label="Deadline"></div>
+    </header>
+    <section id="map-layer" aria-label="Region map"><!-- SVG map (js/map.js) --></section>
+    <canvas id="live-layer" aria-hidden="true"><!-- Pip + fragments (js/party.js) --></canvas>
+    <button id="glyph-legend" class="legend-chip" aria-label="Glyph legend">?</button>
+    <footer id="belt" aria-label="Toolbelt"><!-- icon buttons (js/tools.js) --></footer>
+  </main>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
