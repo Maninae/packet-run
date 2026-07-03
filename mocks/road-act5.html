@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gate P1 mock — Act 5 road view (Hostile Zone)</title>
+<!-- Hand-composed junction scene, NO engine hookup (design/11 step 1), v1
+     RESKIN of road-act1.html for The Hostile Zone (body.act-5 palette):
+     · inky violet-black sky, sickle moon, sparse cold stars, torn clouds
+     · dead-tree ridge silhouettes + distant crooked antenna field
+     · dark violet road ribbons with MAGENTA-VIOLET edge glow (#e08cff)
+     · LEFT hazard = a SNIFFER lurking at depth: periscope-eye peeking beside
+       the road, amber searchlight cone sweeping the ribbon, road amber-
+       stained under the cone (500ms danger read via the road itself)
+     · sign LEFT: eye icon + "#?" label in danger pink-red (#e05a7a), 4 hops
+     · sign RIGHT: "quiet", 7 hops
+     · Destination = Grandma's cottage (the campaign ends where it began):
+       the ONE cozy warm-cream light in the whole cold scene
+     · faint pink-static crackle patches in the far corners (Static's hint)
+     · fireflies become pale violet wisps
+     Color invariants (color is pedagogy): amber #f4a259 = warning only;
+     danger pink #e05a7a only on "#?" label; fragments cyan #6ee7ff; Pip
+     gold #ffd166 — Pip + Grandma's window are the warm hearts of the scene.
+     Same skeleton as road-act1.html (structural template) so party layout,
+     signposts, and animation classes stay 1:1 across acts. -->
+<style>
+  * { margin: 0; box-sizing: border-box; }
+  html, body { height: 100%; background: #0e0a16; overflow: hidden; }
+  .scene { position: fixed; inset: 0; }
+  svg { width: 100%; height: 100%; display: block; }
+
+  .tag {
+    position: fixed; top: 10px; left: 12px; z-index: 2;
+    font: 600 11px ui-monospace, Menlo, monospace; letter-spacing: 0.05em;
+    color: rgba(238, 232, 252, 0.6); background: rgba(20, 12, 36, 0.6);
+    padding: 4px 8px; border-radius: 6px;
+  }
+
+  .float   { animation: float 2.8s ease-in-out infinite alternate; }
+  .float2  { animation: float 3.4s ease-in-out infinite alternate-reverse; }
+  .bob     { animation: bob 3.6s ease-in-out infinite alternate; }
+  .twinkle { animation: twinkle 2.2s ease-in-out infinite alternate; }
+  .twinkle2{ animation: twinkle 3.1s ease-in-out infinite alternate-reverse; }
+  .blink   { animation: blink 2.4s steps(1) infinite; }
+  .sweep   { animation: sweep 4.2s ease-in-out infinite alternate; transform-origin: 250px 356px; transform-box: fill-box; }
+  .crackle { animation: crackle 1.9s steps(1) infinite; }
+  .crackle2{ animation: crackle 2.6s steps(1) infinite; }
+  .flicker { animation: flicker 3.4s steps(1) infinite; }
+  @keyframes float   { from { transform: translateY(-5px); } to { transform: translateY(6px); } }
+  @keyframes bob     { from { transform: translateY(-4px); } to { transform: translateY(5px); } }
+  @keyframes twinkle { from { opacity: 0.25; } to { opacity: 0.9; } }
+  @keyframes blink   { 0% { opacity: 1; } 55% { opacity: 0.15; } 100% { opacity: 1; } }
+  @keyframes sweep   { from { transform: rotate(-7deg); } to { transform: rotate(7deg); } }
+  @keyframes crackle { 0% { opacity: 0.4; } 40% { opacity: 0.15; } 55% { opacity: 0.5; } 100% { opacity: 0.25; } }
+  @keyframes flicker { 0% { opacity: 1; } 12% { opacity: 0.35; } 18% { opacity: 1; } 62% { opacity: 1; } 68% { opacity: 0.4; } 74% { opacity: 1; } 100% { opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) {
+    .float, .float2, .bob, .twinkle, .twinkle2, .blink, .sweep, .crackle, .crackle2, .flicker { animation: none; }
+  }
+</style>
+</head>
+<body>
+<div class="tag">GATE P1 MOCK · ACT 5 · THE HOSTILE ZONE · road view · v1</div>
+<div class="scene">
+<svg viewBox="0 0 1280 800" preserveAspectRatio="xMidYMax slice" role="img"
+     aria-label="A violet-black night. The road forks ahead, both branches curving back to Grandma's warmly-lit cottage on the horizon. A sniffer lurks by the short left road, its amber searchlight sweeping the ribbon; the long right road is quiet.">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0"    stop-color="#0e0619"/>
+      <stop offset="0.35" stop-color="#1c0d38"/>
+      <stop offset="0.68" stop-color="#2c1548"/>
+      <stop offset="0.9"  stop-color="#3a1c5e"/>
+      <stop offset="1"    stop-color="#221334"/>
+    </linearGradient>
+    <radialGradient id="moonGlow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0"   stop-color="#e8d6ff" stop-opacity="0.55"/>
+      <stop offset="0.6" stop-color="#b48cff" stop-opacity="0.15"/>
+      <stop offset="1"   stop-color="#b48cff" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="homeGlow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0"   stop-color="#ffe6a8" stop-opacity="0.9"/>
+      <stop offset="0.5" stop-color="#ffd166" stop-opacity="0.4"/>
+      <stop offset="1"   stop-color="#ffd166" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="meadow" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#221533"/>
+      <stop offset="1" stop-color="#0e0716"/>
+    </linearGradient>
+    <linearGradient id="roadBody" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3d275c"/>
+      <stop offset="1" stop-color="#5a3e82"/>
+    </linearGradient>
+    <linearGradient id="sniffStain" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0"    stop-color="#f4a259" stop-opacity="0"/>
+      <stop offset="0.55" stop-color="#f4a259" stop-opacity="0.28"/>
+      <stop offset="1"    stop-color="#e8944c" stop-opacity="0.55"/>
+    </linearGradient>
+    <radialGradient id="sniffCone" cx="0.5" cy="0" r="1">
+      <stop offset="0"    stop-color="#f4a259" stop-opacity="0.6"/>
+      <stop offset="0.55" stop-color="#f4a259" stop-opacity="0.22"/>
+      <stop offset="1"    stop-color="#f4a259" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="fragGlow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#6ee7ff" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#6ee7ff" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="pipGlow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#ffe9b0" stop-opacity="0.95"/>
+      <stop offset="1" stop-color="#ffd166" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="staticPatch" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#ff5d8f" stop-opacity="0.45"/>
+      <stop offset="0.5" stop-color="#ff5d8f" stop-opacity="0.15"/>
+      <stop offset="1" stop-color="#ff5d8f" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="lampGlow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#ffd166" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#ffd166" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="soft" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="7"/>
+    </filter>
+    <filter id="soft2" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="14"/>
+    </filter>
+  </defs>
+
+  <!-- ===================== SKY ===================== -->
+  <rect width="1280" height="314" fill="url(#sky)"/>
+
+  <!-- The Static's presence — pink crackle patches, upper corners -->
+  <g class="crackle">
+    <ellipse cx="90" cy="80" rx="180" ry="80" fill="url(#staticPatch)"/>
+  </g>
+  <g class="crackle2">
+    <ellipse cx="1210" cy="106" rx="190" ry="86" fill="url(#staticPatch)"/>
+  </g>
+  <!-- static jaggies inside the corner patches — barbed-wire lightning -->
+  <g stroke="#ff5d8f" stroke-width="1.8" fill="none" stroke-linecap="round" opacity="0.6">
+    <path class="crackle"  d="M40 46 l14 -8 l8 10 l14 -6 l6 6"/>
+    <path class="crackle2" d="M96 96 l12 -6 l8 8 l14 -3 l6 5"/>
+    <path class="crackle"  d="M160 60 l10 -4 l6 6 l10 -2"/>
+    <path class="crackle2" d="M1136 66 l14 -9 l8 10 l12 -4 l6 6"/>
+    <path class="crackle"  d="M1170 118 l12 -7 l8 8 l12 -3 l6 5"/>
+    <path class="crackle2" d="M1090 80 l10 -5 l7 7 l10 -3"/>
+  </g>
+  <!-- fizzy micro-dots at the crackle mouths -->
+  <g fill="#ff5d8f" opacity="0.55">
+    <circle class="crackle"  cx="70" cy="52" r="1.6"/>
+    <circle class="crackle2" cx="118" cy="82" r="1.4"/>
+    <circle class="crackle"  cx="150" cy="70" r="1.2"/>
+    <circle class="crackle2" cx="1148" cy="72" r="1.6"/>
+    <circle class="crackle"  cx="1188" cy="128" r="1.4"/>
+    <circle class="crackle2" cx="1104" cy="90" r="1.2"/>
+  </g>
+
+  <!-- sickle moon, top-right area -->
+  <g transform="translate(1000,90)">
+    <circle r="60" fill="url(#moonGlow)"/>
+    <g>
+      <circle r="26" fill="#f0e2ff"/>
+      <circle cx="10" cy="-4" r="24" fill="#1c0d38"/>
+    </g>
+    <!-- moon pockmarks -->
+    <circle cx="-8" cy="6" r="2" fill="#c9b0e6" opacity="0.6"/>
+    <circle cx="-14" cy="-6" r="1.4" fill="#c9b0e6" opacity="0.5"/>
+    <circle cx="-4" cy="12" r="1.2" fill="#c9b0e6" opacity="0.55"/>
+  </g>
+
+  <!-- cold sparse stars -->
+  <g fill="#e8d6ff">
+    <circle class="twinkle"  cx="120" cy="60"  r="1.4"/>
+    <circle class="twinkle2" cx="240" cy="128" r="1.1"/>
+    <circle class="twinkle"  cx="420" cy="52"  r="1.3"/>
+    <circle class="twinkle2" cx="560" cy="100" r="1.0"/>
+    <circle class="twinkle"  cx="700" cy="46"  r="1.2"/>
+    <circle class="twinkle2" cx="820" cy="150" r="1.1"/>
+    <circle class="twinkle"  cx="1180" cy="180" r="1.3"/>
+    <circle class="twinkle2" cx="1105" cy="220" r="0.9"/>
+    <circle class="twinkle"  cx="340" cy="196" r="1.0"/>
+    <circle class="twinkle2" cx="620" cy="212" r="1.1"/>
+  </g>
+
+  <!-- thin torn clouds drifting across the moon -->
+  <g fill="#2a1748" opacity="0.75">
+    <path d="M860 96 q40 -14 96 -6 q46 8 96 -6 q36 -10 84 -2 l0 12 q-50 8 -96 2 q-58 -8 -100 4 q-46 12 -80 8 z"/>
+    <path d="M180 172 q60 -10 120 -2 q52 8 96 -4 l0 10 q-56 12 -102 6 q-64 -8 -114 -2 z"/>
+    <path d="M700 168 q42 -8 92 0 q48 6 88 -4 l0 10 q-48 12 -96 6 q-52 -6 -84 -2 z"/>
+  </g>
+
+  <!-- ============== FAR RIDGES (jagged silhouettes, cold rim) ============== -->
+  <path d="M0 268 L60 240 L110 258 L150 218 L200 250 L260 214 L320 254 L380 226 L440 258 L500 218 L560 252 L620 224 L680 258 L740 216 L800 250 L860 220 L920 254 L980 214 L1040 250 L1100 222 L1160 254 L1220 218 L1280 244 L1280 322 L0 322 Z"
+        fill="#180a2c"/>
+  <!-- cold violet rim light on ridge tops -->
+  <path d="M0 268 L60 240 L110 258 L150 218 L200 250 L260 214 L320 254 L380 226 L440 258 L500 218 L560 252 L620 224 L680 258 L740 216 L800 250 L860 220 L920 254 L980 214 L1040 250 L1100 222 L1160 254 L1220 218 L1280 244"
+        fill="none" stroke="#8a5cc7" stroke-width="2.4" opacity="0.55"/>
+
+  <!-- distant crooked antenna field along the far ridge -->
+  <g stroke="#0d051a" stroke-width="2.4" fill="none" stroke-linecap="round" opacity="0.85">
+    <!-- left cluster -->
+    <path d="M84 244 L88 218 M88 218 L82 214 M88 218 L92 216 M76 244 h20"/>
+    <circle class="blink" cx="88" cy="212" r="2.4" fill="#e05a7a" stroke="none"/>
+    <path d="M152 234 L155 210 M155 210 L149 208 M155 210 L161 210 M144 234 h22"/>
+    <path d="M232 236 L226 214 M226 214 L220 216 M226 214 L232 212 M218 236 h16"/>
+    <!-- right cluster -->
+    <path d="M980 236 L984 210 M984 210 L978 208 M984 210 L990 210 M974 236 h20"/>
+    <circle class="blink" cx="984" cy="204" r="2.4" fill="#e05a7a" stroke="none"/>
+    <path d="M1064 232 L1068 208 M1068 208 L1062 206 M1068 208 L1074 208 M1058 232 h20"/>
+    <path d="M1148 240 L1144 216 M1144 216 L1138 214 M1144 216 L1150 214 M1136 240 h18"/>
+  </g>
+
+  <!-- ============== MID RIDGE + a tilted ruined relay ============== -->
+  <path d="M0 296 L100 274 L180 298 L260 266 L340 296 L440 272 L520 300 L620 268 L720 300 L820 270 L920 300 L1020 272 L1120 302 L1220 278 L1280 296 L1280 384 L0 384 Z"
+        fill="#1e1132"/>
+  <!-- ruined relay, leaning -->
+  <g transform="translate(206,240) rotate(-8)" stroke="#0d051a" fill="none" stroke-width="4.5" stroke-linecap="round">
+    <path d="M0 62 L10 0 L20 62 M-14 62 h68 M2 40 h16 M5 22 h10" />
+    <circle class="blink" cx="10" cy="-6" r="4.5" fill="#e05a7a" stroke="none"/>
+  </g>
+  <!-- crooked outposts on the far right ridge -->
+  <g transform="translate(1030,304)">
+    <path d="M0 34 v-18 l26 -18 26 18 v18 z" fill="#0f0722"/>
+    <rect x="18" y="18" width="9" height="9" rx="2" fill="#5b3d84"/>
+    <path d="M64 34 v-14 l20 -14 20 14 v14 z" fill="#0f0722"/>
+    <rect x="78" y="22" width="8" height="8" rx="2" fill="#5b3d84" opacity="0.9"/>
+  </g>
+
+  <!-- horizon mist — cold violet fog-of-detail -->
+  <g filter="url(#soft2)" opacity="0.45">
+    <ellipse cx="420" cy="326" rx="230" ry="26" fill="#a084d8" opacity="0.28"/>
+    <ellipse cx="900" cy="332" rx="260" ry="24" fill="#a084d8" opacity="0.22"/>
+  </g>
+
+  <!-- ============== GRANDMA'S — the destination, warm heart ==============
+       the ONE cozy cream-gold light in the whole cold scene -->
+  <circle cx="742" cy="300" r="120" fill="url(#homeGlow)"/>
+  <g transform="translate(742,294) scale(1.15)">
+    <ellipse cx="0" cy="23" rx="34" ry="5" fill="#0d051a" opacity="0.6"/>
+    <path d="M-22 18 v-14 l22 -15 22 15 v14 z" fill="#2a1c40" stroke="#ffd166" stroke-width="2.6" stroke-linejoin="round"/>
+    <!-- her main window: the warm-cream heart -->
+    <rect x="-6" y="6" width="12" height="12" rx="2" fill="#ffd166"/>
+    <rect x="-17" y="4" width="7" height="7" rx="1.5" fill="#ffe9b0" opacity="0.95"/>
+    <rect x="10" y="4" width="7" height="7" rx="1.5" fill="#ffe9b0" opacity="0.95"/>
+    <!-- chimney smoke (calm) -->
+    <path d="M8 -8 q4 -7 9 -3" fill="none" stroke="#ffe9b0" stroke-width="2" stroke-linecap="round" opacity="0.85"/>
+  </g>
+
+  <!-- ===================== GROUND ===================== -->
+  <rect y="314" width="1280" height="486" fill="url(#meadow)"/>
+  <!-- pale violet wisps (fireflies, colder) -->
+  <g fill="#c9a0f0" opacity="0.55">
+    <circle cx="150" cy="420" r="3"/><circle cx="260" cy="500" r="4"/>
+    <circle cx="90" cy="610" r="4"/><circle cx="330" cy="660" r="4.5"/>
+    <circle cx="1080" cy="470" r="4"/><circle cx="1180" cy="560" r="4.5"/>
+    <circle cx="990" cy="640" r="4.5"/><circle cx="1240" cy="690" r="5"/>
+  </g>
+  <g fill="#e08cff" opacity="0.5">
+    <circle cx="205" cy="465" r="2.6"/><circle cx="1130" cy="520" r="2.8"/>
+    <circle cx="60" cy="530" r="2.8"/><circle cx="1035" cy="580" r="3"/>
+  </g>
+  <g fill="#8060b0" opacity="0.55">
+    <circle cx="285" cy="560" r="3"/><circle cx="140" cy="500" r="2.6"/>
+    <circle cx="1210" cy="620" r="3.4"/><circle cx="945" cy="560" r="2.8"/>
+  </g>
+
+  <!-- ============== THE ROAD: one trunk, forking, arriving ==============
+       both branches end at Grandma's doorstep — same destination, two
+       routes. Left arc is tight and steep (short); right sweeps wide (long). -->
+  <!-- trunk we stand on -->
+  <path d="M470 800 Q520 645 606 532 L674 532 Q760 645 810 800 Z" fill="url(#roadBody)"/>
+  <!-- LEFT ribbon (short): tight arc to the left side of her door -->
+  <path d="M606 532 C455 455 505 352 718 314 L734 322 C540 368 500 452 640 524 Z"
+        fill="url(#roadBody)"/>
+  <!-- RIGHT ribbon (long): wide lazy sweep to the right side of the door -->
+  <path d="M674 532 C870 470 940 372 766 322 L750 316 C900 372 830 462 640 524 Z"
+        fill="url(#roadBody)"/>
+  <!-- fork notch fill -->
+  <path d="M606 532 L640 522 L674 532 Q640 558 606 532 Z" fill="url(#roadBody)"/>
+  <!-- the sniffer STAINS its road: amber wash over the left ribbon under the cone -->
+  <path d="M606 532 C455 455 505 352 718 314 L734 322 C540 368 500 452 640 524 Z"
+        fill="#f4a259" opacity="0.32"/>
+
+  <!-- edge light: MAGENTA-VIOLET on both roads (act-5 --road-pick #e08cff);
+       the sniffed road's edge glows amber — danger reads from the road itself -->
+  <g fill="none" stroke-linecap="round">
+    <path d="M470 800 Q520 645 606 532" stroke="#e08cff" stroke-width="4.5" opacity="0.95"/>
+    <path d="M606 532 C455 455 505 352 718 314" stroke="#ffc48a" stroke-width="4.5" opacity="0.98"/>
+    <path d="M810 800 Q760 645 674 532 C870 470 940 372 766 322"
+          stroke="#e08cff" stroke-width="4.5" opacity="0.95"/>
+  </g>
+  <g stroke-width="3" fill="none" stroke-linecap="round" opacity="0.55">
+    <path d="M640 524 C500 452 540 368 734 322" stroke="#ffc48a"/>
+    <path d="M640 524 C830 462 900 372 750 316" stroke="#e08cff"/>
+  </g>
+
+  <!-- marching centerline dashes, bright and tapering -->
+  <g fill="#f2e5ff">
+    <ellipse cx="640" cy="754" rx="13" ry="6.5"/>
+    <ellipse cx="640" cy="682" rx="11" ry="5.4"/>
+    <ellipse cx="640" cy="618" rx="9" ry="4.4"/>
+    <ellipse cx="640" cy="562" rx="7.5" ry="3.6"/>
+    <!-- left spine (fewer hops — shorter road) -->
+    <ellipse cx="557" cy="459" rx="6" ry="3"/>
+    <ellipse cx="563" cy="401" rx="4.6" ry="2.3"/>
+    <ellipse cx="631" cy="349" rx="3.4" ry="1.7"/>
+    <!-- right spine (more hops — longer road) -->
+    <ellipse cx="770" cy="475" rx="6" ry="3"/>
+    <ellipse cx="829" cy="430" rx="5.2" ry="2.6"/>
+    <ellipse cx="847" cy="386" rx="4.4" ry="2.2"/>
+    <ellipse cx="815" cy="345" rx="3.6" ry="1.8"/>
+    <ellipse cx="777" cy="326" rx="3" ry="1.5"/>
+  </g>
+
+  <!-- ============ ROADSIDE DEAD TREES + FENCE POSTS ============ -->
+  <g>
+    <!-- left-side dead tree, tallest closest -->
+    <g transform="translate(316,398)">
+      <ellipse cx="0" cy="36" rx="24" ry="5" fill="#0a0416" opacity="0.55"/>
+      <!-- twisted trunk + bare branches -->
+      <path d="M0 34 L-2 -4 L-14 -22 M-2 -4 L10 -18 M-2 -4 L4 -30 M4 -30 L-6 -40 M4 -30 L14 -36"
+            fill="none" stroke="#3d2b58" stroke-width="4.5" stroke-linecap="round"/>
+      <path d="M-14 -22 L-22 -30 M10 -18 L18 -22"
+            fill="none" stroke="#3d2b58" stroke-width="3.4" stroke-linecap="round"/>
+    </g>
+    <g transform="translate(232,470)">
+      <ellipse cx="0" cy="48" rx="30" ry="6" fill="#0a0416" opacity="0.55"/>
+      <path d="M0 46 L-3 -10 L-18 -34 M-3 -10 L14 -28 M-3 -10 L5 -44 M5 -44 L-8 -56 M5 -44 L18 -52"
+            fill="none" stroke="#3d2b58" stroke-width="5.5" stroke-linecap="round"/>
+      <path d="M-18 -34 L-28 -46 M14 -28 L24 -34"
+            fill="none" stroke="#3d2b58" stroke-width="4" stroke-linecap="round"/>
+    </g>
+    <g transform="translate(118,584)">
+      <ellipse cx="0" cy="66" rx="42" ry="8" fill="#0a0416" opacity="0.55"/>
+      <path d="M0 64 L-4 -14 L-24 -46 M-4 -14 L18 -38 M-4 -14 L6 -60 M6 -60 L-12 -78 M6 -60 L26 -70"
+            fill="none" stroke="#3d2b58" stroke-width="7" stroke-linecap="round"/>
+      <path d="M-24 -46 L-38 -62 M18 -38 L32 -48"
+            fill="none" stroke="#3d2b58" stroke-width="5" stroke-linecap="round"/>
+    </g>
+    <!-- right side -->
+    <g transform="translate(1006,412)">
+      <ellipse cx="0" cy="40" rx="26" ry="5" fill="#0a0416" opacity="0.55"/>
+      <path d="M0 38 L-2 -6 L-16 -26 M-2 -6 L14 -22 M-2 -6 L4 -34 M4 -34 L-4 -46 M4 -34 L16 -40"
+            fill="none" stroke="#3d2b58" stroke-width="5" stroke-linecap="round"/>
+      <path d="M-16 -26 L-24 -34 M14 -22 L22 -26"
+            fill="none" stroke="#3d2b58" stroke-width="3.6" stroke-linecap="round"/>
+    </g>
+    <g transform="translate(1132,530)">
+      <ellipse cx="0" cy="58" rx="38" ry="7" fill="#0a0416" opacity="0.55"/>
+      <path d="M0 56 L-3 -10 L-20 -38 M-3 -10 L16 -32 M-3 -10 L5 -52 M5 -52 L-10 -66 M5 -52 L22 -62"
+            fill="none" stroke="#3d2b58" stroke-width="6" stroke-linecap="round"/>
+      <path d="M-20 -38 L-32 -52 M16 -32 L28 -40"
+            fill="none" stroke="#3d2b58" stroke-width="4.5" stroke-linecap="round"/>
+    </g>
+  </g>
+
+  <!-- tilted fence posts (left, in the mid distance) -->
+  <g stroke="#2a1c40" stroke-width="4" stroke-linecap="round" fill="none">
+    <path d="M400 468 l-4 -34" transform="rotate(-6 400 468)"/>
+    <path d="M446 484 l-3 -32" transform="rotate(4 446 484)"/>
+    <path d="M490 500 l-4 -30" transform="rotate(-8 490 500)"/>
+    <path d="M530 516 l-3 -28" transform="rotate(6 530 516)"/>
+    <!-- sagging wire between posts -->
+    <path d="M398 440 Q425 462 447 452 Q470 442 490 476 Q510 490 528 490" stroke="#3a2a58" stroke-width="1.6" opacity="0.7"/>
+  </g>
+
+  <!-- flickering street lamp (mid-right of the road, right side) -->
+  <g transform="translate(892,478)">
+    <ellipse cx="0" cy="72" rx="16" ry="4" fill="#0a0416" opacity="0.6"/>
+    <!-- pole -->
+    <rect x="-2.4" y="-6" width="4.8" height="80" rx="2" fill="#241638"/>
+    <!-- arm -->
+    <path d="M0 -6 q0 -14 -14 -14" fill="none" stroke="#241638" stroke-width="4" stroke-linecap="round"/>
+    <!-- fixture -->
+    <path d="M-20 -22 h12 l-2 8 h-8 z" fill="#241638"/>
+    <!-- glow -->
+    <g class="flicker">
+      <circle cx="-14" cy="-8" r="42" fill="url(#lampGlow)"/>
+      <circle cx="-14" cy="-13" r="4.5" fill="#ffe9b0"/>
+    </g>
+  </g>
+
+  <!-- ============ THE SNIFFER — a shadowy periscope-eye at depth ============
+       lurks LEFT of the sniffed road, well back in the mid-distance;
+       amber cone sweeps the ribbon (500ms danger read), the road amber-stained.
+       eye at (250, 356) world; cone reaches SE to hit the left ribbon around
+       (~430,470)-(~570,455); rotates via CSS about that eye pivot. -->
+  <!-- the amber cone (swept, pivot at the eye) — proper triangle, apex to
+       two points on the left ribbon; no back-wash around the sniffer body -->
+  <g class="sweep">
+    <!-- broad wedge -->
+    <path d="M250 356 L400 500 L620 450 Z" fill="url(#sniffCone)" opacity="0.85"/>
+    <!-- inner brighter beam, narrower -->
+    <path d="M250 356 L450 490 L580 458 Z" fill="#f4a259" opacity="0.22"/>
+  </g>
+  <!-- amber stain glow where the beam actually touches the road ribbon -->
+  <ellipse cx="546" cy="452" rx="130" ry="24" fill="url(#sniffStain)" opacity="0.85"/>
+  <ellipse cx="500" cy="466" rx="82" ry="16" fill="#f4a259" opacity="0.28"/>
+  <!-- static crackle where the sniffer bites the road -->
+  <g stroke="#ffb867" stroke-width="3" stroke-linecap="round" opacity="0.95">
+    <path d="M498 446 l14 -6 l8 8" fill="none"/>
+    <path d="M552 452 l12 -9" fill="none"/>
+    <path d="M470 468 l10 -4 l6 6" fill="none"/>
+  </g>
+
+  <!-- the sniffer body: shadowy silhouette peeking from beside the road.
+       moved LEFT (x=250) so it stands clear of the signpost at x=460. -->
+  <g transform="translate(250,378)">
+    <!-- ground shadow -->
+    <ellipse cx="0" cy="30" rx="46" ry="9" fill="#0a0416" opacity="0.75"/>
+    <g class="bob">
+      <!-- soft menace glow behind body (violet-black) -->
+      <g filter="url(#soft)" opacity="0.8">
+        <ellipse cx="0" cy="6" rx="58" ry="30" fill="#12081e"/>
+      </g>
+      <!-- crouching silhouette base -->
+      <path d="M-40 22 Q-42 -2 -24 -10 Q-10 -22 0 -22 Q12 -22 24 -10 Q42 -2 40 22 Z"
+            fill="#150925" stroke="#4a2f6e" stroke-width="2.6" stroke-linejoin="round"/>
+      <!-- twin periscope stalks rising -->
+      <path d="M-10 -10 L-10 -36" stroke="#150925" stroke-width="7" stroke-linecap="round"/>
+      <path d="M10  -10 L10  -34" stroke="#150925" stroke-width="7" stroke-linecap="round"/>
+      <!-- the periscope-eye (amber, watching) — bigger, more legible -->
+      <g transform="translate(0,-40)">
+        <circle r="17" fill="#150925" stroke="#4a2f6e" stroke-width="2.6"/>
+        <circle r="11" fill="#f4a259"/>
+        <circle r="5.5" fill="#3a1a06"/>
+        <!-- amber highlight -->
+        <circle cx="-3" cy="-3" r="2.2" fill="#fff0a8" opacity="0.95"/>
+      </g>
+      <!-- side eye stalks -->
+      <circle cx="-10" cy="-32" r="5" fill="#f4a259" stroke="#3a1a06" stroke-width="1.4"/>
+      <circle cx="10" cy="-30" r="5" fill="#f4a259" stroke="#3a1a06" stroke-width="1.4"/>
+      <!-- little antenna wires along back (data-tap look) -->
+      <g stroke="#4a2f6e" stroke-width="1.8" fill="none" stroke-linecap="round" opacity="0.95">
+        <path d="M-24 -8 l-10 -12"/>
+        <path d="M26 -6 l12 -14"/>
+      </g>
+      <!-- toothy mouth for kid-friendly menace (not scary — Halloween grin) -->
+      <path d="M-14 6 L-9 12 L-5 6 L0 12 L5 6 L9 12 L14 6"
+            fill="none" stroke="#e05a7a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>
+    </g>
+  </g>
+
+  <!-- ============ SIGNPOSTS (the forecast, diegetic) ============ -->
+  <!-- LEFT: sniffer eyeing #?, 4 hops (danger pink label per in-game chip) -->
+  <g transform="translate(460,472)">
+    <ellipse cx="0" cy="116" rx="20" ry="5" fill="#0a0416" opacity="0.6"/>
+    <rect x="-5" y="-6" width="10" height="122" rx="4" fill="#2a1c40"/>
+    <g transform="translate(0,-14)">
+      <rect x="-92" y="-58" width="184" height="76" rx="16" fill="#180d2a"
+            stroke="#e05a7a" stroke-width="4"/>
+      <!-- eye icon on the left -->
+      <g transform="translate(-64,-20)">
+        <!-- eye almond -->
+        <path d="M-22 0 Q0 -18 22 0 Q0 18 -22 0 Z" fill="#180d2a" stroke="#e05a7a" stroke-width="3" stroke-linejoin="round"/>
+        <circle r="9" fill="#f4a259"/>
+        <circle r="4.5" fill="#3a1a06"/>
+        <circle cx="-2.4" cy="-2.4" r="1.6" fill="#fff0a8" opacity="0.9"/>
+      </g>
+      <text x="26" y="-8" text-anchor="middle" font-family="ui-rounded, system-ui" font-size="34"
+            font-weight="800" fill="#e05a7a">#?</text>
+      <g fill="#f2e5ff">
+        <circle cx="-27" cy="4" r="5.5"/><circle cx="-9" cy="4" r="5.5"/>
+        <circle cx="9" cy="4" r="5.5"/><circle cx="27" cy="4" r="5.5"/>
+      </g>
+    </g>
+  </g>
+  <!-- RIGHT: quiet, 7 hops -->
+  <g transform="translate(1014,456)">
+    <ellipse cx="0" cy="112" rx="20" ry="5" fill="#0a0416" opacity="0.6"/>
+    <rect x="-5" y="-6" width="10" height="118" rx="4" fill="#2a1c40"/>
+    <g transform="translate(0,-14)">
+      <rect x="-86" y="-56" width="172" height="74" rx="16" fill="#180d2a"
+            stroke="#e08cff" stroke-width="4"/>
+      <text x="0" y="-18" text-anchor="middle" font-family="ui-rounded, system-ui"
+            font-size="26" font-weight="800" fill="#e08cff">quiet</text>
+      <g fill="#f2e5ff">
+        <circle cx="-45" cy="4" r="5"/><circle cx="-30" cy="4" r="5"/>
+        <circle cx="-15" cy="4" r="5"/><circle cx="0" cy="4" r="5"/>
+        <circle cx="15" cy="4" r="5"/><circle cx="30" cy="4" r="5"/>
+        <circle cx="45" cy="4" r="5"/>
+      </g>
+    </g>
+  </g>
+
+  <!-- ===================== THE PARTY ===================== -->
+  <!-- a clean staggered arc (loose scatter, never a train), each body
+       shadowed; eyes give them character; numbers stay dominant -->
+  <g transform="translate(556,688)">
+    <ellipse cy="34" rx="28" ry="6" fill="#0a0416" opacity="0.55"/>
+    <g class="bob">
+      <circle r="44" fill="url(#fragGlow)"/>
+      <rect x="-24" y="-24" width="48" height="48" rx="11" fill="#6ee7ff"/>
+      <path d="M-15 -20.5 h30" stroke="#c9f6ff" stroke-width="5" stroke-linecap="round"/>
+      <rect x="-24" y="-24" width="48" height="48" rx="11" fill="none" stroke="#0d3d4d" stroke-width="3"/>
+      <circle cx="-7" cy="-11" r="2.4" fill="#062733"/><circle cx="7" cy="-11" r="2.4" fill="#062733"/>
+      <text y="15" text-anchor="middle" font-family="ui-rounded, system-ui" font-size="25" font-weight="800" fill="#062733">1</text>
+    </g>
+  </g>
+  <g transform="translate(602,646)">
+    <ellipse cy="30" rx="25" ry="5.5" fill="#0a0416" opacity="0.55"/>
+    <g class="float2">
+      <circle r="40" fill="url(#fragGlow)"/>
+      <rect x="-21" y="-21" width="42" height="42" rx="10" fill="#6ee7ff"/>
+      <path d="M-13 -17.5 h26" stroke="#c9f6ff" stroke-width="4.5" stroke-linecap="round"/>
+      <rect x="-21" y="-21" width="42" height="42" rx="10" fill="none" stroke="#0d3d4d" stroke-width="3"/>
+      <circle cx="-6" cy="-9" r="2.2" fill="#062733"/><circle cx="6" cy="-9" r="2.2" fill="#062733"/>
+      <text y="14" text-anchor="middle" font-family="ui-rounded, system-ui" font-size="22" font-weight="800" fill="#062733">3</text>
+    </g>
+  </g>
+  <g transform="translate(660,632)">
+    <ellipse cy="28" rx="23" ry="5" fill="#0a0416" opacity="0.55"/>
+    <g class="bob">
+      <circle r="38" fill="url(#fragGlow)"/>
+      <rect x="-20" y="-20" width="40" height="40" rx="9" fill="#6ee7ff"/>
+      <path d="M-12 -16.5 h24" stroke="#c9f6ff" stroke-width="4.5" stroke-linecap="round"/>
+      <rect x="-20" y="-20" width="40" height="40" rx="9" fill="none" stroke="#0d3d4d" stroke-width="3"/>
+      <circle cx="-6" cy="-8" r="2.1" fill="#062733"/><circle cx="6" cy="-8" r="2.1" fill="#062733"/>
+      <text y="13" text-anchor="middle" font-family="ui-rounded, system-ui" font-size="21" font-weight="800" fill="#062733">2</text>
+    </g>
+  </g>
+  <g transform="translate(718,646)">
+    <ellipse cy="30" rx="25" ry="5.5" fill="#0a0416" opacity="0.55"/>
+    <g class="float">
+      <circle r="40" fill="url(#fragGlow)"/>
+      <rect x="-21" y="-21" width="42" height="42" rx="10" fill="#6ee7ff"/>
+      <path d="M-13 -17.5 h26" stroke="#c9f6ff" stroke-width="4.5" stroke-linecap="round"/>
+      <rect x="-21" y="-21" width="42" height="42" rx="10" fill="none" stroke="#0d3d4d" stroke-width="3"/>
+      <circle cx="-6" cy="-9" r="2.2" fill="#062733"/><circle cx="6" cy="-9" r="2.2" fill="#062733"/>
+      <text y="14" text-anchor="middle" font-family="ui-rounded, system-ui" font-size="22" font-weight="800" fill="#062733">5</text>
+    </g>
+  </g>
+  <g transform="translate(764,688)">
+    <ellipse cy="34" rx="28" ry="6" fill="#0a0416" opacity="0.55"/>
+    <g class="bob">
+      <circle r="44" fill="url(#fragGlow)"/>
+      <rect x="-24" y="-24" width="48" height="48" rx="11" fill="#6ee7ff"/>
+      <path d="M-15 -20.5 h30" stroke="#c9f6ff" stroke-width="5" stroke-linecap="round"/>
+      <rect x="-24" y="-24" width="48" height="48" rx="11" fill="none" stroke="#0d3d4d" stroke-width="3"/>
+      <circle cx="-7" cy="-11" r="2.4" fill="#062733"/><circle cx="7" cy="-11" r="2.4" fill="#062733"/>
+      <text y="15" text-anchor="middle" font-family="ui-rounded, system-ui" font-size="25" font-weight="800" fill="#062733">4</text>
+    </g>
+  </g>
+  <!-- Pip, out front — the hero leads, backlit gold in the violet night -->
+  <g transform="translate(640,566)">
+    <ellipse cy="46" rx="26" ry="5.5" fill="#0a0416" opacity="0.5"/>
+    <g class="float">
+      <circle r="60" fill="url(#pipGlow)"/>
+      <g transform="scale(1.2)">
+        <path d="M0 -34 Q12 -12 34 0 Q12 12 0 34 Q-12 12 -34 0 Q-12 -12 0 -34 Z"
+              fill="none" stroke="#fff3c4" stroke-width="7" stroke-linejoin="round" opacity="0.6"/>
+        <path d="M0 -34 Q12 -12 34 0 Q12 12 0 34 Q-12 12 -34 0 Q-12 -12 0 -34 Z"
+              fill="#ffd166" stroke="#8a6215" stroke-width="2.5" stroke-linejoin="round"/>
+        <circle cx="-8" cy="-4" r="3.6" fill="#3a2c00"/>
+        <circle cx="8" cy="-4" r="3.6" fill="#3a2c00"/>
+        <path d="M-8 7 q8 8 16 0" fill="none" stroke="#3a2c00" stroke-width="3.4" stroke-linecap="round"/>
+      </g>
+    </g>
+  </g>
+
+  <!-- ===================== FOREGROUND — ragged violet grass ===================== -->
+  <path d="M0 800 L0 754 Q60 738 120 752 Q180 766 240 748 Q320 726 390 750 L390 800 Z" fill="#0a0416"/>
+  <path d="M890 800 L890 752 Q960 730 1040 750 Q1120 768 1200 744 Q1245 732 1280 742 L1280 800 Z" fill="#0a0416"/>
+  <g stroke="#0a0416" stroke-width="7" stroke-linecap="round">
+    <path d="M60 754 q-4 -22 -14 -30" fill="none"/>
+    <path d="M96 752 q2 -24 12 -34" fill="none"/>
+    <path d="M300 748 q-2 -20 -12 -28" fill="none"/>
+    <path d="M1000 748 q-3 -22 -13 -30" fill="none"/>
+    <path d="M1176 744 q3 -24 13 -32" fill="none"/>
+  </g>
+  <!-- foreground violet wisps -->
+  <g fill="#e08cff">
+    <circle class="twinkle"  cx="180" cy="700" r="3.4" opacity="0.75"/>
+    <circle class="twinkle2" cx="340" cy="732" r="2.6" opacity="0.75"/>
+    <circle class="twinkle"  cx="1060" cy="712" r="3.4" opacity="0.75"/>
+    <circle class="twinkle2" cx="948" cy="690" r="2.6" opacity="0.75"/>
+    <circle class="twinkle"  cx="1216" cy="668" r="3" opacity="0.75"/>
+  </g>
+</svg>
+</div>
+</body>
+</html>

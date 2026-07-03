@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gate P1 mock — Act 3 road view (Ocean Crossing)</title>
+<!-- Gate P1 mock, Act 3 "The Ocean Crossing" reskin of road-act1.html.
+     Same skeleton (viewBox 1280x800, trunk forking + both arcs arriving at
+     Kenji's, LEFT/RIGHT signposts, 5 numbered cyan fragments + gold Pip
+     leading, shadows under everything, same CSS animation classes with
+     reduced-motion respect). Reskin: underwater world column, cables not
+     roads, seabed ridges, distant shore.
+     Curriculum flip vs Act 1:
+       · LEFT road is the TRENCH shortcut — dips through a canyon.
+         Sign: safe-aqua "+3" (bandwidth pickup), 4 hop dots. NO amber
+         stain — the trench is a BONUS, not a sweeper.
+       · RIGHT road is the SATELLITE bounce — cable rises toward a surface
+         buoy. Sign: amber "slow", 6 hop dots. Right ribbon carries the
+         subtle amber tint near the rise (500ms danger read).
+     Color pedagogy invariants:
+       · warning/hazard/slow  = amber #f4a259 ONLY
+       · fragments             = cyan #6ee7ff
+       · Pip                   = gold #ffd166 (his glow reads underwater)
+     Bioluminescent plankton stand in for fireflies. -->
+<style>
+  * { margin: 0; box-sizing: border-box; }
+  html, body { height: 100%; background: #060d16; overflow: hidden; }
+  .scene { position: fixed; inset: 0; }
+  svg { width: 100%; height: 100%; display: block; }
+
+  .tag {
+    position: fixed; top: 10px; left: 12px; z-index: 2;
+    font: 600 11px ui-monospace, Menlo, monospace; letter-spacing: 0.05em;
+    color: rgba(214, 240, 255, 0.65); background: rgba(6, 13, 22, 0.6);
+    padding: 4px 8px; border-radius: 6px;
+  }
+
+  .float   { animation: float 2.8s ease-in-out infinite alternate; }
+  .float2  { animation: float 3.4s ease-in-out infinite alternate-reverse; }
+  .bob     { animation: bob 3.6s ease-in-out infinite alternate; }
+  .twinkle { animation: twinkle 2.2s ease-in-out infinite alternate; }
+  .twinkle2{ animation: twinkle 3.1s ease-in-out infinite alternate-reverse; }
+  .blink   { animation: blink 2.4s steps(1) infinite; }
+  .drift   { animation: drift 6s ease-in-out infinite alternate; }
+  .rise    { animation: rise 5s linear infinite; }
+  .rise2   { animation: rise 7s linear infinite; }
+  @keyframes float   { from { transform: translateY(-5px); } to { transform: translateY(6px); } }
+  @keyframes bob     { from { transform: translateY(-4px); } to { transform: translateY(5px); } }
+  @keyframes twinkle { from { opacity: 0.25; } to { opacity: 0.9; } }
+  @keyframes blink   { 0% { opacity: 1; } 55% { opacity: 0.15; } 100% { opacity: 1; } }
+  @keyframes drift   { from { transform: translateX(-8px); } to { transform: translateX(9px); } }
+  @keyframes rise    { 0% { transform: translateY(0); opacity: 0; }
+                       15% { opacity: 0.9; }
+                       100% { transform: translateY(-120px); opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) {
+    .float, .float2, .bob, .twinkle, .twinkle2, .blink, .drift, .rise, .rise2 { animation: none; }
+  }
+</style>
+</head>
+<body>
+<div class="tag">GATE P1 MOCK · ACT 3 · THE OCEAN CROSSING · road view · v1</div>
+<div class="scene">
+<svg viewBox="0 0 1280 800" preserveAspectRatio="xMidYMax slice" role="img"
+     aria-label="Underwater scene: glowing aqua sea cables run along a seabed and fork ahead. The left cable dips through a bonus trench canyon; the right cable rises toward a surface satellite buoy and is tinted amber for slow. Both cables arrive at Kenji's glowing beach house on a far shore. A party of five cyan packet fragments follows a gold Pip through the deep.">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0"    stop-color="#0e3a5e"/>
+      <stop offset="0.35" stop-color="#114a6a"/>
+      <stop offset="0.7"  stop-color="#0a2a44"/>
+      <stop offset="1"    stop-color="#061a2e"/>
+    </linearGradient>
+    <linearGradient id="shaft" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#a9e6ff" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#a9e6ff" stop-opacity="0"/>
+    </linearGradient>
+    <radialGradient id="homeGlow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0"   stop-color="#ffe6a8" stop-opacity="0.85"/>
+      <stop offset="0.5" stop-color="#ffd166" stop-opacity="0.35"/>
+      <stop offset="1"   stop-color="#ffd166" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="buoyGlow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#f4a259" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#f4a259" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="trenchGlow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#6fd6ff" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#6fd6ff" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="seabed" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0d2a44"/>
+      <stop offset="1" stop-color="#050f1c"/>
+    </linearGradient>
+    <linearGradient id="cableBody" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#123a56"/>
+      <stop offset="1" stop-color="#1c5378"/>
+    </linearGradient>
+    <linearGradient id="slowStain" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0"    stop-color="#f4a259" stop-opacity="0"/>
+      <stop offset="0.55" stop-color="#f4a259" stop-opacity="0.28"/>
+      <stop offset="1"    stop-color="#e8944c" stop-opacity="0.55"/>
+    </linearGradient>
+    <radialGradient id="fragGlow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#6ee7ff" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#6ee7ff" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="pipGlow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#fff3c4" stop-opacity="0.95"/>
+      <stop offset="1" stop-color="#ffd166" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="trenchDark" cx="0.5" cy="0.35" r="0.65">
+      <stop offset="0" stop-color="#000814" stop-opacity="0.92"/>
+      <stop offset="1" stop-color="#050f1c" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="soft" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="7"/>
+    </filter>
+    <filter id="soft2" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="14"/>
+    </filter>
+  </defs>
+
+  <!-- ===================== WATER COLUMN ===================== -->
+  <rect width="1280" height="314" fill="url(#sky)"/>
+  <!-- surface wave ceiling: a hint of daylight above -->
+  <g opacity="0.6">
+    <path d="M0 12 Q60 4 120 12 T240 12 T360 12 T480 12 T600 12 T720 12 T840 12 T960 12 T1080 12 T1200 12 T1280 12 L1280 0 L0 0 Z"
+          fill="#7fc7e8" opacity="0.55"/>
+    <path d="M0 20 Q60 12 120 20 T240 20 T360 20 T480 20 T600 20 T720 20 T840 20 T960 20 T1080 20 T1200 20 T1280 20"
+          fill="none" stroke="#c9edff" stroke-width="1.5" opacity="0.5"/>
+  </g>
+  <!-- god-ray shafts slanting from the surface -->
+  <g opacity="0.6">
+    <polygon points="120,0 220,0 340,314 200,314" fill="url(#shaft)"/>
+    <polygon points="380,0 460,0 540,314 420,314" fill="url(#shaft)" opacity="0.7"/>
+    <polygon points="760,0 830,0 900,314 800,314" fill="url(#shaft)" opacity="0.6"/>
+    <polygon points="1000,0 1080,0 1140,314 1040,314" fill="url(#shaft)" opacity="0.75"/>
+  </g>
+  <!-- distant whale silhouette in the mid column -->
+  <g class="drift" transform="translate(1020,180)" opacity="0.42">
+    <path d="M-58 0 C-40 -22 20 -22 44 -4 L64 -12 L58 4 L64 20 L44 12 C20 26 -40 22 -58 0 Z"
+          fill="#04162a"/>
+    <path d="M-40 -6 L-64 -22 L-52 -2 Z" fill="#04162a"/>
+    <circle cx="30" cy="-2" r="1.6" fill="#8ab4d1"/>
+  </g>
+  <!-- distant fish school -->
+  <g transform="translate(160,150)" opacity="0.55" fill="#3a7fa4">
+    <path d="M0 0 l-8 -3 l0 6 z"/>
+    <path d="M14 -4 l-8 -3 l0 6 z"/>
+    <path d="M28 2 l-8 -3 l0 6 z"/>
+    <path d="M6 8 l-8 -3 l0 6 z"/>
+    <path d="M22 12 l-8 -3 l0 6 z"/>
+    <path d="M38 -8 l-8 -3 l0 6 z"/>
+  </g>
+  <!-- rising bubbles across the column -->
+  <g fill="#c9edff" opacity="0.55">
+    <circle class="rise"  cx="80"   cy="700" r="3"/>
+    <circle class="rise2" cx="140"  cy="620" r="2"/>
+    <circle class="rise"  cx="220"  cy="740" r="2.6"/>
+    <circle class="rise2" cx="380"  cy="660" r="2"/>
+    <circle class="rise"  cx="1080" cy="700" r="3"/>
+    <circle class="rise2" cx="1180" cy="600" r="2.4"/>
+    <circle class="rise"  cx="960"  cy="680" r="2"/>
+    <circle class="rise2" cx="1220" cy="740" r="3"/>
+    <circle class="rise"  cx="60"   cy="500" r="2"/>
+    <circle class="rise2" cx="1150" cy="500" r="2.2"/>
+  </g>
+
+  <!-- ============== FAR SEABED RIDGES (soft aqua rim light) ============== -->
+  <path d="M0 268 Q140 216 300 252 Q430 280 560 250 Q700 216 840 248 Q1000 282 1120 244 Q1210 222 1280 240 L1280 322 L0 322 Z"
+        fill="#0a2a44"/>
+  <path d="M0 268 Q140 216 300 252 Q430 280 560 250 Q700 216 840 248 Q1000 282 1120 244 Q1210 222 1280 240"
+        fill="none" stroke="#6fd6ff" stroke-width="2.5" opacity="0.35"/>
+
+  <!-- ============== MID SEABED + TRENCH CANYON HINT ============== -->
+  <path d="M0 296 Q170 258 340 288 Q480 312 640 296 Q820 272 980 298 Q1140 322 1280 294 L1280 384 L0 384 Z"
+        fill="#0c3450"/>
+  <!-- coral cluster on the mid ridge (left) -->
+  <g transform="translate(206,258)">
+    <ellipse cx="0" cy="46" rx="26" ry="4" fill="#02101c" opacity="0.55"/>
+    <path d="M0 44 q-4 -22 -14 -30 M-14 14 q-6 -8 -10 -20 M-14 14 q4 -10 6 -22"
+          fill="none" stroke="#e17aa5" stroke-width="4.5" stroke-linecap="round"/>
+    <path d="M6 42 q4 -20 12 -28 M18 14 q6 -6 12 -14 M18 14 q-2 -10 -6 -22"
+          fill="none" stroke="#ff9bb5" stroke-width="4.5" stroke-linecap="round"/>
+    <circle class="twinkle" cx="-14" cy="-6" r="2.4" fill="#ffd6e7"/>
+    <circle class="twinkle2" cx="16" cy="-6" r="2.4" fill="#ffd6e7"/>
+  </g>
+  <!-- kelp on the right -->
+  <g transform="translate(1030,262)">
+    <path d="M0 60 Q-6 30 2 0 Q10 -20 4 -40" fill="none" stroke="#2f8770" stroke-width="6" stroke-linecap="round" opacity="0.85"/>
+    <path d="M18 62 Q22 34 14 8 Q6 -14 18 -34" fill="none" stroke="#4bb896" stroke-width="6" stroke-linecap="round" opacity="0.85"/>
+    <path d="M-14 60 Q-20 34 -12 10 Q-4 -12 -18 -32" fill="none" stroke="#2f8770" stroke-width="5" stroke-linecap="round" opacity="0.8"/>
+  </g>
+
+  <!-- horizon mist (fog of the deep) -->
+  <g filter="url(#soft2)" opacity="0.55">
+    <ellipse cx="420" cy="326" rx="230" ry="26" fill="#7fc7e8" opacity="0.22"/>
+    <ellipse cx="900" cy="332" rx="260" ry="24" fill="#7fc7e8" opacity="0.2"/>
+  </g>
+
+  <!-- ============== KENJI'S — the destination shore, cables emerge here ==============
+       far shore in warm register: a broad shoreline crescent across the
+       horizon so the destination READS from anywhere on screen, plus a
+       stilted beach house with warm windows. Drawn AFTER seabed layers so
+       it reads in front. -->
+  <!-- big warm halo behind the shore -->
+  <circle cx="742" cy="294" r="150" fill="url(#homeGlow)"/>
+  <!-- far shore silhouette headland cresting above the water column -->
+  <path d="M620 296 Q680 250 742 258 Q808 250 872 300 L872 340 L620 340 Z"
+        fill="#3a2a18" opacity="0.9"/>
+  <path d="M620 296 Q680 250 742 258 Q808 250 872 300"
+        fill="none" stroke="#f4a259" stroke-width="2.4" opacity="0.55"/>
+  <!-- sand strip at the waterline (broader, warmer) -->
+  <path d="M624 316 Q700 300 786 306 Q844 310 868 324 L868 344 L624 344 Z"
+        fill="#e9c48a" opacity="0.95"/>
+  <path d="M624 316 Q700 300 786 306 Q844 310 868 324"
+        fill="none" stroke="#fff0c8" stroke-width="1.8" opacity="0.7"/>
+  <!-- beach house on stilts, centered on the shore -->
+  <g transform="translate(742,290) scale(1.25)">
+    <ellipse cx="0" cy="26" rx="36" ry="4.5" fill="#2b1d0a" opacity="0.55"/>
+    <!-- stilts -->
+    <g stroke="#8a5a2c" stroke-width="3" stroke-linecap="round">
+      <line x1="-14" y1="6" x2="-14" y2="26"/>
+      <line x1="14" y1="6" x2="14" y2="26"/>
+    </g>
+    <!-- body -->
+    <path d="M-22 6 v-14 l22 -16 22 16 v14 z" fill="#7a4a24"
+          stroke="#ffd166" stroke-width="2.5" stroke-linejoin="round"/>
+    <!-- warm windows -->
+    <rect x="-6" y="-6" width="12" height="12" rx="2" fill="#ffd166"/>
+    <rect x="-17" y="-8" width="7" height="7" rx="1.5" fill="#ffe9b0" opacity="0.95"/>
+    <rect x="10" y="-8" width="7" height="7" rx="1.5" fill="#ffe9b0" opacity="0.95"/>
+    <!-- lantern hanging under the eaves -->
+    <circle cx="0" cy="-26" r="3.4" fill="#ffe9b0"/>
+    <line x1="0" y1="-30" x2="0" y2="-38" stroke="#ffe9b0" stroke-width="1.4"/>
+    <!-- little palm frond -->
+    <path d="M22 -8 q10 -14 4 -22 M22 -8 q14 -6 20 -18 M22 -8 q6 -6 6 -18"
+          fill="none" stroke="#4bb896" stroke-width="2.4" stroke-linecap="round" opacity="0.9"/>
+  </g>
+  <!-- a second, smaller building tucked to the side (village feel) -->
+  <g transform="translate(818,320) scale(0.7)">
+    <path d="M-16 6 v-10 l16 -12 16 12 v10 z" fill="#5a3a20"
+          stroke="#ffd166" stroke-width="2" stroke-linejoin="round"/>
+    <rect x="-4" y="-4" width="8" height="8" rx="1.5" fill="#ffe9b0"/>
+  </g>
+  <!-- cables emerge from the water and climb onto the sand at Kenji's door -->
+  <g stroke="#6fd6ff" stroke-width="3" fill="none" stroke-linecap="round" opacity="0.95">
+    <path d="M714 318 Q724 306 742 302"/>
+    <path d="M770 320 Q756 308 742 302"/>
+  </g>
+
+  <!-- ===================== SEABED (foreground floor) ===================== -->
+  <rect y="314" width="1280" height="486" fill="url(#seabed)"/>
+  <!-- silty pebbles / plankton motes -->
+  <g fill="#7fc7e8" opacity="0.45">
+    <circle cx="150" cy="420" r="3"/><circle cx="260" cy="500" r="4"/>
+    <circle cx="90" cy="610" r="4"/><circle cx="330" cy="660" r="5"/>
+    <circle cx="1080" cy="470" r="4"/><circle cx="1180" cy="560" r="5"/>
+    <circle cx="990" cy="640" r="4"/><circle cx="1240" cy="690" r="5"/>
+  </g>
+  <g fill="#6fd6ff" opacity="0.6">
+    <circle class="twinkle"  cx="205" cy="465" r="3"/>
+    <circle class="twinkle2" cx="1130" cy="520" r="3"/>
+    <circle class="twinkle"  cx="60"  cy="530" r="3"/>
+    <circle class="twinkle2" cx="1035" cy="580" r="3.4"/>
+  </g>
+  <g fill="#c9edff" opacity="0.55">
+    <circle class="twinkle"  cx="285" cy="560" r="3"/>
+    <circle class="twinkle2" cx="140" cy="500" r="2.6"/>
+    <circle class="twinkle"  cx="1210" cy="620" r="3.4"/>
+    <circle class="twinkle2" cx="945" cy="560" r="3"/>
+  </g>
+
+  <!-- ============ TRENCH DARKNESS (painted UNDER the cables) ============
+       a hollow carved into the seabed just below the LEFT arc's apex.
+       Rim = jagged rocky cliff; interior = deep dark. The left cable
+       (painted next) visibly runs across it. -->
+  <ellipse cx="536" cy="454" rx="180" ry="46" fill="url(#trenchDark)"/>
+  <!-- dark canyon interior (a hollow shape, wider at top) -->
+  <path d="M388 456
+           Q410 442 430 448 Q450 454 470 442 Q492 432 512 448 Q532 462 552 446
+           Q574 432 596 448 Q616 462 640 448 Q664 434 682 452 Q702 468 720 452
+           L714 508 Q560 540 400 512 Z"
+        fill="#02101c" opacity="0.98"/>
+  <!-- rim highlight along the jagged top edge (safe aqua, NOT amber) -->
+  <path d="M388 456 Q410 442 430 448 Q450 454 470 442 Q492 432 512 448 Q532 462 552 446 Q574 432 596 448 Q616 462 640 448 Q664 434 682 452 Q702 468 720 452"
+        fill="none" stroke="#6fd6ff" stroke-width="2.4" opacity="0.65"/>
+  <!-- a couple of jagged rock spurs at the near rim (foreground crags) -->
+  <g fill="#0a141f" stroke="#1a3550" stroke-width="1.4" stroke-linejoin="round">
+    <path d="M410 456 l14 -20 l10 16 z"/>
+    <path d="M508 452 l16 -22 l12 18 z"/>
+    <path d="M624 452 l14 -20 l10 16 z"/>
+    <path d="M690 456 l12 -18 l10 14 z"/>
+  </g>
+
+  <!-- ============== THE CABLE: one trunk, forking, arriving ==============
+       both branches end at Kenji's doorstep — same destination, two
+       routes. LEFT dips into the TRENCH (bonus). RIGHT rises to the
+       SATELLITE buoy (slow). -->
+  <!-- trunk we run along -->
+  <path d="M470 800 Q520 645 606 532 L674 532 Q760 645 810 800 Z" fill="url(#cableBody)"/>
+  <!-- LEFT ribbon (trench dip): tight arc to the left side of Kenji's door -->
+  <path d="M606 532 C455 455 505 352 718 314 L734 322 C540 368 500 452 640 524 Z"
+        fill="url(#cableBody)"/>
+  <!-- RIGHT ribbon (satellite bounce): wide sweep to the right side -->
+  <path d="M674 532 C870 470 940 372 766 322 L750 316 C900 372 830 462 640 524 Z"
+        fill="url(#cableBody)"/>
+  <!-- fork notch fill -->
+  <path d="M606 532 L640 522 L674 532 Q640 558 606 532 Z" fill="url(#cableBody)"/>
+
+  <!-- the SATELLITE bounce STAINS its road: subtle amber wash near the
+       right rise (500ms danger read) — the SLOW road is amber-tinted -->
+  <path d="M674 532 C870 470 940 372 766 322 L750 316 C900 372 830 462 640 524 Z"
+        fill="url(#slowStain)" opacity="0.55"/>
+
+  <!-- edge light: aqua glow on the cables; the SLOW road's outer edge is amber -->
+  <g fill="none" stroke-linecap="round">
+    <path d="M470 800 Q520 645 606 532" stroke="#a5eaff" stroke-width="4.5" opacity="0.95"/>
+    <path d="M606 532 C455 455 505 352 718 314" stroke="#a5eaff" stroke-width="4.5" opacity="0.95"/>
+    <path d="M810 800 Q760 645 674 532" stroke="#a5eaff" stroke-width="4.5" opacity="0.95"/>
+    <path d="M674 532 C870 470 940 372 766 322" stroke="#ffc48a" stroke-width="4.5" opacity="0.95"/>
+  </g>
+  <g stroke-width="3" fill="none" stroke-linecap="round" opacity="0.55">
+    <path d="M640 524 C500 452 540 368 734 322" stroke="#6fd6ff"/>
+    <path d="M640 524 C830 462 900 372 750 316" stroke="#ffc48a"/>
+  </g>
+
+  <!-- cable clamps / anchor pins along the seabed -->
+  <g fill="#1a5578" stroke="#0a2a44" stroke-width="1.5">
+    <rect x="470" y="770" width="14" height="8" rx="2"/>
+    <rect x="622" y="646" width="12" height="7" rx="2"/>
+    <rect x="796" y="770" width="14" height="8" rx="2"/>
+    <rect x="646" y="646" width="12" height="7" rx="2"/>
+    <rect x="524" y="424" width="10" height="6" rx="2"/>
+    <rect x="800" y="440" width="10" height="6" rx="2"/>
+  </g>
+
+  <!-- marching signal pulses along the cables (dashes), bright and tapering -->
+  <g fill="#eafbff">
+    <ellipse cx="640" cy="754" rx="13" ry="6.5"/>
+    <ellipse cx="640" cy="682" rx="11" ry="5.4"/>
+    <ellipse cx="640" cy="618" rx="9" ry="4.4"/>
+    <ellipse cx="640" cy="562" rx="7.5" ry="3.6"/>
+    <!-- left spine (fewer hops — bonus trench route) -->
+    <ellipse cx="557" cy="459" rx="6" ry="3"/>
+    <ellipse cx="563" cy="401" rx="4.6" ry="2.3"/>
+    <ellipse cx="631" cy="349" rx="3.4" ry="1.7"/>
+    <!-- right spine (more hops — long satellite bounce) -->
+    <ellipse cx="770" cy="475" rx="6" ry="3" fill="#ffe4c0"/>
+    <ellipse cx="829" cy="430" rx="5.2" ry="2.6" fill="#ffe4c0"/>
+    <ellipse cx="847" cy="386" rx="4.4" ry="2.2" fill="#ffe4c0"/>
+    <ellipse cx="815" cy="345" rx="3.6" ry="1.8" fill="#ffe4c0"/>
+    <ellipse cx="777" cy="326" rx="3" ry="1.5" fill="#ffe4c0"/>
+  </g>
+
+  <!-- ============ TRENCH AURA + INHABITANTS (painted OVER cables) ============
+       little bioluminescent motes rising out of the trench + a curious
+       octopus peeking over the near rim. The trench darkness itself is
+       painted UNDER the cables (see block above) so the cable reads as
+       running across the canyon mouth. Aqua = bonus, NOT warning. -->
+  <ellipse cx="540" cy="452" rx="130" ry="18" fill="url(#trenchGlow)" opacity="0.7"/>
+  <g fill="#6fd6ff" opacity="0.95">
+    <circle class="rise"  cx="480" cy="470" r="2.4"/>
+    <circle class="rise2" cx="540" cy="486" r="2"/>
+    <circle class="rise"  cx="600" cy="472" r="2.6"/>
+    <circle class="rise2" cx="510" cy="488" r="1.8"/>
+    <circle class="rise"  cx="580" cy="490" r="2.2"/>
+    <circle class="rise2" cx="440" cy="472" r="2"/>
+    <circle class="rise"  cx="660" cy="478" r="2"/>
+    <circle class="rise2" cx="420" cy="484" r="1.8"/>
+    <circle class="rise"  cx="700" cy="486" r="2"/>
+  </g>
+  <!-- a curious octopus peeking over the near rim of the trench -->
+  <g class="drift" transform="translate(462,466)" opacity="0.95">
+    <ellipse cx="0" cy="0" rx="18" ry="14" fill="#7a3f6b"/>
+    <ellipse cx="-5" cy="-4" rx="5" ry="4" fill="#a86494" opacity="0.85"/>
+    <g stroke="#7a3f6b" stroke-width="3.6" stroke-linecap="round" fill="none">
+      <path d="M-12 6 q-4 12 -12 14"/>
+      <path d="M-5 10 q-2 14 -6 22"/>
+      <path d="M2 12 q2 14 -2 22"/>
+      <path d="M9 10 q6 12 6 20"/>
+      <path d="M14 4 q10 8 14 12"/>
+    </g>
+    <circle cx="-8" cy="-4" r="1.7" fill="#0a141f"/>
+    <circle cx="-2" cy="-4" r="1.7" fill="#0a141f"/>
+  </g>
+
+  <!-- ============ THE SATELLITE BOUNCE — RIGHT cable rises to a buoy ============
+       the RIGHT ribbon rises to the surface. A THIN "lift line" tees off
+       the right arc's apex and climbs to a surface buoy far to the right,
+       clear of Kenji's shore. -->
+  <!-- lift-line: cable segment ascending from the right arc to the surface -->
+  <g fill="none" stroke-linecap="round">
+    <path d="M902 402 Q930 300 966 210" stroke="#1c5378" stroke-width="7"/>
+    <path d="M902 402 Q930 300 966 210" stroke="#ffc48a" stroke-width="3" opacity="0.9"/>
+    <!-- signal pulses rising along the lift line -->
+    <g fill="#ffe4c0">
+      <circle cx="912" cy="376" r="3"/>
+      <circle cx="928" cy="330" r="2.6"/>
+      <circle cx="944" cy="282" r="2.2"/>
+      <circle cx="958" cy="240" r="2"/>
+    </g>
+  </g>
+  <!-- amber warning glow where the cable breaches the surface -->
+  <ellipse cx="966" cy="212" rx="70" ry="18" fill="url(#buoyGlow)"/>
+  <!-- surface buoy floating high-right, well clear of the destination -->
+  <g transform="translate(966,150)">
+    <g class="bob">
+      <ellipse cx="0" cy="58" rx="38" ry="5" fill="#02101c" opacity="0.55"/>
+      <!-- floating body -->
+      <path d="M-26 50 Q-30 26 -20 10 L20 10 Q30 26 26 50 Z"
+            fill="#f4a259" stroke="#8a4a1c" stroke-width="2.5" stroke-linejoin="round"/>
+      <rect x="-22" y="14" width="44" height="6" rx="2" fill="#8a4a1c" opacity="0.7"/>
+      <!-- mast -->
+      <line x1="0" y1="10" x2="0" y2="-30" stroke="#8a4a1c" stroke-width="4" stroke-linecap="round"/>
+      <!-- beacon -->
+      <circle cx="0" cy="-36" r="9" fill="#fff0a8" stroke="#8a4a1c" stroke-width="2"/>
+      <circle class="blink" cx="0" cy="-36" r="4.5" fill="#ffb867"/>
+      <!-- little antenna dish -->
+      <path d="M-14 -18 q14 -10 28 0" fill="none" stroke="#8a4a1c" stroke-width="2.5" stroke-linecap="round"/>
+      <line x1="0" y1="-18" x2="0" y2="-24" stroke="#8a4a1c" stroke-width="2"/>
+      <!-- signal arcs bouncing to the sky -->
+      <g stroke="#ffb867" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.8">
+        <path d="M-24 -46 q24 -14 48 0"/>
+        <path d="M-16 -54 q16 -8 32 0"/>
+      </g>
+    </g>
+  </g>
+  <!-- crackle where the cable breaches the surface -->
+  <g stroke="#ffb867" stroke-width="3" stroke-linecap="round" opacity="0.85">
+    <path d="M948 216 l14 -8 l8 8" fill="none"/>
+    <path d="M978 224 l10 -10" fill="none"/>
+  </g>
+
+  <!-- ============ ANCHOR + FISH FOREGROUND PROPS ============ -->
+  <!-- rusty anchor half-buried on the far left seabed -->
+  <g transform="translate(180,600) rotate(-16)">
+    <ellipse cx="0" cy="60" rx="34" ry="5" fill="#02101c" opacity="0.55"/>
+    <circle cx="0" cy="-20" r="8" fill="none" stroke="#a37246" stroke-width="4"/>
+    <line x1="0" y1="-12" x2="0" y2="42" stroke="#a37246" stroke-width="6" stroke-linecap="round"/>
+    <line x1="-16" y1="0" x2="16" y2="0" stroke="#a37246" stroke-width="5" stroke-linecap="round"/>
+    <path d="M-24 42 q0 12 24 12 q24 0 24 -12" fill="none" stroke="#a37246" stroke-width="6" stroke-linecap="round"/>
+    <path d="M-24 42 l-10 -6 M24 42 l10 -6" stroke="#a37246" stroke-width="6" stroke-linecap="round"/>
+  </g>
+  <!-- tiny fish schools drifting through the mid-ground -->
+  <g class="drift" transform="translate(340,470)" opacity="0.9" fill="#6fd6ff">
+    <path d="M0 0 l-8 -3 l0 6 z"/>
+    <path d="M14 -4 l-8 -3 l0 6 z"/>
+    <path d="M28 2 l-8 -3 l0 6 z"/>
+    <path d="M8 8 l-8 -3 l0 6 z"/>
+  </g>
+  <g class="drift" transform="translate(1100,610)" opacity="0.9" fill="#c9edff">
+    <path d="M0 0 l-8 -3 l0 6 z"/>
+    <path d="M14 -4 l-8 -3 l0 6 z"/>
+    <path d="M28 2 l-8 -3 l0 6 z"/>
+    <path d="M8 8 l-8 -3 l0 6 z"/>
+    <path d="M22 12 l-8 -3 l0 6 z"/>
+  </g>
+  <!-- more coral clumps low on either side -->
+  <g transform="translate(120,690)">
+    <ellipse cx="0" cy="30" rx="34" ry="6" fill="#02101c" opacity="0.55"/>
+    <path d="M0 30 q-6 -22 -18 -30 M-18 0 q-4 -6 -8 -18 M-18 0 q6 -8 8 -20"
+          fill="none" stroke="#e17aa5" stroke-width="7" stroke-linecap="round"/>
+    <path d="M8 30 q6 -20 16 -28 M24 2 q6 -6 14 -12 M24 2 q-2 -10 -6 -18"
+          fill="none" stroke="#ff9bb5" stroke-width="7" stroke-linecap="round"/>
+  </g>
+  <g transform="translate(1160,700)">
+    <ellipse cx="0" cy="26" rx="30" ry="5" fill="#02101c" opacity="0.5"/>
+    <path d="M0 26 q-4 -18 -12 -26 M-12 0 q-4 -6 -6 -14"
+          fill="none" stroke="#f4a259" stroke-width="6" stroke-linecap="round" opacity="0.85"/>
+    <path d="M6 26 q6 -18 14 -24 M20 2 q4 -6 10 -12"
+          fill="none" stroke="#ffab5e" stroke-width="6" stroke-linecap="round" opacity="0.85"/>
+  </g>
+  <!-- kelp on the right foreground -->
+  <g transform="translate(1030,540)">
+    <path d="M0 160 Q-8 100 4 60 Q14 20 6 -20"
+          fill="none" stroke="#2f8770" stroke-width="7" stroke-linecap="round" opacity="0.9"/>
+    <path d="M22 160 Q28 108 18 64 Q10 28 24 -12"
+          fill="none" stroke="#4bb896" stroke-width="7" stroke-linecap="round" opacity="0.9"/>
+    <path d="M-16 160 Q-22 108 -14 66 Q-6 28 -20 -14"
+          fill="none" stroke="#2f8770" stroke-width="6" stroke-linecap="round" opacity="0.85"/>
+  </g>
+
+  <!-- ============ SIGNPOSTS (the forecast, diegetic) ============
+       LEFT: TRENCH bonus (safe-aqua "+3", 4 hops, no amber)
+       RIGHT: SATELLITE "slow" (amber, 6 hops) — matches in-game chip 1:1 -->
+  <!-- LEFT: trench bonus -->
+  <g transform="translate(298,452)">
+    <ellipse cx="0" cy="116" rx="20" ry="5" fill="#02101c" opacity="0.6"/>
+    <rect x="-5" y="-6" width="10" height="122" rx="4" fill="#1a5578"/>
+    <g transform="translate(0,-14)">
+      <rect x="-92" y="-58" width="184" height="76" rx="16" fill="#0e2a40"
+            stroke="#6fd6ff" stroke-width="4"/>
+      <!-- trench pictogram: two ridges + a downward V wedge -->
+      <g transform="translate(-72,-40)" stroke="#6fd6ff" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M0 20 L10 8 L22 22 L34 6 L46 22 L58 10"/>
+        <path d="M18 24 L28 46 L38 24 Z" fill="#0e2a40"/>
+        <path d="M18 24 L28 46 L38 24" stroke="#6fd6ff"/>
+      </g>
+      <!-- little downward arrow accent -->
+      <path d="M-46 4 l0 10 l-4 -3 M-46 14 l4 -3" fill="none"
+            stroke="#6fd6ff" stroke-width="3" stroke-linecap="round"/>
+      <text x="18" y="-20" font-family="ui-rounded, system-ui" font-size="27"
+            font-weight="800" fill="#6fd6ff">+3</text>
+      <g fill="#eafbff">
+        <circle cx="-27" cy="4" r="5.5"/><circle cx="-9" cy="4" r="5.5"/>
+        <circle cx="9" cy="4" r="5.5"/><circle cx="27" cy="4" r="5.5"/>
+      </g>
+    </g>
+  </g>
+  <!-- RIGHT: satellite "slow" (label matches in-game chip 1:1) -->
+  <g transform="translate(1014,456)">
+    <ellipse cx="0" cy="112" rx="20" ry="5" fill="#02101c" opacity="0.6"/>
+    <rect x="-5" y="-6" width="10" height="118" rx="4" fill="#1a5578"/>
+    <g transform="translate(0,-14)">
+      <rect x="-92" y="-58" width="184" height="76" rx="16" fill="#0e2a40"
+            stroke="#f4a259" stroke-width="4"/>
+      <!-- little satellite pictogram in the corner -->
+      <g transform="translate(-70,-40)" stroke="#f4a259" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="12" y="16" width="14" height="10" rx="2" fill="#ffab5e"/>
+        <path d="M4 12 L12 20 M26 20 L34 12"/>
+        <path d="M4 12 l-4 -4 l4 -4 l4 4 z" fill="#ffab5e"/>
+        <path d="M34 12 l4 -4 l-4 -4 l-4 4 z" fill="#ffab5e"/>
+        <path d="M-2 30 q22 -14 44 0" opacity="0.85"/>
+      </g>
+      <text x="8" y="-18" text-anchor="middle" font-family="ui-rounded, system-ui"
+            font-size="26" font-weight="800" fill="#ffb867">slow</text>
+      <g fill="#eafbff">
+        <circle cx="-33" cy="4" r="5"/><circle cx="-19" cy="4" r="5"/>
+        <circle cx="-5" cy="4" r="5"/><circle cx="9" cy="4" r="5"/>
+        <circle cx="23" cy="4" r="5"/><circle cx="37" cy="4" r="5"/>
+      </g>
+    </g>
+  </g>
+
+  <!-- ===================== THE PARTY ===================== -->
+  <!-- staggered arc (loose scatter, never a train), each body shadowed;
+       eyes give them character; numbers stay dominant -->
+  <g transform="translate(556,688)">
+    <ellipse cy="34" rx="28" ry="6" fill="#02101c" opacity="0.55"/>
+    <g class="bob">
+      <circle r="44" fill="url(#fragGlow)"/>
+      <rect x="-24" y="-24" width="48" height="48" rx="11" fill="#6ee7ff"/>
+      <path d="M-15 -20.5 h30" stroke="#c9f6ff" stroke-width="5" stroke-linecap="round"/>
+      <rect x="-24" y="-24" width="48" height="48" rx="11" fill="none" stroke="#0d3d4d" stroke-width="3"/>
+      <circle cx="-7" cy="-11" r="2.4" fill="#062733"/><circle cx="7" cy="-11" r="2.4" fill="#062733"/>
+      <text y="15" text-anchor="middle" font-family="ui-rounded, system-ui" font-size="25" font-weight="800" fill="#062733">1</text>
+    </g>
+  </g>
+  <g transform="translate(602,646)">
+    <ellipse cy="30" rx="25" ry="5.5" fill="#02101c" opacity="0.55"/>
+    <g class="float2">
+      <circle r="40" fill="url(#fragGlow)"/>
+      <rect x="-21" y="-21" width="42" height="42" rx="10" fill="#6ee7ff"/>
+      <path d="M-13 -17.5 h26" stroke="#c9f6ff" stroke-width="4.5" stroke-linecap="round"/>
+      <rect x="-21" y="-21" width="42" height="42" rx="10" fill="none" stroke="#0d3d4d" stroke-width="3"/>
+      <circle cx="-6" cy="-9" r="2.2" fill="#062733"/><circle cx="6" cy="-9" r="2.2" fill="#062733"/>
+      <text y="14" text-anchor="middle" font-family="ui-rounded, system-ui" font-size="22" font-weight="800" fill="#062733">3</text>
+    </g>
+  </g>
+  <g transform="translate(660,632)">
+    <ellipse cy="28" rx="23" ry="5" fill="#02101c" opacity="0.55"/>
+    <g class="bob">
+      <circle r="38" fill="url(#fragGlow)"/>
+      <rect x="-20" y="-20" width="40" height="40" rx="9" fill="#6ee7ff"/>
+      <path d="M-12 -16.5 h24" stroke="#c9f6ff" stroke-width="4.5" stroke-linecap="round"/>
+      <rect x="-20" y="-20" width="40" height="40" rx="9" fill="none" stroke="#0d3d4d" stroke-width="3"/>
+      <circle cx="-6" cy="-8" r="2.1" fill="#062733"/><circle cx="6" cy="-8" r="2.1" fill="#062733"/>
+      <text y="13" text-anchor="middle" font-family="ui-rounded, system-ui" font-size="21" font-weight="800" fill="#062733">2</text>
+    </g>
+  </g>
+  <g transform="translate(718,646)">
+    <ellipse cy="30" rx="25" ry="5.5" fill="#02101c" opacity="0.55"/>
+    <g class="float">
+      <circle r="40" fill="url(#fragGlow)"/>
+      <rect x="-21" y="-21" width="42" height="42" rx="10" fill="#6ee7ff"/>
+      <path d="M-13 -17.5 h26" stroke="#c9f6ff" stroke-width="4.5" stroke-linecap="round"/>
+      <rect x="-21" y="-21" width="42" height="42" rx="10" fill="none" stroke="#0d3d4d" stroke-width="3"/>
+      <circle cx="-6" cy="-9" r="2.2" fill="#062733"/><circle cx="6" cy="-9" r="2.2" fill="#062733"/>
+      <text y="14" text-anchor="middle" font-family="ui-rounded, system-ui" font-size="22" font-weight="800" fill="#062733">5</text>
+    </g>
+  </g>
+  <g transform="translate(764,688)">
+    <ellipse cy="34" rx="28" ry="6" fill="#02101c" opacity="0.55"/>
+    <g class="bob">
+      <circle r="44" fill="url(#fragGlow)"/>
+      <rect x="-24" y="-24" width="48" height="48" rx="11" fill="#6ee7ff"/>
+      <path d="M-15 -20.5 h30" stroke="#c9f6ff" stroke-width="5" stroke-linecap="round"/>
+      <rect x="-24" y="-24" width="48" height="48" rx="11" fill="none" stroke="#0d3d4d" stroke-width="3"/>
+      <circle cx="-7" cy="-11" r="2.4" fill="#062733"/><circle cx="7" cy="-11" r="2.4" fill="#062733"/>
+      <text y="15" text-anchor="middle" font-family="ui-rounded, system-ui" font-size="25" font-weight="800" fill="#062733">4</text>
+    </g>
+  </g>
+  <!-- Pip, out front — the hero leads, backlit; underwater his glow is
+       a lantern in the deep -->
+  <g transform="translate(640,566)">
+    <ellipse cy="46" rx="26" ry="5.5" fill="#02101c" opacity="0.5"/>
+    <g class="float">
+      <circle r="72" fill="url(#pipGlow)"/>
+      <circle r="42" fill="url(#pipGlow)" opacity="0.7"/>
+      <g transform="scale(1.2)">
+        <path d="M0 -34 Q12 -12 34 0 Q12 12 0 34 Q-12 12 -34 0 Q-12 -12 0 -34 Z"
+              fill="none" stroke="#fff3c4" stroke-width="7" stroke-linejoin="round" opacity="0.6"/>
+        <path d="M0 -34 Q12 -12 34 0 Q12 12 0 34 Q-12 12 -34 0 Q-12 -12 0 -34 Z"
+              fill="#ffd166" stroke="#8a6215" stroke-width="2.5" stroke-linejoin="round"/>
+        <circle cx="-8" cy="-4" r="3.6" fill="#3a2c00"/>
+        <circle cx="8" cy="-4" r="3.6" fill="#3a2c00"/>
+        <path d="M-8 7 q8 8 16 0" fill="none" stroke="#3a2c00" stroke-width="3.4" stroke-linecap="round"/>
+      </g>
+    </g>
+  </g>
+
+  <!-- ===================== FOREGROUND SEABED SILT ===================== -->
+  <path d="M0 800 L0 754 Q60 738 120 752 Q180 766 240 748 Q320 726 390 750 L390 800 Z" fill="#02101c"/>
+  <path d="M890 800 L890 752 Q960 730 1040 750 Q1120 768 1200 744 Q1245 732 1280 742 L1280 800 Z" fill="#02101c"/>
+  <!-- silt tufts / sea grass -->
+  <g stroke="#0a2a44" stroke-width="7" stroke-linecap="round">
+    <path d="M60 754 q-4 -22 -14 -30" fill="none"/>
+    <path d="M96 752 q2 -24 12 -34" fill="none"/>
+    <path d="M300 748 q-2 -20 -12 -28" fill="none"/>
+    <path d="M1000 748 q-3 -22 -13 -30" fill="none"/>
+    <path d="M1176 744 q3 -24 13 -32" fill="none"/>
+  </g>
+  <!-- bioluminescent plankton motes near the seabed (was fireflies) -->
+  <g fill="#a5eaff">
+    <circle class="twinkle"  cx="180" cy="700" r="4"/>
+    <circle class="twinkle2" cx="340" cy="732" r="3"/>
+    <circle class="twinkle"  cx="1060" cy="712" r="4"/>
+    <circle class="twinkle2" cx="948" cy="690" r="3"/>
+    <circle class="twinkle"  cx="1216" cy="668" r="3.4"/>
+    <circle class="twinkle2" cx="60"  cy="720" r="3"/>
+    <circle class="twinkle"  cx="900" cy="742" r="3"/>
+  </g>
+</svg>
+</div>
+</body>
+</html>

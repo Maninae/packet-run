@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gate P1 mock — Act 4 road view (Far Reaches)</title>
+<!-- Same skeleton as road-act1.html (viewBox 1280x800 + preserveAspectRatio,
+     trunk-forking geometry, both arcs arriving at either side of the
+     destination, party of 5 cyan fragments + gold Pip lead, signpost pair
+     with hop dots, same CSS animation classes w/ reduced-motion).
+     Reskinned to Act 4 · THE FAR REACHES per design/04+08:
+     · golden-hour outback under an enormous sky (cream/gold family only —
+       saturated red-orange stays OFF the sky so hazard amber #f4a259 pops)
+     · low HUGE setting sun tucked half-behind flat-topped mesas
+     · sparse infrastructure: satellite dish, power poles + sagging lines,
+       distant windmill; roads are dusty ochre ribbons with gold edges
+     · LEFT hazard = an OFFLINE / power-cycling relay at depth with a
+       "sleeping" lamp and amber zzz/clock marks + a saturated-amber glow
+       staining ONLY its road (3 hops — short but offline)
+     · RIGHT is quiet, 7 hops — the long way around through open country
+     · destination = Auntie Rosa's rural station-house with a lit porch
+     · fireflies → warm dust motes; a jackrabbit silhouette out front
+     · respect rule (design/04): the land is beautiful and loved; the
+       infrastructure is just sparse — copy stays neutral, never bleak. -->
+<style>
+  * { margin: 0; box-sizing: border-box; }
+  html, body { height: 100%; background: #1a1410; overflow: hidden; }
+  .scene { position: fixed; inset: 0; }
+  svg { width: 100%; height: 100%; display: block; }
+
+  .tag {
+    position: fixed; top: 10px; left: 12px; z-index: 2;
+    font: 600 11px ui-monospace, Menlo, monospace; letter-spacing: 0.05em;
+    color: rgba(255, 232, 190, 0.72); background: rgba(28, 15, 6, 0.55);
+    padding: 4px 8px; border-radius: 6px;
+  }
+
+  .float   { animation: float 2.8s ease-in-out infinite alternate; }
+  .float2  { animation: float 3.4s ease-in-out infinite alternate-reverse; }
+  .bob     { animation: bob 3.6s ease-in-out infinite alternate; }
+  .twinkle { animation: twinkle 2.2s ease-in-out infinite alternate; }
+  .twinkle2{ animation: twinkle 3.1s ease-in-out infinite alternate-reverse; }
+  .blink   { animation: blink 2.4s steps(1) infinite; }
+  .zzz     { animation: zzz 3.2s ease-in-out infinite; transform-origin: center; }
+  .spin    { animation: spin 12s linear infinite; transform-origin: center; }
+  @keyframes float   { from { transform: translateY(-5px); } to { transform: translateY(6px); } }
+  @keyframes bob     { from { transform: translateY(-4px); } to { transform: translateY(5px); } }
+  @keyframes twinkle { from { opacity: 0.25; } to { opacity: 0.9; } }
+  @keyframes blink   { 0% { opacity: 0.9; } 55% { opacity: 0.15; } 100% { opacity: 0.9; } }
+  @keyframes zzz     { 0% { opacity: 0.15; transform: translateY(4px); }
+                       55% { opacity: 0.95; transform: translateY(-6px); }
+                       100% { opacity: 0.15; transform: translateY(4px); } }
+  @keyframes spin    { from { transform: rotate(0); } to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) {
+    .float, .float2, .bob, .twinkle, .twinkle2, .blink, .zzz, .spin { animation: none; }
+  }
+</style>
+</head>
+<body>
+<div class="tag">GATE P1 MOCK · ACT 4 · THE FAR REACHES · road view · v1</div>
+<div class="scene">
+<svg viewBox="0 0 1280 800" preserveAspectRatio="xMidYMax slice" role="img"
+     aria-label="A dusty ochre road forks ahead at golden hour, both branches curving to Auntie Rosa's little station house on the horizon. A relay tower on the short left road is offline, its lamp asleep; the long right road is quiet under a huge low sun and flat-topped mesas.">
+  <defs>
+    <!-- sky: deep amber-brown up top → glowing cream-gold at horizon.
+         no saturated red-orange in the sky — that hue is reserved for
+         the hazard so danger reads instantly. -->
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0"    stop-color="#3a1e08"/>
+      <stop offset="0.35" stop-color="#6a3f14"/>
+      <stop offset="0.66" stop-color="#c98a3a"/>
+      <stop offset="0.86" stop-color="#ffcf7a"/>
+      <stop offset="1"    stop-color="#ffe9b0"/>
+    </linearGradient>
+    <!-- the big low sun, half-hidden by the mesas -->
+    <radialGradient id="sunCore" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0"    stop-color="#ffe9b0"/>
+      <stop offset="0.55" stop-color="#ffcf7a"/>
+      <stop offset="1"    stop-color="#f0a94a"/>
+    </radialGradient>
+    <radialGradient id="sunHalo" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0"   stop-color="#ffcf7a" stop-opacity="0.55"/>
+      <stop offset="0.5" stop-color="#e69a3c" stop-opacity="0.22"/>
+      <stop offset="1"   stop-color="#e69a3c" stop-opacity="0"/>
+    </radialGradient>
+    <!-- Auntie Rosa's porch light — the second warm glow, cream/gold family,
+         NOT the hazard amber -->
+    <radialGradient id="homeGlow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0"   stop-color="#fff3c4" stop-opacity="0.85"/>
+      <stop offset="0.5" stop-color="#ffd166" stop-opacity="0.32"/>
+      <stop offset="1"   stop-color="#ffd166" stop-opacity="0"/>
+    </radialGradient>
+    <!-- open ground: warm dry ochre earth, darker toward the foreground -->
+    <linearGradient id="earth" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7a4b22"/>
+      <stop offset="1" stop-color="#2a180a"/>
+    </linearGradient>
+    <!-- the road ribbon: dusty ochre, brighter up on top edges -->
+    <linearGradient id="roadBody" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#c88a45"/>
+      <stop offset="1" stop-color="#e0a860"/>
+    </linearGradient>
+    <!-- the OFFLINE relay stains its road: saturated amber wash -->
+    <linearGradient id="offlineStain" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0"    stop-color="#f4a259" stop-opacity="0"/>
+      <stop offset="0.55" stop-color="#f4a259" stop-opacity="0.32"/>
+      <stop offset="1"    stop-color="#e8944c" stop-opacity="0.6"/>
+    </linearGradient>
+    <radialGradient id="offlineLight" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#f4a259" stop-opacity="0.6"/>
+      <stop offset="1" stop-color="#f4a259" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="fragGlow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#6ee7ff" stop-opacity="0.5"/>
+      <stop offset="1" stop-color="#6ee7ff" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="pipGlow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#ffe9b0" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#ffd166" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="soft" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="7"/>
+    </filter>
+    <filter id="soft2" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="14"/>
+    </filter>
+  </defs>
+
+  <!-- ===================== SKY ===================== -->
+  <rect width="1280" height="314" fill="url(#sky)"/>
+
+  <!-- huge sun halo, then the sun itself: LOW, half-behind mesas.
+       big enough to feel like a horizon feature, not a decoration. -->
+  <ellipse cx="410" cy="298" rx="220" ry="150" fill="url(#sunHalo)"/>
+  <circle cx="410" cy="298" r="112" fill="url(#sunCore)"/>
+  <!-- a couple of subtle heat-shimmer bands over the sun -->
+  <g opacity="0.35" stroke="#a35c1c" stroke-width="3" stroke-linecap="round" fill="none">
+    <path d="M310 286 h200"/>
+    <path d="M328 304 h170"/>
+  </g>
+
+  <!-- a few high circling birds (silhouettes, warm register) -->
+  <g stroke="#3a1c08" stroke-width="2.6" fill="none" stroke-linecap="round" opacity="0.7">
+    <path d="M960 118 q9 -9 18 0 M978 120 q9 -9 18 0"/>
+    <path d="M998 104 q7 -7 14 0"/>
+    <path d="M942 100 q6 -6 12 0"/>
+  </g>
+
+  <!-- a solo distant windmill silhouette on the far horizon (right of sun) -->
+  <g transform="translate(1130,258)" opacity="0.55">
+    <rect x="-1.5" y="0" width="3" height="46" fill="#2a160a"/>
+    <g class="spin">
+      <g stroke="#2a160a" stroke-width="2.2" stroke-linecap="round" fill="#2a160a">
+        <path d="M0 0 L0 -14"/><path d="M0 0 L12 7"/><path d="M0 0 L-12 7"/>
+        <circle r="2"/>
+      </g>
+    </g>
+  </g>
+
+  <!-- ============== FAR MESAS (flat-topped, sloped sides, hazy rim) ============== -->
+  <!-- back-most mesa row: pale, distant, atmosphere-hazed.
+       real mesas have sloped talus sides, not vertical walls — the
+       shape reads as landform, not city skyline. -->
+  <path d="M0 292
+           L60 292 L84 274 L96 268 L240 268 L252 274 L272 292
+           L470 292 L500 274 L536 262 L750 262 L784 274 L806 292
+           L910 292 L946 268 L964 258 L1108 258 L1128 268 L1152 292
+           L1280 292 L1280 322 L0 322 Z"
+        fill="#8a4a20" opacity="0.78"/>
+  <!-- warm rim light along the mesa tops -->
+  <path d="M60 292 L84 274 L96 268 L240 268 L252 274 L272 292
+           M470 292 L500 274 L536 262 L750 262 L784 274 L806 292
+           M910 292 L946 268 L964 258 L1108 258 L1128 268 L1152 292"
+        fill="none" stroke="#ffcf7a" stroke-width="2.6" opacity="0.6"/>
+  <!-- atmospheric haze wash over the far mesas: pushes them back -->
+  <rect y="252" width="1280" height="70" fill="#ffcf7a" opacity="0.1"/>
+
+  <!-- ============== MID PLATEAU + INFRASTRUCTURE (relay, poles, dish) ============== -->
+  <!-- second mesa row: nearer, warmer, more defined; sloped sides too -->
+  <path d="M0 322
+           L40 322 L64 306 L80 300 L216 300 L232 306 L252 322
+           L344 322 L378 306 L400 298 L570 298 L594 306 L616 322
+           L720 322 L758 300 L780 290 L928 290 L954 300 L976 322
+           L1050 322 L1082 306 L1100 298 L1260 298 L1280 306 L1280 322
+           L1280 384 L0 384 Z"
+        fill="#a55622"/>
+
+  <!-- a satellite dish, pointed up, on the mid plateau (left side, out
+       of the sun's face) -->
+  <g transform="translate(216,282)" stroke="#2a160a" fill="none" stroke-width="4" stroke-linecap="round">
+    <!-- tripod + shadow -->
+    <ellipse cx="0" cy="30" rx="18" ry="3.5" fill="#2a160a" opacity="0.55" stroke="none"/>
+    <path d="M-10 28 L0 6 L10 28 M-14 28 h28"/>
+    <!-- dish -->
+    <path d="M-18 4 Q0 -22 18 4 Q0 12 -18 4 Z" fill="#c98a3a" stroke="#2a160a" stroke-width="3"/>
+    <circle cx="0" cy="-2" r="2.6" fill="#2a160a" stroke="none"/>
+    <!-- signal ping -->
+    <path d="M8 -10 q6 -8 14 -4" stroke="#ffd166" stroke-width="2.2" opacity="0.85"/>
+  </g>
+
+  <!-- sparse power poles with sagging lines. warm silhouettes,
+       lines droop between them = the "aging links" note in design/04. -->
+  <g stroke="#2a160a" stroke-width="3" stroke-linecap="round" fill="none">
+    <!-- pole 1 (far left) -->
+    <path d="M92 316 v-46 M76 274 h32 M78 282 h28"/>
+    <!-- pole 2 -->
+    <path d="M1064 314 v-42 M1050 276 h28 M1052 284 h24"/>
+    <!-- pole 3 (far right, near windmill) -->
+    <path d="M1198 316 v-40 M1186 280 h24 M1188 288 h20"/>
+    <!-- sagging wires between poles (lots of droop) -->
+    <path d="M92 274 Q580 340 1064 276" opacity="0.55" stroke-width="1.8"/>
+    <path d="M1064 276 Q1130 300 1198 280" opacity="0.55" stroke-width="1.8"/>
+  </g>
+
+  <!-- warm horizon haze along the mesa base -->
+  <g filter="url(#soft2)" opacity="0.55">
+    <ellipse cx="420" cy="330" rx="260" ry="26" fill="#ffcf7a" opacity="0.28"/>
+    <ellipse cx="920" cy="336" rx="280" ry="22" fill="#ffcf7a" opacity="0.22"/>
+  </g>
+
+  <!-- ============== AUNTIE ROSA'S STATION — where both roads arrive ==============
+       small rural station-house with a warm lit porch. sits ON the mesa
+       row, in front, at the roads' apex. cream/gold glow, NOT amber.
+       upsized so it pops against the horizon like Grandma's did in Act 1. -->
+  <circle cx="742" cy="296" r="130" fill="url(#homeGlow)"/>
+  <g transform="translate(742,286) scale(1.55)">
+    <!-- ground shadow -->
+    <ellipse cx="0" cy="28" rx="44" ry="6" fill="#1a0e04" opacity="0.62"/>
+    <!-- station-house body -->
+    <rect x="-26" y="-2" width="52" height="26" rx="2" fill="#3a2210"
+          stroke="#ffd166" stroke-width="2.6"/>
+    <!-- shallow pitched roof -->
+    <path d="M-30 -2 L0 -20 L30 -2 Z" fill="#5a3416"
+          stroke="#ffd166" stroke-width="2.6" stroke-linejoin="round"/>
+    <!-- little chimney -->
+    <rect x="12" y="-14" width="5" height="8" fill="#3a2210" stroke="#ffd166" stroke-width="1.6"/>
+    <!-- porch overhang + posts (the "lit porch") -->
+    <path d="M-32 14 L-32 24 L32 24 L32 14" fill="none"
+          stroke="#ffd166" stroke-width="2.4" stroke-linecap="round"/>
+    <rect x="-30" y="4" width="2.6" height="20" fill="#ffd166"/>
+    <rect x="27.4" y="4" width="2.6" height="20" fill="#ffd166"/>
+    <!-- porch lantern glow -->
+    <circle cx="0" cy="16" r="8" fill="#fff3c4" opacity="0.7"/>
+    <circle cx="0" cy="16" r="3.5" fill="#ffe9b0"/>
+    <!-- warm windows -->
+    <rect x="-18" y="4" width="9" height="10" rx="1.5" fill="#ffe9b0"/>
+    <rect x="9" y="4" width="9" height="10" rx="1.5" fill="#ffe9b0"/>
+    <!-- tiny window crossbars -->
+    <path d="M-13.5 4 v10 M-18 9 h9 M13.5 4 v10 M9 9 h9"
+          stroke="#3a2210" stroke-width="1" fill="none" opacity="0.8"/>
+    <!-- door -->
+    <rect x="-4" y="8" width="8" height="16" rx="1" fill="#ffd166"/>
+    <circle cx="2" cy="16" r="0.8" fill="#3a2210"/>
+    <!-- welcome-flag on a pole beside the porch (reads as station-ish
+         without a floating-plaque awkwardness) -->
+    <path d="M32 24 v-30" stroke="#ffd166" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+    <path d="M32 -6 l10 3 l-10 3 z" fill="#ffd166"/>
+  </g>
+
+  <!-- ===================== OPEN GROUND ===================== -->
+  <rect y="314" width="1280" height="486" fill="url(#earth)"/>
+
+  <!-- scattered stones + brush tufts across the open ground -->
+  <g fill="#c88a45" opacity="0.55">
+    <circle cx="150" cy="420" r="3"/><circle cx="260" cy="500" r="4"/>
+    <circle cx="90" cy="610" r="5"/><circle cx="330" cy="660" r="5"/>
+    <circle cx="1080" cy="470" r="4"/><circle cx="1180" cy="560" r="5"/>
+    <circle cx="990" cy="640" r="5"/><circle cx="1240" cy="690" r="6"/>
+  </g>
+  <!-- pebbles: darker tone -->
+  <g fill="#3a1c08" opacity="0.65">
+    <ellipse cx="205" cy="465" rx="4" ry="2.4"/>
+    <ellipse cx="1130" cy="520" rx="4" ry="2.4"/>
+    <ellipse cx="60" cy="530" rx="3" ry="1.8"/>
+    <ellipse cx="1035" cy="580" rx="4.6" ry="2.6"/>
+    <ellipse cx="285" cy="560" rx="4" ry="2.4"/>
+    <ellipse cx="1210" cy="620" rx="3.5" ry="2"/>
+  </g>
+  <!-- distant brush tufts (v-strokes) -->
+  <g stroke="#4a2a10" stroke-width="4" stroke-linecap="round" fill="none" opacity="0.7">
+    <path d="M100 508 l6 -12 M108 508 l3 -10 M115 510 l7 -13"/>
+    <path d="M980 502 l6 -12 M988 502 l3 -10 M995 504 l7 -13"/>
+    <path d="M1160 460 l5 -10 M1168 460 l2 -9"/>
+  </g>
+
+  <!-- ============== THE ROAD: trunk → fork → arrive ==============
+       both branches end at Auntie Rosa's — same destination, two routes.
+       LEFT arc is tight/steep (short); RIGHT sweeps wide (long). -->
+  <!-- trunk we stand on -->
+  <path d="M470 800 Q520 645 606 532 L674 532 Q760 645 810 800 Z" fill="url(#roadBody)"/>
+  <!-- LEFT ribbon (short): tight arc to the left side of her porch -->
+  <path d="M606 532 C455 455 505 352 718 314 L734 322 C540 368 500 452 640 524 Z"
+        fill="url(#roadBody)"/>
+  <!-- RIGHT ribbon (long): wide lazy sweep to the right side -->
+  <path d="M674 532 C870 470 940 372 766 322 L750 316 C900 372 830 462 640 524 Z"
+        fill="url(#roadBody)"/>
+  <!-- fork notch fill -->
+  <path d="M606 532 L640 522 L674 532 Q640 558 606 532 Z" fill="url(#roadBody)"/>
+  <!-- the offline relay STAINS its road: amber wash over the left ribbon -->
+  <path d="M606 532 C455 455 505 352 718 314 L734 322 C540 368 500 452 640 524 Z"
+        fill="#f4a259" opacity="0.22"/>
+
+  <!-- edge light: trunk edges flow into each fork's outer edge.
+       stormy road's edge glows saturated amber = danger reads from the
+       road itself; quiet road's edge is warm gold. -->
+  <g fill="none" stroke-linecap="round">
+    <path d="M470 800 Q520 645 606 532" stroke="#ffe9b0" stroke-width="4.5" opacity="0.95"/>
+    <path d="M606 532 C455 455 505 352 718 314" stroke="#ffb867" stroke-width="4.5" opacity="0.95"/>
+    <path d="M810 800 Q760 645 674 532 C870 470 940 372 766 322"
+          stroke="#ffe9b0" stroke-width="4.5" opacity="0.95"/>
+  </g>
+  <g stroke-width="3" fill="none" stroke-linecap="round" opacity="0.55">
+    <path d="M640 524 C500 452 540 368 734 322" stroke="#ffb867"/>
+    <path d="M640 524 C830 462 900 372 750 316" stroke="#ffd166"/>
+  </g>
+
+  <!-- marching centerline dashes: warm cream, tapering with distance -->
+  <g fill="#fff3c4">
+    <ellipse cx="640" cy="754" rx="13" ry="6.5"/>
+    <ellipse cx="640" cy="682" rx="11" ry="5.4"/>
+    <ellipse cx="640" cy="618" rx="9" ry="4.4"/>
+    <ellipse cx="640" cy="562" rx="7.5" ry="3.6"/>
+    <!-- left spine (fewer hops — shorter road) -->
+    <ellipse cx="557" cy="459" rx="6" ry="3"/>
+    <ellipse cx="563" cy="401" rx="4.6" ry="2.3"/>
+    <ellipse cx="631" cy="349" rx="3.4" ry="1.7"/>
+    <!-- right spine (more hops — longer road) -->
+    <ellipse cx="770" cy="475" rx="6" ry="3"/>
+    <ellipse cx="829" cy="430" rx="5.2" ry="2.6"/>
+    <ellipse cx="847" cy="386" rx="4.4" ry="2.2"/>
+    <ellipse cx="815" cy="345" rx="3.6" ry="1.8"/>
+    <ellipse cx="777" cy="326" rx="3" ry="1.5"/>
+  </g>
+
+  <!-- ============ ROADSIDE PROPS (sparse, warm silhouettes) ============ -->
+  <g>
+    <!-- brush tuft (medium) -->
+    <g transform="translate(316,410)">
+      <ellipse cx="0" cy="24" rx="24" ry="5" fill="#1a0e04" opacity="0.55"/>
+      <g stroke="#3a2210" stroke-width="7" stroke-linecap="round" fill="none">
+        <path d="M-14 22 l4 -22"/>
+        <path d="M-6 22 l2 -26"/>
+        <path d="M2 22 l1 -30"/>
+        <path d="M10 22 l-2 -24"/>
+        <path d="M18 22 l-4 -18"/>
+      </g>
+      <g stroke="#a86a30" stroke-width="3" stroke-linecap="round" fill="none">
+        <path d="M-8 -2 l4 -6"/><path d="M4 -4 l3 -5"/>
+      </g>
+    </g>
+    <!-- brush tuft (larger, nearer) -->
+    <g transform="translate(230,510)">
+      <ellipse cx="0" cy="30" rx="30" ry="6" fill="#1a0e04" opacity="0.55"/>
+      <g stroke="#3a2210" stroke-width="8" stroke-linecap="round" fill="none">
+        <path d="M-18 28 l6 -30"/>
+        <path d="M-8 28 l3 -36"/>
+        <path d="M2 28 l0 -40"/>
+        <path d="M12 28 l-4 -32"/>
+        <path d="M20 28 l-6 -24"/>
+      </g>
+      <g stroke="#c88a45" stroke-width="3" stroke-linecap="round" fill="none" opacity="0.85">
+        <path d="M-10 -6 l4 -8"/><path d="M2 -10 l3 -7"/>
+      </g>
+    </g>
+    <!-- a lone pole near the foreground (short, casual) -->
+    <g transform="translate(118,584)">
+      <ellipse cx="0" cy="60" rx="18" ry="6" fill="#1a0e04" opacity="0.55"/>
+      <path d="M0 58 v-70" stroke="#2a160a" stroke-width="5" stroke-linecap="round"/>
+      <path d="M-14 -6 h28" stroke="#2a160a" stroke-width="4" stroke-linecap="round"/>
+      <path d="M-16 2 h32" stroke="#2a160a" stroke-width="3.5" stroke-linecap="round"/>
+    </g>
+    <!-- brush tuft (right side) -->
+    <g transform="translate(1006,430)">
+      <ellipse cx="0" cy="24" rx="26" ry="5" fill="#1a0e04" opacity="0.55"/>
+      <g stroke="#3a2210" stroke-width="7" stroke-linecap="round" fill="none">
+        <path d="M-16 22 l4 -22"/>
+        <path d="M-6 22 l2 -28"/>
+        <path d="M4 22 l0 -32"/>
+        <path d="M12 22 l-3 -22"/>
+        <path d="M20 22 l-5 -18"/>
+      </g>
+    </g>
+    <!-- big brush tuft, right foreground -->
+    <g transform="translate(1132,540)">
+      <ellipse cx="0" cy="36" rx="38" ry="7" fill="#1a0e04" opacity="0.55"/>
+      <g stroke="#3a2210" stroke-width="8.5" stroke-linecap="round" fill="none">
+        <path d="M-24 32 l6 -34"/>
+        <path d="M-12 32 l3 -40"/>
+        <path d="M0 32 l-1 -46"/>
+        <path d="M12 32 l-4 -38"/>
+        <path d="M24 32 l-6 -28"/>
+      </g>
+      <g stroke="#c88a45" stroke-width="3" stroke-linecap="round" fill="none" opacity="0.85">
+        <path d="M-12 -12 l4 -8"/><path d="M4 -14 l3 -7"/>
+      </g>
+    </g>
+  </g>
+
+  <!-- ============ THE OFFLINE RELAY — the loud thing on screen ============
+       on the LEFT road, at depth. its lamp is dark ("sleeping"); amber
+       zzz + a clock float above; a saturated amber glow beneath tints
+       the road. this is the "power-cycling nodes" hazard from design/04.
+       upsized + higher contrast so the silhouette pops against the sun. -->
+  <ellipse cx="560" cy="452" rx="140" ry="30" fill="url(#offlineLight)"/>
+  <!-- a subtle ripple where the offline glow meets the road -->
+  <g stroke="#ffb867" stroke-width="2.6" stroke-linecap="round" opacity="0.75" fill="none">
+    <path d="M498 456 q22 -8 42 0"/>
+    <path d="M574 458 q22 -8 42 0"/>
+  </g>
+
+  <g transform="translate(556,354)">
+    <!-- ground shadow of the tower -->
+    <ellipse cx="0" cy="76" rx="52" ry="8" fill="#1a0e04" opacity="0.6"/>
+    <!-- an amber back-halo behind the tower to lift it off the sun-glow -->
+    <ellipse cx="0" cy="0" rx="42" ry="66" fill="#f4a259" opacity="0.14"/>
+    <!-- a tiny "power hiccup" spark at the tower's base — reinforces the
+         "cycling / temporarily offline" read without a text label -->
+    <g class="twinkle2" transform="translate(-2,68)" opacity="0.85">
+      <path d="M0 -8 l-3 6 h5 l-4 8 l8 -10 h-5 l4 -8 z"
+            fill="#f4a259" stroke="#3a1c08" stroke-width="1"
+            stroke-linejoin="round"/>
+    </g>
+    <!-- relay tower silhouette: X-braced, chunky, ink-dark outline
+         (using #1a0e04 to punch through the warm background) -->
+    <g stroke="#0f0602" stroke-width="6" stroke-linecap="round" fill="none">
+      <path d="M-28 76 L-9 -42 L9 -42 L28 76"/>            <!-- outer legs -->
+      <path d="M-22 30 L22 30 M-17 4 L17 4 M-12 -20 L12 -20"/> <!-- crossbeams -->
+      <path d="M-22 30 L17 4 M22 30 L-17 4"/>              <!-- upper-X -->
+      <path d="M-17 4 L12 -20 M17 4 L-12 -20"/>            <!-- mid-X -->
+      <path d="M-25 52 L25 52"/>                           <!-- lower beam -->
+      <path d="M-25 52 L22 30 M25 52 L-22 30"/>            <!-- lower-X -->
+    </g>
+    <!-- lamp housing at the top -->
+    <rect x="-14" y="-56" width="28" height="14" rx="3" fill="#1a0e04"
+          stroke="#0f0602" stroke-width="2.4"/>
+    <!-- the "sleeping" lamp: dark socket, dim ember slow-blinking -->
+    <circle cx="0" cy="-49" r="7" fill="#2a160a" stroke="#0f0602" stroke-width="2"/>
+    <circle class="blink" cx="0" cy="-49" r="3.2" fill="#8a4a20"/>
+    <!-- a little antenna nub -->
+    <path d="M0 -56 v-8" stroke="#0f0602" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="0" cy="-66" r="2.6" fill="#0f0602"/>
+
+    <!-- amber zzz / clock marks hovering above the tower -->
+    <g transform="translate(0,-74)">
+      <g class="zzz">
+        <text x="-22" y="-6" font-family="ui-rounded, system-ui" font-size="24"
+              font-weight="800" fill="#f4a259" opacity="0.95"
+              stroke="#3a1c08" stroke-width="1" paint-order="stroke fill">z</text>
+        <text x="-8" y="-18" font-family="ui-rounded, system-ui" font-size="19"
+              font-weight="800" fill="#f4a259" opacity="0.9"
+              stroke="#3a1c08" stroke-width="1" paint-order="stroke fill">z</text>
+        <text x="3" y="-30" font-family="ui-rounded, system-ui" font-size="14"
+              font-weight="800" fill="#f4a259" opacity="0.8"
+              stroke="#3a1c08" stroke-width="1" paint-order="stroke fill">z</text>
+      </g>
+      <!-- a small clock hovers next to the zzzs -->
+      <g transform="translate(26,-10)" stroke="#f4a259" stroke-width="2.6"
+         fill="none" stroke-linecap="round">
+        <circle r="11" fill="#2a160a"/>
+        <path d="M0 -6 v6 l5 4"/>
+        <circle r="1.4" fill="#f4a259" stroke="none"/>
+      </g>
+    </g>
+  </g>
+
+  <!-- ============ SIGNPOSTS (the forecast, diegetic) ============ -->
+  <!-- LEFT: OFFLINE / slow, 3 hops. clock icon + "slow" label in amber. -->
+  <g transform="translate(298,452)">
+    <ellipse cx="0" cy="116" rx="20" ry="5" fill="#1a0e04" opacity="0.6"/>
+    <rect x="-5" y="-6" width="10" height="122" rx="4" fill="#3a2210"/>
+    <g transform="translate(0,-14)">
+      <rect x="-92" y="-58" width="184" height="76" rx="16" fill="#2a1a0e"
+            stroke="#f4a259" stroke-width="4"/>
+      <!-- clock icon on the sign -->
+      <g transform="translate(-58,-20)" stroke="#f4a259" stroke-width="3.4" fill="none" stroke-linecap="round">
+        <circle r="17" fill="#3a2210"/>
+        <path d="M0 -10 v10 l7 5"/>
+        <circle r="1.6" fill="#f4a259" stroke="none"/>
+      </g>
+      <!-- "slow" label in saturated amber -->
+      <text x="20" y="-12" font-family="ui-rounded, system-ui" font-size="30"
+            font-weight="800" fill="#ffb867">slow</text>
+      <!-- 3 hop dots -->
+      <g fill="#ffe9b0">
+        <circle cx="-18" cy="6" r="5.5"/>
+        <circle cx="0" cy="6" r="5.5"/>
+        <circle cx="18" cy="6" r="5.5"/>
+      </g>
+    </g>
+  </g>
+  <!-- RIGHT: quiet, 7 hops (long way around, safe) -->
+  <g transform="translate(1014,456)">
+    <ellipse cx="0" cy="112" rx="20" ry="5" fill="#1a0e04" opacity="0.6"/>
+    <rect x="-5" y="-6" width="10" height="118" rx="4" fill="#3a2210"/>
+    <g transform="translate(0,-14)">
+      <rect x="-86" y="-56" width="172" height="74" rx="16" fill="#2a1a0e"
+            stroke="#ffd166" stroke-width="4"/>
+      <text x="0" y="-18" text-anchor="middle" font-family="ui-rounded, system-ui"
+            font-size="26" font-weight="800" fill="#ffe9b0">quiet</text>
+      <g fill="#ffe9b0">
+        <circle cx="-45" cy="4" r="5"/><circle cx="-30" cy="4" r="5"/>
+        <circle cx="-15" cy="4" r="5"/><circle cx="0" cy="4" r="5"/>
+        <circle cx="15" cy="4" r="5"/><circle cx="30" cy="4" r="5"/>
+        <circle cx="45" cy="4" r="5"/>
+      </g>
+    </g>
+  </g>
+
+  <!-- ===================== THE PARTY ===================== -->
+  <!-- a clean staggered arc (loose scatter, never a train), each body
+       shadowed; eyes give them character; numbers stay dominant.
+       identical formation + colors to Act 1 — color is pedagogy. -->
+  <g transform="translate(556,688)">
+    <ellipse cy="34" rx="28" ry="6" fill="#1a0e04" opacity="0.55"/>
+    <g class="bob">
+      <circle r="44" fill="url(#fragGlow)"/>
+      <rect x="-24" y="-24" width="48" height="48" rx="11" fill="#6ee7ff"/>
+      <path d="M-15 -20.5 h30" stroke="#c9f6ff" stroke-width="5" stroke-linecap="round"/>
+      <rect x="-24" y="-24" width="48" height="48" rx="11" fill="none" stroke="#0d3d4d" stroke-width="3"/>
+      <circle cx="-7" cy="-11" r="2.4" fill="#062733"/><circle cx="7" cy="-11" r="2.4" fill="#062733"/>
+      <text y="15" text-anchor="middle" font-family="ui-rounded, system-ui" font-size="25" font-weight="800" fill="#062733">1</text>
+    </g>
+  </g>
+  <g transform="translate(602,646)">
+    <ellipse cy="30" rx="25" ry="5.5" fill="#1a0e04" opacity="0.55"/>
+    <g class="float2">
+      <circle r="40" fill="url(#fragGlow)"/>
+      <rect x="-21" y="-21" width="42" height="42" rx="10" fill="#6ee7ff"/>
+      <path d="M-13 -17.5 h26" stroke="#c9f6ff" stroke-width="4.5" stroke-linecap="round"/>
+      <rect x="-21" y="-21" width="42" height="42" rx="10" fill="none" stroke="#0d3d4d" stroke-width="3"/>
+      <circle cx="-6" cy="-9" r="2.2" fill="#062733"/><circle cx="6" cy="-9" r="2.2" fill="#062733"/>
+      <text y="14" text-anchor="middle" font-family="ui-rounded, system-ui" font-size="22" font-weight="800" fill="#062733">3</text>
+    </g>
+  </g>
+  <g transform="translate(660,632)">
+    <ellipse cy="28" rx="23" ry="5" fill="#1a0e04" opacity="0.55"/>
+    <g class="bob">
+      <circle r="38" fill="url(#fragGlow)"/>
+      <rect x="-20" y="-20" width="40" height="40" rx="9" fill="#6ee7ff"/>
+      <path d="M-12 -16.5 h24" stroke="#c9f6ff" stroke-width="4.5" stroke-linecap="round"/>
+      <rect x="-20" y="-20" width="40" height="40" rx="9" fill="none" stroke="#0d3d4d" stroke-width="3"/>
+      <circle cx="-6" cy="-8" r="2.1" fill="#062733"/><circle cx="6" cy="-8" r="2.1" fill="#062733"/>
+      <text y="13" text-anchor="middle" font-family="ui-rounded, system-ui" font-size="21" font-weight="800" fill="#062733">2</text>
+    </g>
+  </g>
+  <g transform="translate(718,646)">
+    <ellipse cy="30" rx="25" ry="5.5" fill="#1a0e04" opacity="0.55"/>
+    <g class="float">
+      <circle r="40" fill="url(#fragGlow)"/>
+      <rect x="-21" y="-21" width="42" height="42" rx="10" fill="#6ee7ff"/>
+      <path d="M-13 -17.5 h26" stroke="#c9f6ff" stroke-width="4.5" stroke-linecap="round"/>
+      <rect x="-21" y="-21" width="42" height="42" rx="10" fill="none" stroke="#0d3d4d" stroke-width="3"/>
+      <circle cx="-6" cy="-9" r="2.2" fill="#062733"/><circle cx="6" cy="-9" r="2.2" fill="#062733"/>
+      <text y="14" text-anchor="middle" font-family="ui-rounded, system-ui" font-size="22" font-weight="800" fill="#062733">5</text>
+    </g>
+  </g>
+  <g transform="translate(764,688)">
+    <ellipse cy="34" rx="28" ry="6" fill="#1a0e04" opacity="0.55"/>
+    <g class="bob">
+      <circle r="44" fill="url(#fragGlow)"/>
+      <rect x="-24" y="-24" width="48" height="48" rx="11" fill="#6ee7ff"/>
+      <path d="M-15 -20.5 h30" stroke="#c9f6ff" stroke-width="5" stroke-linecap="round"/>
+      <rect x="-24" y="-24" width="48" height="48" rx="11" fill="none" stroke="#0d3d4d" stroke-width="3"/>
+      <circle cx="-7" cy="-11" r="2.4" fill="#062733"/><circle cx="7" cy="-11" r="2.4" fill="#062733"/>
+      <text y="15" text-anchor="middle" font-family="ui-rounded, system-ui" font-size="25" font-weight="800" fill="#062733">4</text>
+    </g>
+  </g>
+  <!-- Pip, out front — the hero leads, backlit gold -->
+  <g transform="translate(640,566)">
+    <ellipse cy="46" rx="26" ry="5.5" fill="#1a0e04" opacity="0.45"/>
+    <g class="float">
+      <circle r="60" fill="url(#pipGlow)"/>
+      <g transform="scale(1.2)">
+        <path d="M0 -34 Q12 -12 34 0 Q12 12 0 34 Q-12 12 -34 0 Q-12 -12 0 -34 Z"
+              fill="none" stroke="#fff3c4" stroke-width="7" stroke-linejoin="round" opacity="0.55"/>
+        <path d="M0 -34 Q12 -12 34 0 Q12 12 0 34 Q-12 12 -34 0 Q-12 -12 0 -34 Z"
+              fill="#ffd166" stroke="#8a6215" stroke-width="2.5" stroke-linejoin="round"/>
+        <circle cx="-8" cy="-4" r="3.6" fill="#3a2c00"/>
+        <circle cx="8" cy="-4" r="3.6" fill="#3a2c00"/>
+        <path d="M-8 7 q8 8 16 0" fill="none" stroke="#3a2c00" stroke-width="3.4" stroke-linecap="round"/>
+      </g>
+    </g>
+  </g>
+
+  <!-- a jackrabbit silhouette, small, on the right roadside (foreground) -->
+  <g transform="translate(940,720)" opacity="0.85">
+    <ellipse cx="0" cy="10" rx="20" ry="3.5" fill="#0d0703" opacity="0.6"/>
+    <!-- body -->
+    <ellipse cx="0" cy="0" rx="14" ry="7" fill="#1a0e04"/>
+    <!-- haunch -->
+    <ellipse cx="-8" cy="-2" rx="7" ry="9" fill="#1a0e04"/>
+    <!-- head -->
+    <circle cx="10" cy="-6" r="5" fill="#1a0e04"/>
+    <!-- big ears -->
+    <path d="M9 -10 l-2 -14 l4 2 z" fill="#1a0e04"/>
+    <path d="M13 -10 l2 -14 l-4 2 z" fill="#1a0e04"/>
+    <!-- tail -->
+    <circle cx="-14" cy="0" r="2.4" fill="#1a0e04"/>
+    <!-- front + back legs -->
+    <path d="M6 6 v6" stroke="#1a0e04" stroke-width="2.4" stroke-linecap="round"/>
+    <path d="M-6 6 v6" stroke="#1a0e04" stroke-width="2.4" stroke-linecap="round"/>
+    <!-- tiny warm eye highlight -->
+    <circle cx="11" cy="-7" r="0.9" fill="#ffe9b0"/>
+  </g>
+
+  <!-- ===================== FOREGROUND ===================== -->
+  <!-- warm ochre bank/silhouette, dry brush edges -->
+  <path d="M0 800 L0 754 Q60 738 120 752 Q180 766 240 748 Q320 726 390 750 L390 800 Z" fill="#1a0e04"/>
+  <path d="M890 800 L890 752 Q960 730 1040 750 Q1120 768 1200 744 Q1245 732 1280 742 L1280 800 Z" fill="#1a0e04"/>
+  <!-- dry brush strokes (thin, V-shaped) instead of lush grass -->
+  <g stroke="#1a0e04" stroke-width="6" stroke-linecap="round" fill="none">
+    <path d="M60 754 l-4 -22 M64 750 l4 -20"/>
+    <path d="M96 752 l2 -24 M100 748 l6 -22"/>
+    <path d="M300 748 l-2 -20 M304 744 l4 -22"/>
+    <path d="M1000 748 l-3 -22 M1004 744 l5 -20"/>
+    <path d="M1176 744 l3 -24 M1180 740 l-5 -22"/>
+  </g>
+  <!-- warm dust motes drift through the low sun (fireflies → dust) -->
+  <g fill="#fff3c4">
+    <circle class="twinkle"  cx="180" cy="700" r="3.6"/>
+    <circle class="twinkle2" cx="340" cy="732" r="2.8"/>
+    <circle class="twinkle"  cx="440" cy="670" r="2.2"/>
+    <circle class="twinkle2" cx="520" cy="612" r="1.8"/>
+    <circle class="twinkle"  cx="1060" cy="712" r="3.6"/>
+    <circle class="twinkle2" cx="948" cy="690" r="2.6"/>
+    <circle class="twinkle"  cx="1216" cy="668" r="3.2"/>
+    <circle class="twinkle2" cx="820" cy="620" r="2"/>
+    <circle class="twinkle"  cx="740" cy="588" r="1.6"/>
+  </g>
+</svg>
+</div>
+</body>
+</html>

@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gate P1 mock — Act 2 road view</title>
+<!-- Backbone City reskin of road-act1.html (design/11 step 1).
+     Same skeleton — trunk forks into short LEFT + long RIGHT, both rejoin at
+     the destination (now Ava's tower, not Grandma's house) — but every layer
+     is repainted for the neon-dusk city biome (css/base.css body.act-2):
+     · sky: deep indigo → violet with a magenta glow band + stars
+     · far: chunky city skyline silhouettes with tiny lit windows + moon
+     · mid: closer neon-edged towers, a blinking radio mast, elevated cable
+       trays crossing between rooftops
+     · roads: dark asphalt-indigo ribbons with CYAN-MINT edge light
+       (--road-pick #6ee8c8) and a bright dash centerline
+     · LEFT hazard is a congestion JAM — boxy packet/vehicles clotted ON the
+       road with amber hazard glow and blinking hazards (not a storm cloud);
+       the road stains amber down its length just like Act 1
+     · destination is Ava's tower — apartment tower with one warm lit window
+       and a warm glow, tucked between the arc ends on the horizon
+     · roadside: neon street signs, traffic bollards, a warm café glow;
+       fireflies become floating neon motes
+     Color invariants (color = pedagogy): hazard amber (#f4a259/#ff9440) ONLY
+     on the jam + its road stain; fragments stay cyan (#6ee7ff); Pip stays
+     gold (#ffd166); no other saturated warm-orange element on screen.
+     Animation classes live on INNER groups (CSS transform overrides the
+     SVG transform attribute). "quiet" text kept: 1:1 with the in-game chip. -->
+<style>
+  * { margin: 0; box-sizing: border-box; }
+  html, body { height: 100%; background: #0c0a19; overflow: hidden; }
+  .scene { position: fixed; inset: 0; }
+  svg { width: 100%; height: 100%; display: block; }
+
+  .tag {
+    position: fixed; top: 10px; left: 12px; z-index: 2;
+    font: 600 11px ui-monospace, Menlo, monospace; letter-spacing: 0.05em;
+    color: rgba(230, 220, 255, 0.7); background: rgba(20, 12, 40, 0.6);
+    padding: 4px 8px; border-radius: 6px;
+  }
+
+  .float   { animation: float 2.8s ease-in-out infinite alternate; }
+  .float2  { animation: float 3.4s ease-in-out infinite alternate-reverse; }
+  .bob     { animation: bob 3.6s ease-in-out infinite alternate; }
+  .twinkle { animation: twinkle 2.2s ease-in-out infinite alternate; }
+  .twinkle2{ animation: twinkle 3.1s ease-in-out infinite alternate-reverse; }
+  .blink   { animation: blink 2.4s steps(1) infinite; }
+  .blink2  { animation: blink 1.6s steps(1) infinite; }
+  @keyframes float   { from { transform: translateY(-5px); } to { transform: translateY(6px); } }
+  @keyframes bob     { from { transform: translateY(-4px); } to { transform: translateY(5px); } }
+  @keyframes twinkle { from { opacity: 0.25; } to { opacity: 0.9; } }
+  @keyframes blink   { 0% { opacity: 1; } 55% { opacity: 0.15; } 100% { opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) {
+    .float, .float2, .bob, .twinkle, .twinkle2, .blink, .blink2 { animation: none; }
+  }
+</style>
+</head>
+<body>
+<div class="tag">GATE P1 MOCK · ACT 2 · BACKBONE CITY · road view · v1</div>
+<div class="scene">
+<svg viewBox="0 0 1280 800" preserveAspectRatio="xMidYMax slice" role="img"
+     aria-label="A neon city canyon at dusk. A dark data-highway forks ahead. A clot of stuck packet-vehicles jams the short left road under amber hazard glow; the long right road is quiet and cyan-lit. Both arcs meet at Ava's apartment tower on the horizon, one window warmly lit.">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0"    stop-color="#140b2b"/>
+      <stop offset="0.32" stop-color="#241659"/>
+      <stop offset="0.62" stop-color="#3a1f66"/>
+      <stop offset="0.82" stop-color="#7a2f7a"/>
+      <stop offset="1"    stop-color="#3a1660"/>
+    </linearGradient>
+    <radialGradient id="horizonGlow" cx="0.5" cy="1" r="0.6">
+      <stop offset="0"   stop-color="#ff7ac6" stop-opacity="0.55"/>
+      <stop offset="0.5" stop-color="#8a3ea8" stop-opacity="0.25"/>
+      <stop offset="1"   stop-color="#3a1660" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="towerGlow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0"   stop-color="#ffe6a8" stop-opacity="0.72"/>
+      <stop offset="0.5" stop-color="#ffd166" stop-opacity="0.28"/>
+      <stop offset="1"   stop-color="#ffd166" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="ground" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1a1236"/>
+      <stop offset="1" stop-color="#0c0819"/>
+    </linearGradient>
+    <linearGradient id="roadBody" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1c1a3a"/>
+      <stop offset="1" stop-color="#2c2a55"/>
+    </linearGradient>
+    <linearGradient id="jamStain" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0"    stop-color="#f4a259" stop-opacity="0"/>
+      <stop offset="0.55" stop-color="#f4a259" stop-opacity="0.28"/>
+      <stop offset="1"    stop-color="#e8944c" stop-opacity="0.55"/>
+    </linearGradient>
+    <radialGradient id="jamLight" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#f4a259" stop-opacity="0.6"/>
+      <stop offset="1" stop-color="#f4a259" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="fragGlow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#6ee7ff" stop-opacity="0.5"/>
+      <stop offset="1" stop-color="#6ee7ff" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="pipGlow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#ffe9b0" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#ffd166" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="cafeGlow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#ffb0d8" stop-opacity="0.6"/>
+      <stop offset="1" stop-color="#ff7ac6" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="moteGlow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#6ee8c8" stop-opacity="0.7"/>
+      <stop offset="1" stop-color="#6ee8c8" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="soft" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="7"/>
+    </filter>
+    <filter id="soft2" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="14"/>
+    </filter>
+  </defs>
+
+  <!-- ===================== SKY ===================== -->
+  <rect width="1280" height="314" fill="url(#sky)"/>
+  <!-- magenta-violet glow band across the low sky (city light pollution) -->
+  <rect y="180" width="1280" height="180" fill="url(#horizonGlow)"/>
+
+  <!-- moon, small and cool — never warm-orange -->
+  <g transform="translate(1080,88)">
+    <circle r="26" fill="#efe6ff" opacity="0.25" filter="url(#soft)"/>
+    <circle r="18" fill="#f4ecff"/>
+    <circle cx="-6" cy="-4" r="3" fill="#d9c8f2" opacity="0.7"/>
+    <circle cx="4" cy="6" r="2" fill="#d9c8f2" opacity="0.6"/>
+  </g>
+
+  <!-- stars -->
+  <g fill="#eafff2">
+    <circle class="twinkle"  cx="120" cy="60"  r="1.8"/>
+    <circle class="twinkle2" cx="240" cy="128" r="1.3"/>
+    <circle class="twinkle"  cx="420" cy="52"  r="1.5"/>
+    <circle class="twinkle2" cx="560" cy="100" r="1.2"/>
+    <circle class="twinkle"  cx="900" cy="64"  r="1.7"/>
+    <circle class="twinkle2" cx="180" cy="200" r="1.1"/>
+    <circle class="twinkle"  cx="1180" cy="160" r="1.6"/>
+    <circle class="twinkle2" cx="330" cy="170" r="1.1"/>
+    <circle class="twinkle"  cx="640" cy="50"  r="1.4"/>
+    <circle class="twinkle2" cx="780" cy="140" r="1.2"/>
+  </g>
+
+  <!-- a tiny sky drone flock heading home too -->
+  <g stroke="#c9b6ff" stroke-width="2.2" fill="none" stroke-linecap="round" opacity="0.7">
+    <path d="M420 210 q6 -5 12 0 M432 212 q6 -5 12 0"/>
+    <path d="M448 200 q6 -5 12 0"/>
+  </g>
+
+  <!-- ============== FAR CITY SKYLINE — silhouettes with lit windows ============== -->
+  <!-- back skyline (darkest, farthest) -->
+  <g fill="#1a0f3a">
+    <rect x="0"    y="238" width="70"  height="84"/>
+    <rect x="70"   y="228" width="56"  height="94"/>
+    <rect x="126"  y="248" width="42"  height="74"/>
+    <rect x="168"  y="220" width="60"  height="102"/>
+    <rect x="228"  y="240" width="46"  height="82"/>
+    <rect x="274"  y="232" width="52"  height="90"/>
+    <rect x="326"  y="252" width="38"  height="70"/>
+    <rect x="364"  y="238" width="50"  height="84"/>
+    <rect x="414"  y="222" width="48"  height="100"/>
+    <rect x="462"  y="244" width="44"  height="78"/>
+    <!-- gap for destination in the middle: 506..776 -->
+    <rect x="776"  y="244" width="46"  height="78"/>
+    <rect x="822"  y="228" width="54"  height="94"/>
+    <rect x="876"  y="242" width="44"  height="80"/>
+    <rect x="920"  y="234" width="52"  height="88"/>
+    <rect x="972"  y="252" width="40"  height="70"/>
+    <rect x="1012" y="222" width="58"  height="100"/>
+    <rect x="1070" y="240" width="46"  height="82"/>
+    <rect x="1116" y="232" width="52"  height="90"/>
+    <rect x="1168" y="248" width="44"  height="74"/>
+    <rect x="1212" y="238" width="68"  height="84"/>
+  </g>
+  <!-- back skyline windows: tiny warm dots, muted -->
+  <g fill="#ffd166" opacity="0.55">
+    <rect x="82" y="240" width="3" height="4"/>
+    <rect x="90" y="252" width="3" height="4"/>
+    <rect x="98" y="264" width="3" height="4"/>
+    <rect x="110" y="244" width="3" height="4"/>
+    <rect x="180" y="234" width="3" height="4"/>
+    <rect x="192" y="248" width="3" height="4"/>
+    <rect x="204" y="262" width="3" height="4"/>
+    <rect x="216" y="276" width="3" height="4"/>
+    <rect x="240" y="254" width="3" height="4"/>
+    <rect x="288" y="248" width="3" height="4"/>
+    <rect x="300" y="266" width="3" height="4"/>
+    <rect x="376" y="252" width="3" height="4"/>
+    <rect x="388" y="264" width="3" height="4"/>
+    <rect x="426" y="236" width="3" height="4"/>
+    <rect x="438" y="252" width="3" height="4"/>
+    <rect x="450" y="270" width="3" height="4"/>
+    <rect x="472" y="256" width="3" height="4"/>
+    <rect x="486" y="272" width="3" height="4"/>
+    <rect x="788" y="258" width="3" height="4"/>
+    <rect x="800" y="272" width="3" height="4"/>
+    <rect x="834" y="240" width="3" height="4"/>
+    <rect x="846" y="256" width="3" height="4"/>
+    <rect x="858" y="272" width="3" height="4"/>
+    <rect x="932" y="248" width="3" height="4"/>
+    <rect x="944" y="264" width="3" height="4"/>
+    <rect x="956" y="278" width="3" height="4"/>
+    <rect x="1024" y="234" width="3" height="4"/>
+    <rect x="1036" y="250" width="3" height="4"/>
+    <rect x="1048" y="266" width="3" height="4"/>
+    <rect x="1060" y="284" width="3" height="4"/>
+    <rect x="1082" y="252" width="3" height="4"/>
+    <rect x="1128" y="246" width="3" height="4"/>
+    <rect x="1140" y="262" width="3" height="4"/>
+    <rect x="1180" y="260" width="3" height="4"/>
+    <rect x="1226" y="252" width="3" height="4"/>
+    <rect x="1240" y="268" width="3" height="4"/>
+    <rect x="1256" y="282" width="3" height="4"/>
+  </g>
+  <!-- a couple of cyan-mint accent windows for city flavor -->
+  <g fill="#6ee8c8" opacity="0.7">
+    <rect x="102" y="270" width="3" height="4"/>
+    <rect x="188" y="260" width="3" height="4"/>
+    <rect x="424" y="266" width="3" height="4"/>
+    <rect x="808" y="248" width="3" height="4"/>
+    <rect x="1050" y="240" width="3" height="4"/>
+    <rect x="1236" y="242" width="3" height="4"/>
+  </g>
+
+  <!-- horizon smog (fog-of-detail lives at distance) -->
+  <g filter="url(#soft2)" opacity="0.55">
+    <ellipse cx="380" cy="322" rx="260" ry="22" fill="#5c2f88" opacity="0.5"/>
+    <ellipse cx="900" cy="326" rx="280" ry="22" fill="#5c2f88" opacity="0.5"/>
+  </g>
+
+  <!-- ============== MID CITY — closer neon-edged towers + cable trays ============== -->
+  <!-- three big towers straddling the horizon, with neon edge light -->
+  <!-- left tower cluster -->
+  <g>
+    <!-- LEFT big tower -->
+    <rect x="256" y="196" width="76" height="132" fill="#1f1444"/>
+    <rect x="256" y="196" width="76" height="4" fill="#6ee8c8" opacity="0.8"/>
+    <rect x="256" y="196" width="4"  height="132" fill="#6ee8c8" opacity="0.6"/>
+    <rect x="328" y="196" width="4"  height="132" fill="#c98cff" opacity="0.6"/>
+    <!-- windows grid, warm -->
+    <g fill="#ffd166" opacity="0.75">
+      <rect x="266" y="212" width="4" height="6"/>
+      <rect x="278" y="212" width="4" height="6"/>
+      <rect x="290" y="212" width="4" height="6"/>
+      <rect x="302" y="212" width="4" height="6"/>
+      <rect x="314" y="212" width="4" height="6"/>
+      <rect x="266" y="226" width="4" height="6"/>
+      <rect x="290" y="226" width="4" height="6"/>
+      <rect x="314" y="226" width="4" height="6"/>
+      <rect x="278" y="240" width="4" height="6"/>
+      <rect x="302" y="240" width="4" height="6"/>
+      <rect x="266" y="254" width="4" height="6"/>
+      <rect x="290" y="254" width="4" height="6"/>
+      <rect x="314" y="254" width="4" height="6"/>
+      <rect x="278" y="268" width="4" height="6"/>
+      <rect x="302" y="268" width="4" height="6"/>
+      <rect x="266" y="282" width="4" height="6"/>
+      <rect x="290" y="282" width="4" height="6"/>
+      <rect x="314" y="282" width="4" height="6"/>
+      <rect x="278" y="296" width="4" height="6"/>
+      <rect x="302" y="296" width="4" height="6"/>
+    </g>
+    <!-- rooftop antenna -->
+    <rect x="292" y="176" width="4" height="20" fill="#3a2a68"/>
+    <circle class="blink" cx="294" cy="174" r="3.5" fill="#ff8b6b"/>
+  </g>
+
+  <!-- neon rooftop sign on left tower -->
+  <g transform="translate(268,204)">
+    <rect x="0" y="0" width="52" height="10" rx="2" fill="#0f0a20" opacity="0.85"/>
+    <text x="26" y="8" text-anchor="middle" font-family="ui-monospace, Menlo, monospace"
+          font-size="7" font-weight="800" fill="#ff7ac6" letter-spacing="1">TCP</text>
+  </g>
+
+  <!-- RIGHT big tower cluster -->
+  <g>
+    <rect x="946" y="180" width="80" height="148" fill="#1f1444"/>
+    <rect x="946" y="180" width="80" height="4" fill="#c98cff" opacity="0.8"/>
+    <rect x="946" y="180" width="4"  height="148" fill="#6ee8c8" opacity="0.6"/>
+    <rect x="1022" y="180" width="4" height="148" fill="#c98cff" opacity="0.6"/>
+    <g fill="#ffd166" opacity="0.75">
+      <rect x="956" y="196" width="4" height="6"/>
+      <rect x="968" y="196" width="4" height="6"/>
+      <rect x="980" y="196" width="4" height="6"/>
+      <rect x="992" y="196" width="4" height="6"/>
+      <rect x="1004" y="196" width="4" height="6"/>
+      <rect x="1016" y="196" width="4" height="6"/>
+      <rect x="956" y="210" width="4" height="6"/>
+      <rect x="980" y="210" width="4" height="6"/>
+      <rect x="1004" y="210" width="4" height="6"/>
+      <rect x="968" y="224" width="4" height="6"/>
+      <rect x="992" y="224" width="4" height="6"/>
+      <rect x="1016" y="224" width="4" height="6"/>
+      <rect x="956" y="238" width="4" height="6"/>
+      <rect x="980" y="238" width="4" height="6"/>
+      <rect x="1004" y="238" width="4" height="6"/>
+      <rect x="968" y="252" width="4" height="6"/>
+      <rect x="992" y="252" width="4" height="6"/>
+      <rect x="1016" y="252" width="4" height="6"/>
+      <rect x="956" y="266" width="4" height="6"/>
+      <rect x="980" y="266" width="4" height="6"/>
+      <rect x="1004" y="266" width="4" height="6"/>
+      <rect x="968" y="280" width="4" height="6"/>
+      <rect x="992" y="280" width="4" height="6"/>
+      <rect x="1016" y="280" width="4" height="6"/>
+      <rect x="956" y="294" width="4" height="6"/>
+      <rect x="980" y="294" width="4" height="6"/>
+      <rect x="1004" y="294" width="4" height="6"/>
+    </g>
+    <!-- rooftop water tank -->
+    <ellipse cx="986" cy="180" rx="14" ry="4" fill="#3a2a68"/>
+    <rect x="972" y="164" width="28" height="16" rx="3" fill="#3a2a68"/>
+  </g>
+
+  <!-- blinking radio mast BETWEEN the tower clusters (stands where Act 1's relay lived) -->
+  <g transform="translate(146,152)" stroke="#7a5eaa" fill="none" stroke-width="4" stroke-linecap="round">
+    <path d="M0 122 L12 0 L24 122 M-16 122 h56 M4 90 h16 M8 60 h8"/>
+    <circle class="blink2" cx="12" cy="-4" r="4.5" fill="#ff8b6b" stroke="none"/>
+    <!-- a small cable-tray dish -->
+    <circle cx="24" cy="26" r="6" fill="none" stroke="#8a78c9" stroke-width="3"/>
+  </g>
+
+  <!-- elevated cable tray crossing between tower clusters (behind destination) -->
+  <g stroke="#3a2a68" stroke-width="3" fill="none" opacity="0.85">
+    <path d="M170 174 Q400 158 620 178"/>
+    <path d="M170 178 Q400 162 620 182"/>
+    <!-- support poles -->
+    <path d="M260 176 v22" stroke-width="2.4"/>
+    <path d="M420 168 v22" stroke-width="2.4"/>
+    <path d="M580 178 v22" stroke-width="2.4"/>
+  </g>
+  <g stroke="#3a2a68" stroke-width="3" fill="none" opacity="0.85">
+    <path d="M660 178 Q820 164 946 190"/>
+    <path d="M660 182 Q820 168 946 194"/>
+    <path d="M720 172 v22" stroke-width="2.4"/>
+    <path d="M840 168 v22" stroke-width="2.4"/>
+  </g>
+
+  <!-- a small hovering delivery drone against the sky -->
+  <g transform="translate(760,220)" class="float2">
+    <rect x="-6" y="-2" width="12" height="5" rx="1.5" fill="#6ee8c8"/>
+    <path d="M-9 -2 h4 M5 -2 h4" stroke="#6ee8c8" stroke-width="2" stroke-linecap="round"/>
+    <circle class="blink" cx="0" cy="4" r="1.6" fill="#ff8b6b"/>
+  </g>
+
+  <!-- ============== AVA'S TOWER — destination between the arc ends ==============
+       drawn AFTER the skyline: sits in front, warm-lit — the beacon -->
+  <circle cx="640" cy="300" r="96" fill="url(#towerGlow)"/>
+  <g transform="translate(640,306)">
+    <!-- shadow at base -->
+    <ellipse cx="0" cy="24" rx="32" ry="5" fill="#080510" opacity="0.7"/>
+    <!-- apartment tower body: taller than wide, softly rounded -->
+    <rect x="-22" y="-70" width="44" height="94" rx="6" fill="#2a1f52"
+          stroke="#ffd166" stroke-width="2.5"/>
+    <!-- window grid: mostly dim, ONE warmly lit window -->
+    <g fill="#2f2364">
+      <rect x="-16" y="-62" width="9" height="10" rx="1.5"/>
+      <rect x="-4"  y="-62" width="9" height="10" rx="1.5"/>
+      <rect x="8"   y="-62" width="9" height="10" rx="1.5"/>
+      <rect x="-16" y="-48" width="9" height="10" rx="1.5"/>
+      <rect x="8"   y="-48" width="9" height="10" rx="1.5"/>
+      <rect x="-16" y="-34" width="9" height="10" rx="1.5"/>
+      <rect x="-4"  y="-34" width="9" height="10" rx="1.5"/>
+      <rect x="-16" y="-20" width="9" height="10" rx="1.5"/>
+      <rect x="8"   y="-20" width="9" height="10" rx="1.5"/>
+      <rect x="-16" y="-6" width="9" height="10" rx="1.5"/>
+      <rect x="-4"  y="-6" width="9" height="10" rx="1.5"/>
+      <rect x="8"   y="-6" width="9" height="10" rx="1.5"/>
+      <rect x="-4"  y="8" width="9" height="10" rx="1.5"/>
+      <rect x="8"   y="8" width="9" height="10" rx="1.5"/>
+    </g>
+    <!-- a few softly lit dim windows for life -->
+    <g fill="#7c6bb3" opacity="0.75">
+      <rect x="-4"  y="-48" width="9" height="10" rx="1.5"/>
+      <rect x="8"   y="-34" width="9" height="10" rx="1.5"/>
+      <rect x="-4"  y="-20" width="9" height="10" rx="1.5"/>
+      <rect x="-16" y="8" width="9" height="10" rx="1.5"/>
+    </g>
+    <!-- THE lit window (Ava is home) — with a soft warm halo -->
+    <circle cx="0" cy="-29" r="14" fill="url(#towerGlow)" opacity="0.9"/>
+    <rect x="-4" y="-34" width="9" height="10" rx="1.5" fill="#ffe9b0"/>
+    <rect x="-4" y="-34" width="9" height="10" rx="1.5" fill="none"
+          stroke="#fff3c4" stroke-width="1.2" opacity="0.9"/>
+    <!-- silhouette in the window: someone standing there -->
+    <rect x="-1.5" y="-32" width="3" height="6" rx="1" fill="#8a6215" opacity="0.85"/>
+    <!-- little planter (a warm human touch) -->
+    <rect x="-6" y="-24" width="13" height="2" rx="0.5" fill="#4cb173" opacity="0.9"/>
+    <!-- roof -->
+    <rect x="-24" y="-74" width="48" height="6" rx="2" fill="#3a2a68"/>
+    <!-- door at street level, cyan-mint accent -->
+    <rect x="-6" y="14" width="12" height="10" rx="1.5" fill="#6ee8c8"/>
+  </g>
+
+  <!-- ===================== GROUND (city plaza) ===================== -->
+  <rect y="314" width="1280" height="486" fill="url(#ground)"/>
+  <!-- sidewalk speckle (subtle) -->
+  <g fill="#6ee8c8" opacity="0.22">
+    <circle cx="150" cy="420" r="2.4"/><circle cx="260" cy="500" r="3"/>
+    <circle cx="90" cy="610" r="3.6"/><circle cx="330" cy="660" r="3.6"/>
+    <circle cx="1080" cy="470" r="3"/><circle cx="1180" cy="560" r="3.6"/>
+    <circle cx="990" cy="640" r="3.6"/><circle cx="1240" cy="690" r="4"/>
+  </g>
+  <g fill="#c98cff" opacity="0.28">
+    <circle cx="205" cy="465" r="2.4"/><circle cx="1130" cy="520" r="2.6"/>
+    <circle cx="60" cy="530" r="2.4"/><circle cx="1035" cy="580" r="3"/>
+  </g>
+  <g fill="#ff7ac6" opacity="0.28">
+    <circle cx="285" cy="560" r="2.6"/><circle cx="140" cy="500" r="2.4"/>
+    <circle cx="1210" cy="620" r="3"/><circle cx="945" cy="560" r="2.4"/>
+  </g>
+
+  <!-- ============== THE ROADS: dark asphalt-indigo, cyan-mint edge-lit ==============
+       same trunk-fork-rejoin geometry as Act 1. left ribbon = short (jammed);
+       right ribbon = long. -->
+  <!-- trunk -->
+  <path d="M470 800 Q520 645 606 532 L674 532 Q760 645 810 800 Z" fill="url(#roadBody)"/>
+  <!-- LEFT ribbon (short) -->
+  <path d="M606 532 C455 455 505 352 718 314 L734 322 C540 368 500 452 640 524 Z"
+        fill="url(#roadBody)"/>
+  <!-- RIGHT ribbon (long) -->
+  <path d="M674 532 C870 470 940 372 766 322 L750 316 C900 372 830 462 640 524 Z"
+        fill="url(#roadBody)"/>
+  <!-- fork notch fill -->
+  <path d="M606 532 L640 522 L674 532 Q640 558 606 532 Z" fill="url(#roadBody)"/>
+  <!-- jam STAINS its road: amber wash over the left ribbon (500ms danger read) -->
+  <path d="M606 532 C455 455 505 352 718 314 L734 322 C540 368 500 452 640 524 Z"
+        fill="#f4a259" opacity="0.22"/>
+
+  <!-- edge light: trunk edges → each fork; the JAMMED road glows amber;
+       the quiet road glows cyan-mint (the city's road-pick #6ee8c8) -->
+  <g fill="none" stroke-linecap="round">
+    <path d="M470 800 Q520 645 606 532" stroke="#6ee8c8" stroke-width="4.5" opacity="0.9"/>
+    <path d="M606 532 C455 455 505 352 718 314" stroke="#ffc48a" stroke-width="4.5" opacity="0.95"/>
+    <path d="M810 800 Q760 645 674 532 C870 470 940 372 766 322"
+          stroke="#6ee8c8" stroke-width="4.5" opacity="0.9"/>
+  </g>
+  <g stroke-width="3" fill="none" stroke-linecap="round" opacity="0.55">
+    <path d="M640 524 C500 452 540 368 734 322" stroke="#ffc48a"/>
+    <path d="M640 524 C830 462 900 372 750 316" stroke="#6ee8c8"/>
+  </g>
+
+  <!-- marching centerline dashes — bright cyan-mint on the trunk & quiet fork;
+       dimmed under the jam on the left fork -->
+  <g fill="#e6fff8">
+    <ellipse cx="640" cy="754" rx="13" ry="6.5"/>
+    <ellipse cx="640" cy="682" rx="11" ry="5.4"/>
+    <ellipse cx="640" cy="618" rx="9" ry="4.4"/>
+    <ellipse cx="640" cy="562" rx="7.5" ry="3.6"/>
+  </g>
+  <!-- left spine (fewer hops — shorter road) — dimmed under the jam -->
+  <g fill="#e6fff8" opacity="0.45">
+    <ellipse cx="557" cy="459" rx="6" ry="3"/>
+    <ellipse cx="563" cy="401" rx="4.6" ry="2.3"/>
+    <ellipse cx="631" cy="349" rx="3.4" ry="1.7"/>
+  </g>
+  <!-- right spine (more hops — longer road) — bright -->
+  <g fill="#e6fff8">
+    <ellipse cx="770" cy="475" rx="6" ry="3"/>
+    <ellipse cx="829" cy="430" rx="5.2" ry="2.6"/>
+    <ellipse cx="847" cy="386" rx="4.4" ry="2.2"/>
+    <ellipse cx="815" cy="345" rx="3.6" ry="1.8"/>
+    <ellipse cx="777" cy="326" rx="3" ry="1.5"/>
+  </g>
+
+  <!-- ============ ROADSIDE PROPS: bollards, neon street signs, café glow ============ -->
+  <!-- traffic bollards along the trunk (both sides) -->
+  <g>
+    <g transform="translate(450,720)">
+      <ellipse cx="0" cy="12" rx="7" ry="2" fill="#080510" opacity="0.7"/>
+      <rect x="-3" y="-14" width="6" height="24" rx="2" fill="#2a1f52"/>
+      <rect x="-3" y="-14" width="6" height="4" fill="#6ee8c8"/>
+      <rect x="-3" y="-3" width="6" height="3" fill="#6ee8c8" opacity="0.7"/>
+    </g>
+    <g transform="translate(830,720)">
+      <ellipse cx="0" cy="12" rx="7" ry="2" fill="#080510" opacity="0.7"/>
+      <rect x="-3" y="-14" width="6" height="24" rx="2" fill="#2a1f52"/>
+      <rect x="-3" y="-14" width="6" height="4" fill="#6ee8c8"/>
+      <rect x="-3" y="-3" width="6" height="3" fill="#6ee8c8" opacity="0.7"/>
+    </g>
+    <g transform="translate(492,616)">
+      <ellipse cx="0" cy="10" rx="6" ry="2" fill="#080510" opacity="0.7"/>
+      <rect x="-2.5" y="-12" width="5" height="22" rx="2" fill="#2a1f52"/>
+      <rect x="-2.5" y="-12" width="5" height="3" fill="#6ee8c8"/>
+    </g>
+    <g transform="translate(788,616)">
+      <ellipse cx="0" cy="10" rx="6" ry="2" fill="#080510" opacity="0.7"/>
+      <rect x="-2.5" y="-12" width="5" height="22" rx="2" fill="#2a1f52"/>
+      <rect x="-2.5" y="-12" width="5" height="3" fill="#6ee8c8"/>
+    </g>
+  </g>
+
+  <!-- neon street sign on the LEFT: violet "AVE" plate (color-invariant safe:
+       amber stays exclusive to hazards; the sign points the way in cool tones) -->
+  <g transform="translate(400,588)">
+    <ellipse cx="0" cy="70" rx="14" ry="4" fill="#080510" opacity="0.65"/>
+    <rect x="-3" y="0" width="6" height="72" rx="2" fill="#3a2a68"/>
+    <rect x="-30" y="-30" width="60" height="34" rx="6" fill="#17102e"
+          stroke="#c98cff" stroke-width="3"/>
+    <!-- street-name plate in cool neon (not warm) -->
+    <text x="0" y="-8" text-anchor="middle" font-family="ui-monospace, Menlo, monospace"
+          font-size="12" font-weight="800" fill="#c98cff" letter-spacing="1.5">AVE ::</text>
+    <text x="0" y="-22" text-anchor="middle" font-family="ui-monospace, Menlo, monospace"
+          font-size="7" font-weight="700" fill="#6ee8c8" letter-spacing="1">BLK 203</text>
+  </g>
+
+  <!-- little café glow on the RIGHT (a warm neighborhood pocket) -->
+  <g transform="translate(1080,608)">
+    <ellipse cx="0" cy="86" rx="42" ry="8" fill="#080510" opacity="0.75"/>
+    <!-- awning glow -->
+    <ellipse cx="0" cy="20" rx="52" ry="34" fill="url(#cafeGlow)"/>
+    <!-- squat storefront -->
+    <rect x="-36" y="-8" width="72" height="60" rx="6" fill="#241645"
+          stroke="#ff7ac6" stroke-width="2.5"/>
+    <!-- windows -->
+    <rect x="-28" y="4" width="20" height="20" rx="2" fill="#ffd166" opacity="0.85"/>
+    <rect x="8"   y="4" width="20" height="20" rx="2" fill="#ffd166" opacity="0.85"/>
+    <!-- door -->
+    <rect x="-6" y="26" width="12" height="26" rx="2" fill="#6ee8c8"/>
+    <!-- roof neon sign -->
+    <rect x="-24" y="-16" width="48" height="10" rx="2" fill="#0f0a20"/>
+    <text x="0" y="-8" text-anchor="middle" font-family="ui-monospace, Menlo, monospace"
+          font-size="7" font-weight="800" fill="#6ee8c8" letter-spacing="1">::CACHE</text>
+  </g>
+
+  <!-- a smaller neon shop on the RIGHT further back -->
+  <g transform="translate(986,486)">
+    <ellipse cx="0" cy="42" rx="26" ry="5" fill="#080510" opacity="0.7"/>
+    <rect x="-24" y="0" width="48" height="40" rx="4" fill="#231640"
+          stroke="#6ee8c8" stroke-width="2"/>
+    <rect x="-18" y="10" width="14" height="14" rx="1.5" fill="#ffd166" opacity="0.8"/>
+    <rect x="4"   y="10" width="14" height="14" rx="1.5" fill="#ffd166" opacity="0.8"/>
+    <rect x="-24" y="-8" width="48" height="8" rx="1.5" fill="#0f0a20"/>
+    <text x="0" y="-2" text-anchor="middle" font-family="ui-monospace, Menlo, monospace"
+          font-size="6" font-weight="800" fill="#c98cff" letter-spacing="1">HUB</text>
+  </g>
+
+  <!-- ============ THE JAM — a clot of stuck packet-vehicles ON the left road ============
+       amber hazard glow underneath; a couple of vehicles askew; blinking hazards -->
+  <ellipse cx="560" cy="438" rx="120" ry="26" fill="url(#jamLight)"/>
+  <!-- little rising heat/steam wisps from the clot -->
+  <g stroke="#ffb867" stroke-width="2.4" stroke-linecap="round" opacity="0.7" fill="none">
+    <path d="M540 380 q3 -8 -2 -14"/>
+    <path d="M568 372 q3 -10 -2 -18"/>
+    <path d="M588 388 q3 -8 -2 -14"/>
+  </g>
+
+  <g transform="translate(560,410)">
+    <g class="bob">
+      <!-- ground shadow -->
+      <g filter="url(#soft)" opacity="0.55">
+        <ellipse cx="0" cy="34" rx="98" ry="16" fill="#5a2a10"/>
+      </g>
+
+      <!-- Vehicle A: leftmost, angled askew (rear-ended vibe) -->
+      <g transform="translate(-58,10) rotate(-8)">
+        <rect x="-22" y="-14" width="44" height="26" rx="6" fill="#ff9440"
+              stroke="#7a3c14" stroke-width="2.5"/>
+        <!-- windshield -->
+        <rect x="-14" y="-10" width="28" height="10" rx="2" fill="#3a1f0a" opacity="0.8"/>
+        <!-- wheels (chunky rounded dots — city cartoon) -->
+        <circle cx="-14" cy="12" r="5" fill="#1a0f2a"/>
+        <circle cx="14" cy="12" r="5" fill="#1a0f2a"/>
+        <!-- hazard blink -->
+        <circle class="blink" cx="20" cy="-10" r="2.4" fill="#fff0a8"/>
+        <circle class="blink" cx="-20" cy="-10" r="2.4" fill="#fff0a8"/>
+      </g>
+
+      <!-- Vehicle B: front-center — biggest, packet-truck (a box on wheels) -->
+      <g transform="translate(-8,-4)">
+        <rect x="-30" y="-20" width="60" height="34" rx="7" fill="#ffab5e"
+              stroke="#7a3c14" stroke-width="2.5"/>
+        <!-- cab -->
+        <rect x="-30" y="-20" width="20" height="34" rx="6" fill="#f08a38"
+              stroke="#7a3c14" stroke-width="2.5"/>
+        <!-- windshield on cab -->
+        <rect x="-26" y="-16" width="12" height="10" rx="1.5" fill="#3a1f0a" opacity="0.85"/>
+        <!-- packet label on the trailer -->
+        <rect x="-6" y="-12" width="30" height="18" rx="2" fill="#fff0a8"/>
+        <text x="9" y="1" text-anchor="middle" font-family="ui-monospace, Menlo, monospace"
+              font-size="9" font-weight="800" fill="#7a3c14">DATA</text>
+        <!-- wheels -->
+        <circle cx="-18" cy="16" r="6" fill="#1a0f2a"/>
+        <circle cx="8" cy="16" r="6" fill="#1a0f2a"/>
+        <circle cx="24" cy="16" r="6" fill="#1a0f2a"/>
+      </g>
+
+      <!-- Vehicle C: rightmost, a compact -->
+      <g transform="translate(50,8) rotate(6)">
+        <rect x="-20" y="-13" width="40" height="24" rx="6" fill="#ff9440"
+              stroke="#7a3c14" stroke-width="2.5"/>
+        <rect x="-13" y="-10" width="26" height="9" rx="2" fill="#3a1f0a" opacity="0.8"/>
+        <circle cx="-12" cy="11" r="5" fill="#1a0f2a"/>
+        <circle cx="12" cy="11" r="5" fill="#1a0f2a"/>
+        <!-- brake light -->
+        <circle class="blink" cx="-18" cy="-8" r="2" fill="#ff5252"/>
+      </g>
+
+      <!-- steam/exhaust puff over the jam -->
+      <g opacity="0.65">
+        <circle cx="-30" cy="-24" r="9" fill="#fff0a8"/>
+        <circle cx="-14" cy="-32" r="11" fill="#ffe19a"/>
+        <circle cx="10" cy="-30" r="10" fill="#ffe19a"/>
+        <circle cx="28" cy="-26" r="8" fill="#fff0a8"/>
+      </g>
+    </g>
+  </g>
+
+  <!-- ============ SIGNPOSTS (the forecast, diegetic) ============ -->
+  <!-- LEFT: jam on this road, 3 hops -->
+  <g transform="translate(298,452)">
+    <ellipse cx="0" cy="116" rx="20" ry="5" fill="#080510" opacity="0.65"/>
+    <rect x="-5" y="-6" width="10" height="122" rx="4" fill="#2a1f52"/>
+    <g transform="translate(0,-14)">
+      <rect x="-92" y="-58" width="184" height="76" rx="16" fill="#17102e"
+            stroke="#f4a259" stroke-width="4"/>
+      <!-- icon: a clogged pipe / jam symbol.
+           a pipe with 3 boxy packets stuck inside -->
+      <g transform="translate(-72,-32)">
+        <!-- pipe outline -->
+        <rect x="0" y="0" width="40" height="16" rx="4" fill="none"
+              stroke="#ffab5e" stroke-width="3"/>
+        <!-- three stuck packets -->
+        <rect x="4"  y="3" width="10" height="10" rx="1.5" fill="#f4a259"/>
+        <rect x="15" y="3" width="10" height="10" rx="1.5" fill="#ffab5e"/>
+        <rect x="26" y="3" width="10" height="10" rx="1.5" fill="#f4a259"/>
+      </g>
+      <text x="18" y="-14" font-family="ui-rounded, system-ui" font-size="28"
+            font-weight="800" fill="#ffb867">jam</text>
+      <g fill="#eafff2">
+        <circle cx="-18" cy="4" r="6"/>
+        <circle cx="0"   cy="4" r="6"/>
+        <circle cx="18"  cy="4" r="6"/>
+      </g>
+    </g>
+  </g>
+
+  <!-- RIGHT: quiet, 6 hops (text label matches the in-game chip 1:1) -->
+  <g transform="translate(1014,456)">
+    <ellipse cx="0" cy="112" rx="20" ry="5" fill="#080510" opacity="0.65"/>
+    <rect x="-5" y="-6" width="10" height="118" rx="4" fill="#2a1f52"/>
+    <g transform="translate(0,-14)">
+      <rect x="-86" y="-56" width="172" height="74" rx="16" fill="#17102e"
+            stroke="#6ee8c8" stroke-width="4"/>
+      <text x="0" y="-18" text-anchor="middle" font-family="ui-rounded, system-ui"
+            font-size="26" font-weight="800" fill="#7ff2d0">quiet</text>
+      <g fill="#eafff2">
+        <circle cx="-37.5" cy="4" r="5"/>
+        <circle cx="-22.5" cy="4" r="5"/>
+        <circle cx="-7.5"  cy="4" r="5"/>
+        <circle cx="7.5"   cy="4" r="5"/>
+        <circle cx="22.5"  cy="4" r="5"/>
+        <circle cx="37.5"  cy="4" r="5"/>
+      </g>
+    </g>
+  </g>
+
+  <!-- ===================== THE PARTY ===================== -->
+  <!-- staggered arc, each shadowed; eyes give them character; numbers dominant -->
+  <g transform="translate(556,688)">
+    <ellipse cy="34" rx="28" ry="6" fill="#050310" opacity="0.7"/>
+    <g class="bob">
+      <circle r="44" fill="url(#fragGlow)"/>
+      <rect x="-24" y="-24" width="48" height="48" rx="11" fill="#6ee7ff"/>
+      <path d="M-15 -20.5 h30" stroke="#c9f6ff" stroke-width="5" stroke-linecap="round"/>
+      <rect x="-24" y="-24" width="48" height="48" rx="11" fill="none" stroke="#0d3d4d" stroke-width="3"/>
+      <circle cx="-7" cy="-11" r="2.4" fill="#062733"/><circle cx="7" cy="-11" r="2.4" fill="#062733"/>
+      <text y="15" text-anchor="middle" font-family="ui-rounded, system-ui" font-size="25" font-weight="800" fill="#062733">1</text>
+    </g>
+  </g>
+  <g transform="translate(602,646)">
+    <ellipse cy="30" rx="25" ry="5.5" fill="#050310" opacity="0.7"/>
+    <g class="float2">
+      <circle r="40" fill="url(#fragGlow)"/>
+      <rect x="-21" y="-21" width="42" height="42" rx="10" fill="#6ee7ff"/>
+      <path d="M-13 -17.5 h26" stroke="#c9f6ff" stroke-width="4.5" stroke-linecap="round"/>
+      <rect x="-21" y="-21" width="42" height="42" rx="10" fill="none" stroke="#0d3d4d" stroke-width="3"/>
+      <circle cx="-6" cy="-9" r="2.2" fill="#062733"/><circle cx="6" cy="-9" r="2.2" fill="#062733"/>
+      <text y="14" text-anchor="middle" font-family="ui-rounded, system-ui" font-size="22" font-weight="800" fill="#062733">3</text>
+    </g>
+  </g>
+  <g transform="translate(660,632)">
+    <ellipse cy="28" rx="23" ry="5" fill="#050310" opacity="0.7"/>
+    <g class="bob">
+      <circle r="38" fill="url(#fragGlow)"/>
+      <rect x="-20" y="-20" width="40" height="40" rx="9" fill="#6ee7ff"/>
+      <path d="M-12 -16.5 h24" stroke="#c9f6ff" stroke-width="4.5" stroke-linecap="round"/>
+      <rect x="-20" y="-20" width="40" height="40" rx="9" fill="none" stroke="#0d3d4d" stroke-width="3"/>
+      <circle cx="-6" cy="-8" r="2.1" fill="#062733"/><circle cx="6" cy="-8" r="2.1" fill="#062733"/>
+      <text y="13" text-anchor="middle" font-family="ui-rounded, system-ui" font-size="21" font-weight="800" fill="#062733">2</text>
+    </g>
+  </g>
+  <g transform="translate(718,646)">
+    <ellipse cy="30" rx="25" ry="5.5" fill="#050310" opacity="0.7"/>
+    <g class="float">
+      <circle r="40" fill="url(#fragGlow)"/>
+      <rect x="-21" y="-21" width="42" height="42" rx="10" fill="#6ee7ff"/>
+      <path d="M-13 -17.5 h26" stroke="#c9f6ff" stroke-width="4.5" stroke-linecap="round"/>
+      <rect x="-21" y="-21" width="42" height="42" rx="10" fill="none" stroke="#0d3d4d" stroke-width="3"/>
+      <circle cx="-6" cy="-9" r="2.2" fill="#062733"/><circle cx="6" cy="-9" r="2.2" fill="#062733"/>
+      <text y="14" text-anchor="middle" font-family="ui-rounded, system-ui" font-size="22" font-weight="800" fill="#062733">5</text>
+    </g>
+  </g>
+  <g transform="translate(764,688)">
+    <ellipse cy="34" rx="28" ry="6" fill="#050310" opacity="0.7"/>
+    <g class="bob">
+      <circle r="44" fill="url(#fragGlow)"/>
+      <rect x="-24" y="-24" width="48" height="48" rx="11" fill="#6ee7ff"/>
+      <path d="M-15 -20.5 h30" stroke="#c9f6ff" stroke-width="5" stroke-linecap="round"/>
+      <rect x="-24" y="-24" width="48" height="48" rx="11" fill="none" stroke="#0d3d4d" stroke-width="3"/>
+      <circle cx="-7" cy="-11" r="2.4" fill="#062733"/><circle cx="7" cy="-11" r="2.4" fill="#062733"/>
+      <text y="15" text-anchor="middle" font-family="ui-rounded, system-ui" font-size="25" font-weight="800" fill="#062733">4</text>
+    </g>
+  </g>
+  <!-- Pip, out front — the hero leads, backlit -->
+  <g transform="translate(640,566)">
+    <ellipse cy="46" rx="26" ry="5.5" fill="#050310" opacity="0.6"/>
+    <g class="float">
+      <circle r="60" fill="url(#pipGlow)"/>
+      <g transform="scale(1.2)">
+        <path d="M0 -34 Q12 -12 34 0 Q12 12 0 34 Q-12 12 -34 0 Q-12 -12 0 -34 Z"
+              fill="none" stroke="#fff3c4" stroke-width="7" stroke-linejoin="round" opacity="0.55"/>
+        <path d="M0 -34 Q12 -12 34 0 Q12 12 0 34 Q-12 12 -34 0 Q-12 -12 0 -34 Z"
+              fill="#ffd166" stroke="#8a6215" stroke-width="2.5" stroke-linejoin="round"/>
+        <circle cx="-8" cy="-4" r="3.6" fill="#3a2c00"/>
+        <circle cx="8" cy="-4" r="3.6" fill="#3a2c00"/>
+        <path d="M-8 7 q8 8 16 0" fill="none" stroke="#3a2c00" stroke-width="3.4" stroke-linecap="round"/>
+      </g>
+    </g>
+  </g>
+
+  <!-- ===================== FOREGROUND — sidewalk shapes, neon motes ===================== -->
+  <path d="M0 800 L0 754 Q60 738 120 752 Q180 766 240 748 Q320 726 390 750 L390 800 Z" fill="#0a0616"/>
+  <path d="M890 800 L890 752 Q960 730 1040 750 Q1120 768 1200 744 Q1245 732 1280 742 L1280 800 Z" fill="#0a0616"/>
+  <!-- sidewalk edge highlights -->
+  <g stroke="#6ee8c8" stroke-width="2" stroke-linecap="round" opacity="0.55" fill="none">
+    <path d="M0 754 Q60 738 120 752 Q180 766 240 748 Q320 726 390 750"/>
+    <path d="M890 752 Q960 730 1040 750 Q1120 768 1200 744 Q1245 732 1280 742"/>
+  </g>
+  <!-- storm-drain grate hints (little dashes) -->
+  <g stroke="#3a2a68" stroke-width="3" stroke-linecap="round">
+    <path d="M84 770 h20"/><path d="M84 778 h20"/>
+    <path d="M1160 770 h20"/><path d="M1160 778 h20"/>
+  </g>
+
+  <!-- floating neon motes (fireflies → neon in the city) -->
+  <g>
+    <g class="twinkle"><circle cx="180" cy="700" r="4" fill="#6ee8c8"/></g>
+    <g class="twinkle"><circle cx="180" cy="700" r="10" fill="url(#moteGlow)"/></g>
+    <g class="twinkle2"><circle cx="340" cy="732" r="3" fill="#c98cff"/></g>
+    <g class="twinkle"><circle cx="1060" cy="712" r="4" fill="#6ee8c8"/></g>
+    <g class="twinkle"><circle cx="1060" cy="712" r="10" fill="url(#moteGlow)"/></g>
+    <g class="twinkle2"><circle cx="948" cy="690" r="3" fill="#ff7ac6"/></g>
+    <g class="twinkle"><circle cx="1216" cy="668" r="3.4" fill="#6ee8c8"/></g>
+    <g class="twinkle2"><circle cx="260" cy="666" r="3" fill="#c98cff"/></g>
+    <g class="twinkle"><circle cx="30" cy="686" r="3.4" fill="#6ee8c8"/></g>
+  </g>
+</svg>
+</div>
+</body>
+</html>
