@@ -21,9 +21,17 @@
   --fragment-corrupt: #ff5d8f; /* scrambled bits — glitch pink */
   --copy: #b58cff;           /* duplicate = translucent twin, violet */
 
-  --wire: #2e4438;
-  --wire-lit: #57806a;
+  --wire: #35594a;
+  --wire-lit: #66a681;
   --road-pick: #7bd88f;      /* highlighted / chosen road */
+
+  /* the stage sky: each act paints its own weather-lit backdrop behind the
+     map (design/11 color register — the environment is saturated and alive;
+     characters and the hazard amber never shift) */
+  --sky-top: #16455e;
+  --sky-mid: #1b5c49;
+  --sky-deep: #0c2418;
+  --dest-glow: rgba(255, 209, 102, 0.2);
 
   --hazard: #f4a259;         /* hazard hue family: storm, drizzle, gust */
   --hazard-soft: rgba(244, 162, 89, 0.18);
@@ -75,12 +83,16 @@ body.act-2 { /* Backbone City: neon dusk */
   --surface-2: #2a2149;
   --ink-soft: #b3a8d1;
   --ink-faint: #6f6592;
-  --wire: #3b3159;
-  --wire-lit: #7263a5;
+  --wire: #453a6b;
+  --wire-lit: #8a78c9;
   --road-pick: #6ee8c8;
   --safe: #6ee8c8;
   --fog: rgba(170, 160, 210, 0.14);
   --fog-edge: rgba(170, 160, 210, 0.05);
+  --sky-top: #241659;
+  --sky-mid: #3a1f66;
+  --sky-deep: #140b2b;
+  --dest-glow: rgba(110, 232, 200, 0.18);
 }
 
 body.act-4 { /* The Far Reaches: warm ochre — big skies, sparse grid */
@@ -90,12 +102,16 @@ body.act-4 { /* The Far Reaches: warm ochre — big skies, sparse grid */
   --surface-2: #3b2f22;
   --ink-soft: #d1bfa4;
   --ink-faint: #8d7a60;
-  --wire: #4a3b28;
-  --wire-lit: #8a6f4d;
+  --wire: #5c4a2e;
+  --wire-lit: #a8875c;
   --road-pick: #ffc966;
   --safe: #ffc966;
   --fog: rgba(215, 185, 140, 0.14);
   --fog-edge: rgba(215, 185, 140, 0.05);
+  --sky-top: #472a10;
+  --sky-mid: #5c3a1a;
+  --sky-deep: #1c0f06;
+  --dest-glow: rgba(255, 201, 102, 0.24);
 }
 
 body.act-5 { /* The Hostile Zone: inky violet — rough neighborhood */
@@ -105,12 +121,16 @@ body.act-5 { /* The Hostile Zone: inky violet — rough neighborhood */
   --surface-2: #302145;
   --ink-soft: #bda8d6;
   --ink-faint: #776394;
-  --wire: #423156;
-  --wire-lit: #79619c;
+  --wire: #4f3a6a;
+  --wire-lit: #9678c0;
   --road-pick: #e08cff;
   --safe: #e08cff;
   --fog: rgba(190, 160, 225, 0.15);
   --fog-edge: rgba(190, 160, 225, 0.05);
+  --sky-top: #2c1548;
+  --sky-mid: #3a1c5e;
+  --sky-deep: #120826;
+  --dest-glow: rgba(224, 140, 255, 0.2);
 }
 
 body.act-3 { /* The Ocean Crossing: deep blues */
@@ -120,12 +140,16 @@ body.act-3 { /* The Ocean Crossing: deep blues */
   --surface-2: #19344e;
   --ink-soft: #9cc2dc;
   --ink-faint: #587e9a;
-  --wire: #23445e;
-  --wire-lit: #4a80a8;
+  --wire: #2c567a;
+  --wire-lit: #5c9cc9;
   --road-pick: #6fd6ff;
   --safe: #6fd6ff;
   --fog: rgba(150, 195, 225, 0.15);
   --fog-edge: rgba(150, 195, 225, 0.05);
+  --sky-top: #0e3a5e;
+  --sky-mid: #114a6a;
+  --sky-deep: #051220;
+  --dest-glow: rgba(111, 214, 255, 0.2);
 }
 
 .act-chip { margin-left: auto; }

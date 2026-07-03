@@ -72,6 +72,14 @@
 #stage {
   position: relative;
   min-height: 0;
+  /* the act's sky: a saturated backdrop under the SVG map, with the
+     destination's warm glow pooling where the dock lives (top, in the
+     portrait column — landscape.css re-anchors it east). Color families
+     per act live in base.css; hazard amber never moves. */
+  background:
+    radial-gradient(ellipse 62% 30% at 50% 4%, var(--dest-glow), transparent 70%),
+    linear-gradient(180deg, var(--sky-top), var(--sky-mid) 46%, var(--sky-deep));
+  box-shadow: inset 0 0 72px rgba(0, 0, 0, 0.32);
 }
 
 #map-layer, #live-layer {

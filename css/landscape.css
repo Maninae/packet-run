@@ -20,6 +20,10 @@
   #stage {
     grid-area: stage;
     border-right: var(--stroke-w) solid var(--wire);
+    /* the journey flows west→east here — the destination glow moves east */
+    background:
+      radial-gradient(ellipse 30% 62% at 96% 50%, var(--dest-glow), transparent 70%),
+      linear-gradient(180deg, var(--sky-top), var(--sky-mid) 46%, var(--sky-deep));
   }
 
   #meters {
