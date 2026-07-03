@@ -50,7 +50,12 @@ the event stream. The perspective view is a rendering swap:
 
 1. **Static mock first** (one hand-composed junction scene per act biome,
    HTML/CSS/SVG, no engine hookup) → judged against the current view before
-   any rebuild. This is Gate P1.
+   any rebuild. This is Gate P1. **Act-1 mock PASSED 2026-07-03** (two
+   fresh-context reviewers, game-feel + kid-UX lenses, TUNE→PASS round 2;
+   what the gate added: arcs rejoin at the destination, arc breadth = hop
+   count, sweeping hazards stain their road amber, no warm sky competing
+   with hazard amber, shadows + eyes). mocks/road-act1.html is the bar;
+   acts 2–5 mocks derive from it.
 2. Landscape two-pane layout for the CURRENT top-down view (independent,
    ships first — desktop players get a real layout while the chase-cam
    develops). **SHIPPED 2026-07-02**: map pane west (journey flows
@@ -59,7 +64,11 @@ the event stream. The perspective view is a rendering swap:
    untouched; breakpoint min-width 900px + landscape orientation.
 3. Perspective renderer for one act (Act 1 neighborhood) behind a `?view=road`
    flag; full-motion E2E from day one (testing lore: reduced-motion hides
-   animation crashes).
+   animation crashes). **SHIPPED 2026-07-03** (js/road/: projection math
+   unit-tested, signposts = the chips 1:1 incl. data-road-chip handles,
+   DNS mystery house, dock-fill win beat, Road ⇄ Map toggle, hop surge
+   with the map's impact fates; Act 1 + landscape only — portrait, later
+   acts, and the duel fall back to the classic map).
 4. Kid playtest the two views head-to-head (PLAYTEST.md session) before
    making perspective the default.
 5. Remaining biomes, environment set-pieces (router interior, seabed
