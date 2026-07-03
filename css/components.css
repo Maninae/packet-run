@@ -82,6 +82,20 @@
   box-shadow: inset 0 0 72px rgba(0, 0, 0, 0.32);
 }
 
+/* each act's horizon: a silhouette band along the top of the stage (hills,
+   skyline, ridge — per-act --scenery in base.css) — the layered read the
+   flat gradient lacked. Paints under the SVG map layers. */
+#stage::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: var(--scenery, none);
+  background-repeat: repeat-x;
+  background-position: top left;
+  background-size: auto 96px;
+}
+
 #map-layer, #live-layer {
   position: absolute;
   inset: 0;

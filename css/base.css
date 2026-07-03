@@ -32,6 +32,8 @@
   --sky-mid: #1b5c49;
   --sky-deep: #0c2418;
   --dest-glow: rgba(255, 209, 102, 0.2);
+  /* act 1: rolling meadow hills on the horizon */
+  --scenery: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 96' preserveAspectRatio='none'%3E%3Cpath d='M0 0 L400 0 L400 52 Q350 78 300 56 Q250 32 200 54 Q150 78 100 58 Q50 36 0 64 Z' fill='%23000000' fill-opacity='0.28'/%3E%3Cpath d='M0 0 L400 0 L400 34 Q330 52 260 38 Q180 22 110 40 Q50 52 0 40 Z' fill='%23000000' fill-opacity='0.2'/%3E%3C/svg%3E");
 
   --hazard: #f4a259;         /* hazard hue family: storm, drizzle, gust */
   --hazard-soft: rgba(244, 162, 89, 0.18);
@@ -93,6 +95,8 @@ body.act-2 { /* Backbone City: neon dusk */
   --sky-mid: #3a1f66;
   --sky-deep: #140b2b;
   --dest-glow: rgba(110, 232, 200, 0.18);
+  /* act 2: stepped city skyline */
+  --scenery: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 96' preserveAspectRatio='none'%3E%3Cpath d='M0 0 L400 0 L400 58 h-28 v-20 h-24 v34 h-30 v-14 h-26 v-26 h-22 v18 h-30 v22 h-28 v-38 h-24 v12 h-30 v14 h-26 v-30 h-24 v40 h-28 v-18 h-26 v-14 h-24 v24 h-30 Z' fill='%23000000' fill-opacity='0.3'/%3E%3C/svg%3E");
 }
 
 body.act-4 { /* The Far Reaches: warm ochre — big skies, sparse grid */
@@ -112,6 +116,8 @@ body.act-4 { /* The Far Reaches: warm ochre — big skies, sparse grid */
   --sky-mid: #5c3a1a;
   --sky-deep: #1c0f06;
   --dest-glow: rgba(255, 201, 102, 0.24);
+  /* act 4: flat-topped mesas on a huge horizon */
+  --scenery: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 96' preserveAspectRatio='none'%3E%3Cpath d='M0 0 L400 0 L400 50 h-36 l-14 20 h-52 l-12 -20 h-58 l-16 26 h-64 l-14 -26 h-48 l-12 18 h-46 l-12 -18 L0 56 Z' fill='%23000000' fill-opacity='0.3'/%3E%3C/svg%3E");
 }
 
 body.act-5 { /* The Hostile Zone: inky violet — rough neighborhood */
@@ -131,6 +137,8 @@ body.act-5 { /* The Hostile Zone: inky violet — rough neighborhood */
   --sky-mid: #3a1c5e;
   --sky-deep: #120826;
   --dest-glow: rgba(224, 140, 255, 0.2);
+  /* act 5: jagged hostile ridgeline */
+  --scenery: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 96' preserveAspectRatio='none'%3E%3Cpath d='M0 0 L400 0 L400 44 l-24 18 l-30 -26 l-28 34 l-34 -20 l-26 12 l-38 -30 l-30 40 l-36 -26 l-28 16 l-32 -22 l-30 30 l-34 -18 L0 62 Z' fill='%23000000' fill-opacity='0.32'/%3E%3C/svg%3E");
 }
 
 body.act-3 { /* The Ocean Crossing: deep blues */
@@ -150,6 +158,8 @@ body.act-3 { /* The Ocean Crossing: deep blues */
   --sky-mid: #114a6a;
   --sky-deep: #051220;
   --dest-glow: rgba(111, 214, 255, 0.2);
+  /* act 3: the surface swell overhead — we're under the ocean */
+  --scenery: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 96' preserveAspectRatio='none'%3E%3Cpath d='M0 0 L400 0 L400 26 Q360 40 320 28 Q280 16 240 30 Q200 44 160 30 Q120 16 80 30 Q40 44 0 30 Z' fill='%23ffffff' fill-opacity='0.07'/%3E%3Cpath d='M0 0 L400 0 L400 14 Q340 26 280 16 Q220 6 160 18 Q100 30 40 18 L0 22 Z' fill='%23ffffff' fill-opacity='0.06'/%3E%3C/svg%3E");
 }
 
 .act-chip { margin-left: auto; }

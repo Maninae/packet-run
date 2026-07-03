@@ -61,7 +61,7 @@ function signpost(scene, glyph) {
     <rect x="-5" y="-6" width="10" height="122" rx="4" fill="#1d4a38"/>
     <g transform="translate(0,-14)">
       <rect x="${-w / 2}" y="-58" width="${w}" height="76" rx="16" fill="#12352b"
-            stroke="${picked ? 'var(--road-pick)' : accent}" stroke-width="${picked ? 5 : 4}"/>
+            stroke="${picked ? '#eafff2' : accent}" stroke-width="${picked ? 5 : 4}"/>
       ${icon}
       <text x="${glyph.kind ? 26 : 0}" y="-20" text-anchor="middle"
             font-family="var(--font)" font-size="26" font-weight="800"
@@ -210,14 +210,23 @@ export function renderRoad(svg, scene) {
     const p = cubicAt(...spine, t);
     const hz = el('g', { class: 'rv-hazard' });
     if (road.hazard.kind === 'storm') {
-      // only a real storm gets the big amber thunderhead
-      hz.innerHTML = stormAtDepth(p.x, p.y - 100, 1.1);
+      // only a real storm gets the big amber thunderhead (0.95: the pane is
+      // narrower than the mock's full frame — the storm is an object, not
+      // half the sky)
+      hz.innerHTML = stormAtDepth(p.x, p.y - 96, 0.95);
     } else {
+      // milder hazards float as a legible badge at depth — the icon alone
+      // shrank to a smudge at horizon scale
+      const accent = road.hazard.kind === 'trench' ? 'var(--safe)' : 'var(--hazard)';
       hz.innerHTML = `
         <ellipse cx="${p.x}" cy="${p.y + 6}" rx="70" ry="16" fill="url(#rv-hazardLight)"/>
-        <g class="rv-bob"><g transform="translate(${p.x - 27},${p.y - 74})">
-          ${HAZARD_ICONS[road.hazard.kind](54)}
-        </g></g>`;
+        <g class="rv-bob">
+          <circle cx="${p.x}" cy="${p.y - 62}" r="46" fill="#12352b" opacity="0.9"/>
+          <circle cx="${p.x}" cy="${p.y - 62}" r="46" fill="none" stroke="${accent}" stroke-width="3.5"/>
+          <g transform="translate(${p.x - 32},${p.y - 94})">
+            ${HAZARD_ICONS[road.hazard.kind](64)}
+          </g>
+        </g>`;
     }
     svg.append(hz);
   }

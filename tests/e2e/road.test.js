@@ -85,6 +85,8 @@ test('the top-down map stays one toggle away (and comes back)', async () => {
   assert.equal((await toggle.textContent()).trim(), 'Map');
   await toggle.click();
   assert.equal(await page.locator('#map-layer').getAttribute('viewBox'), MAP_LANDSCAPE_BOX);
+  assert.equal(await page.locator('#map-layer').getAttribute('preserveAspectRatio'),
+    'xMidYMid meet', 'the map letterboxes — no leftover slice-crop from the road view');
   assert.equal((await toggle.textContent()).trim(), 'Road');
   await toggle.click();
   assert.equal(await page.locator('#map-layer').getAttribute('viewBox'), ROAD_BOX);

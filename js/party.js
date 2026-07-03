@@ -80,11 +80,20 @@ export function drawFragment(ctx, x, y, size, fragment) {
       ctx.fillRect(-half + ((i * 7 + 2) % size), -half + ((i * 11 + 3) % size), 3, 1.6);
     }
   }
+  // a body, not a chip (design/11): top-lit edge + two dot eyes, number below
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
+  ctx.beginPath();
+  ctx.roundRect(-half + 3, -half + 2, size - 6, Math.max(1.5, size * 0.07), 2);
+  ctx.fill();
   ctx.fillStyle = glitched ? '#2b0713' : '#062733';
-  ctx.font = `800 ${size * 0.62}px ${cssVar('--font') || 'system-ui'}`;
+  ctx.beginPath();
+  ctx.arc(-size * 0.16, -size * 0.2, Math.max(1, size * 0.055), 0, Math.PI * 2);
+  ctx.arc(size * 0.16, -size * 0.2, Math.max(1, size * 0.055), 0, Math.PI * 2);
+  ctx.fill();
+  ctx.font = `800 ${size * 0.52}px ${cssVar('--font') || 'system-ui'}`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText(String(fragment.id), 0, 1);
+  ctx.fillText(String(fragment.id), 0, size * 0.17);
   ctx.restore();
 }
 

@@ -260,6 +260,9 @@ function drawAmbient(svg, orientation) {
 export function renderMap(svg, scene) {
   const orientation = mapOrientation();
   svg.setAttribute('viewBox', viewBoxFor(orientation).join(' '));
+  // the road view leaves 'slice' cropping behind — the map must letterbox,
+  // or the dock clips behind the rail after a Road → Map toggle
+  svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
   svg.replaceChildren();
   const nodes = layoutMap(scene.map, orientation);
 

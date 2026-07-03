@@ -125,19 +125,24 @@ export function animateRoadHop(canvas, { map, segment, road, racers }, { duratio
       racers.forEach((f, i) => {
         const slot = SLOTS[(f.id - 1) % SLOTS.length];
         // slot → fork → a third of the way up the arc, then the camera
-        // "catches up" (the scene re-renders at the new node)
+        // "catches up" (the scene re-renders at the new node). Each racer
+        // KEEPS a share of its formation offset all the way up — five
+        // distinct bodies racing, never one stacked dot (the impact fates
+        // must stay attributable to a number).
         const wobble = Math.sin(t01 * Math.PI * 2 + jitter[i]) * 6 * (1 - t01);
+        const race = Math.min(1, t01 + Math.sin(t01 * Math.PI) * 0.07 * Math.sin(jitter[i] * 3 + i));
+        const spread = (slot.x - FORK.x) * 0.55 * (1 - race * 0.5);
         let p;
-        if (t01 < 0.45) {
-          const k = t01 / 0.45;
+        if (race < 0.45) {
+          const k = race / 0.45;
           p = {
-            x: slot.x + (FORK.x - slot.x) * k + wobble,
+            x: slot.x + (FORK.x + spread - slot.x) * k + wobble,
             y: slot.y + (FORK.y + 26 - slot.y) * k,
           };
         } else {
-          const k = (t01 - 0.45) / 0.55;
+          const k = (race - 0.45) / 0.55;
           const arcP = cubicAt(...spine, 0.34 * k);
-          p = { x: arcP.x + wobble * 0.5, y: arcP.y };
+          p = { x: arcP.x + spread + wobble * 0.5, y: arcP.y };
         }
         const size = slot.s * (1 - 0.55 * t01);
         let alpha = 1;
