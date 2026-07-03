@@ -6,7 +6,7 @@ Shape: **S** = single-shot choice, **W** = hazard window (approach → impact �
 
 | Encounter | Shape | Interaction | Teaches |
 |---|---|---|---|
-| **DNS crossroads** | S | interactive lookup **only for a new destination** (costs 1 Deadline); known destinations skip it (*"your device remembers the address for a while"*) | names → addresses, and caching — kills the every-run opening tax *because caching is real* |
+| **DNS crossroads** | S | interactive lookup **only for a new destination** (costs 1 Deadline); known destinations skip it (*"your device remembers the address for a while"*). Visual: pre-lookup the dock is dim with a "?" plate (the map shows the *place*; the network needs the *number*); the lookup lights it and hangs the address plate ([11-perspective-view.md](11-perspective-view.md)) | names → addresses, and caching — kills the every-run opening tax *because caching is real* |
 | **Junction** | S | pick a road by hint glyphs; only next-hop options ever shown | routers choose next hop; no one knows the whole path |
 | **Storm** | W | **telegraphs which fragment numbers it's eyeing** on approach — insure (Duplicate), recover after (Retransmit), or route around; every option priced ([02-core-loop.md](02-core-loop.md)). Early campaign guarantees one loss so retransmission actually lands | packet loss; weather hits physical links |
 | **Undersea trench** | W | huge bandwidth (BW pickups), rare *catastrophic cable cut* (forced reroute) | the internet is physical; >99% is seabed fiber; big pipes fail big |

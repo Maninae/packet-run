@@ -64,3 +64,47 @@ the event stream. The perspective view is a rendering swap:
    making perspective the default.
 5. Remaining biomes, environment set-pieces (router interior, seabed
    descent), impact-at-depth choreography.
+
+## Build spec (2026-07-03, Owen's go: "gorgeous, colorful, like Mario Kart, 2.5D")
+
+**Projection** (js/road/projection.js, pure math, unit-tested): single
+vanishing point on a ground plane. `horizonY ≈ 0.36·H`; a world point at
+depth `z` (0 = camera plane) projects to
+`y = horizonY + K/(z + z0)`, `x = cx + worldX·K/((z + z0)·s)` — one `K`
+shared so verticals and lanes agree. The hop is a camera dolly: scenery
+depth decreases with progress; the impact cloud on your road grows from
+the horizon as you approach (telegraphs get scarier AND more legible).
+
+**Layers, back→front** (SVG for scenery/signposts, canvas for the party —
+same split as design/08): sky gradient (per-act family, saturated
+"golden-dusk meadow" for Act 1) → celestial + far silhouettes (slowest
+parallax) → mid silhouettes (hills, rooftops, trees) → road ribbons
+(chunky, rounded, edge-lit) → roadside props receding → hazard-at-depth →
+signposts over each fork → party formation ahead of the camera (canvas,
+existing wiggle/race animations re-projected).
+
+**Non-negotiables carried over:** signposts ARE the glyph chips — same
+forecast data at the same decision moment, same `data-road-chip` handles
+(tests and tap flow unchanged). The top-down map survives as a
+stage-corner toggle (Road ⇄ Map); the classic renderer stays the tactical
+read. Reduced motion = static composition, hop = cut. Accuracy law: pure
+presentation, zero mechanic changes.
+
+**Scope:** renderer ships for Act 1 behind `?view=road`; other acts fall
+back to the map view until their environments land. Gate P1 mocks
+(mocks/road-act*.html, no engine hookup) set the art bar per biome first.
+
+**Color register update (both views):** push the biome palettes from muted
+dark → saturated and playful (Mario-Kart register): gradient skies, vivid
+surfaces, glow. Invariant (color-is-pedagogy): hazards stay ONE amber
+family everywhere; fragments stay cyan; Pip stays gold; per-act ENVIRONMENT
+hues shift, character/hazard hues never do. The classic top-down view also
+gains per-act layered scenery backdrops behind the map so it reads 2.5D,
+not flat.
+
+**DNS beat fix (Owen, 2026-07-03):** looking up an address while the dock
+sits labeled on the map read as pointless. The map shows the PLACE; the
+network needs the NUMBER — so before the lookup the dock renders dim with
+a "?" plate and withholds its name; the lookup lights it up and hangs the
+address plate (203.0.113.7, TEST-NET) under the label. View-side only
+(engine already emits `dns-lookup`); copy stays ≤2 short sentences.

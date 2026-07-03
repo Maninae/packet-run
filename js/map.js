@@ -73,6 +73,11 @@ function drawHouse(svg, { x, y }) {
 
 function drawDock(svg, { x, y }, scene) {
   const g = el('g', { transform: `translate(${x},${y})` });
+  // pre-lookup the dock is a mystery: dim, no gold, name withheld (design/04 —
+  // the map shows the place, the network needs the number)
+  const pending = scene.dnsPending;
+  const trim = pending ? 'var(--ink-faint)' : 'var(--pip)';
+  if (pending) g.setAttribute('opacity', '0.65');
   const slots = [-28, -14, 0, 14, 28].map((dx, i) => {
     const filled = i < (scene.dockFilled ?? 0);
     return `<rect x="${dx - 5.5}" y="-4" width="11" height="11" rx="3"
@@ -81,11 +86,26 @@ function drawDock(svg, { x, y }, scene) {
   }).join('');
   g.innerHTML = `
     <rect x="-40" y="-16" width="80" height="34" rx="10" fill="var(--surface-2)"
-          stroke="var(--pip)" stroke-width="2"/>
+          stroke="${trim}" stroke-width="2"/>
     ${slots}
-    <path d="M-6 -16 q6 -9 12 0" fill="none" stroke="var(--pip)" stroke-width="2"
+    <path d="M-6 -16 q6 -9 12 0" fill="none" stroke="${trim}" stroke-width="2"
           stroke-linecap="round"/>`;
   svg.append(g);
+
+  // the address plate: "?" until the lookup answers, the number after
+  if (pending || scene.address) {
+    const w = pending ? 22 : 80;
+    const plateY = pending ? 24 : 40;
+    const plate = el('g', { class: 'dock-plate', transform: `translate(${x},${y})` });
+    plate.innerHTML = `
+      <rect x="${-w / 2}" y="${plateY}" width="${w}" height="16" rx="5"
+            fill="var(--surface-2)" stroke="${pending ? 'var(--pip)' : 'var(--wire-lit)'}"
+            stroke-width="1.6"/>
+      <text y="${plateY + 12}" text-anchor="middle" font-size="${pending ? 12 : 9.5}"
+            font-weight="700" fill="${pending ? 'var(--pip)' : 'var(--ink-soft)'}"
+            font-family="var(--font-mono)">${pending ? '?' : scene.address}</text>`;
+    svg.append(plate);
+  }
 }
 
 function drawRelay(svg, { x, y }) {
@@ -277,7 +297,9 @@ export function renderMap(svg, scene) {
     else if (node.kind === 'pickup') drawRelay(svg, node);
     else if (node.kind === 'junction') drawJunctionNode(svg, node);
     else drawWaypoint(svg, node);
-    const label = node.kind === 'dock' && scene.dockLabel ? scene.dockLabel : node.label;
+    const label = node.kind === 'dock'
+      ? (scene.dnsPending ? null : (scene.dockLabel || node.label))
+      : node.label;
     if (label) {
       // long recipient names near the east edge (landscape dock) stay in frame:
       // clamp the anchor by the text's estimated half-width (~12px font)

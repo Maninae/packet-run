@@ -4,7 +4,7 @@
 // and routes taps back into engine actions.
 
 import { EASY, MAP_1A, BELT, ACTS, EVENTS, WEATHER, weatherFor, POUCH, recipientFor } from './config.js';
-import { createRun, legalActions, act, segmentRoads, roadDef } from './engine.js';
+import { createRun, legalActions, act, segmentRoads, roadDef, DEST_ADDRESS } from './engine.js';
 import { generateMap } from './generator.js';
 import { randomSeed } from './rng.js';
 import { logRun, deriveAutopsy } from './autopsy.js';
@@ -68,6 +68,11 @@ function scene() {
   return {
     dueling: run.phase === 'duel',
     dockLabel: recipientFor(actFor().id).dockLabel,
+    // the map shows the PLACE; the network needs the NUMBER (design/04) —
+    // withhold both until the lookup answers (or the cache remembers)
+    dnsPending: run.phase === 'dns',
+    address: run.phase === 'dns' ? null
+      : (run.events.find((e) => e.type === 'dns-lookup')?.address ?? DEST_ADDRESS),
     map: run.map,
     segment: run.segment,
     takenRoads: run.events.filter((e) => e.type === 'road-chosen').map((e) => e.road),
