@@ -27,7 +27,7 @@ const FRAG_OFFSETS = [
   { x: 13, y: -27 }, { x: 24, y: -12 },
 ];
 
-function drawPip(ctx, x, y, scale) {
+export function drawPip(ctx, x, y, scale) {
   const r = 1.15 * scale;
   ctx.save();
   ctx.translate(x, y);
@@ -52,7 +52,7 @@ function drawPip(ctx, x, y, scale) {
   ctx.restore();
 }
 
-function drawFragment(ctx, x, y, size, fragment) {
+export function drawFragment(ctx, x, y, size, fragment) {
   const half = size / 2;
   ctx.save();
   ctx.translate(x, y);

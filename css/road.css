@@ -1,0 +1,37 @@
+/* road.css — chase-cam view (design/11): ambient animation classes used by
+   js/road/scenery.js templates, and the Road ⇄ Map toggle. The road view
+   activates on Act 1 + landscape + ?view=road; everything here is inert
+   otherwise. */
+
+.rv-bob     { animation: rv-bob 3.6s ease-in-out infinite alternate; }
+.rv-twinkle { animation: rv-twinkle 2.2s ease-in-out infinite alternate; }
+.rv-twinkle2{ animation: rv-twinkle 3.1s ease-in-out infinite alternate-reverse; }
+.rv-blink   { animation: rv-blink 2.4s steps(1) infinite; }
+
+@keyframes rv-bob     { from { transform: translateY(-4px); } to { transform: translateY(5px); } }
+@keyframes rv-twinkle { from { opacity: 0.25; } to { opacity: 0.9; } }
+@keyframes rv-blink   { 0% { opacity: 1; } 55% { opacity: 0.15; } 100% { opacity: 1; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .rv-bob, .rv-twinkle, .rv-twinkle2, .rv-blink { animation: none; }
+}
+
+/* the Road ⇄ Map toggle: the top-down map survives as the tactical read */
+#view-toggle {
+  display: none;
+  position: absolute;
+  top: var(--space);
+  left: var(--space);
+  min-width: var(--touch-min);
+  min-height: var(--touch-min);
+  padding: 0 14px;
+  border: var(--stroke-w) solid var(--wire-lit);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  color: var(--ink-soft);
+  font-size: 14px;
+  font-weight: 800;
+  z-index: 4;
+}
+
+body.road-available #view-toggle { display: flex; align-items: center; justify-content: center; }

@@ -149,6 +149,18 @@ function drawHazardCloud(svg, nodes, road, key, orientation) {
   svg.append(g);
 }
 
+// The one glyph language, shared by the map's chips and the road view's
+// signposts (design/11: the forecast read carries over 1:1).
+export function glyphLabel({ kind, threatens = [], straggles }) {
+  if (!kind) return { text: 'quiet', color: 'var(--safe)', centered: true };
+  if (kind === 'static' || kind === 'sniffer') return { text: '#?', color: 'var(--danger)' };
+  if (kind === 'rapids') return { text: `x${straggles ?? 2}`, color: 'var(--fragment)' };
+  if (kind === 'congestion') return { text: 'jam', color: 'var(--hazard)' };
+  if (kind === 'trench') return { text: '+3', color: 'var(--safe)' };
+  if (kind === 'satellite') return { text: 'slow', color: 'var(--hazard)' };
+  return { text: threatens.map((n) => `#${n}`).join(' '), color: 'var(--hazard)' };
+}
+
 // Junction read chip: hazard icon + threatened numbers + distance dots.
 // Doubles as the road's big-friendly tap target.
 function drawGlyphChip(svg, { x, y, kind, threatens, hops, straggles, road, scene }) {
@@ -158,33 +170,16 @@ function drawGlyphChip(svg, { x, y, kind, threatens, hops, straggles, road, scen
     g.setAttribute('cursor', 'pointer');
     g.addEventListener('click', () => scene.onRoadTap(road));
   }
-  const nums = threatens.map((n) => `#${n}`).join(' ');
   const dots = Array.from({ length: hops }, (_, i) =>
     `<circle cx="${(i - (hops - 1) / 2) * 8}" cy="13" r="2.4" fill="var(--ink-soft)"/>`
   ).join('');
   const icon = kind
     ? `<g transform="translate(-28,-11)">${HAZARD_ICONS[kind](20)}</g>`
     : '';
-  const label = !kind
-    ? `<text x="0" y="-1" text-anchor="middle" font-size="11" font-weight="700"
-         fill="var(--safe)" font-family="var(--font)">quiet</text>`
-    : kind === 'static' || kind === 'sniffer'
-      ? `<text x="9" y="-1" text-anchor="middle" font-size="13" font-weight="800"
-           fill="var(--danger)" font-family="var(--font)">#?</text>`
-      : kind === 'rapids'
-        ? `<text x="9" y="-1" text-anchor="middle" font-size="12" font-weight="800"
-             fill="var(--fragment)" font-family="var(--font)">x${straggles ?? 2}</text>`
-        : kind === 'congestion'
-          ? `<text x="9" y="-1" text-anchor="middle" font-size="11" font-weight="800"
-               fill="var(--hazard)" font-family="var(--font)">jam</text>`
-        : kind === 'trench'
-          ? `<text x="9" y="-1" text-anchor="middle" font-size="11" font-weight="800"
-               fill="var(--safe)" font-family="var(--font)">+3</text>`
-        : kind === 'satellite'
-          ? `<text x="9" y="-1" text-anchor="middle" font-size="11" font-weight="800"
-               fill="var(--hazard)" font-family="var(--font)">slow</text>`
-          : `<text x="9" y="-1" text-anchor="middle" font-size="12" font-weight="800"
-               fill="var(--hazard)" font-family="var(--font)">${nums}</text>`;
+  const lbl = glyphLabel({ kind, threatens, straggles });
+  const label = `<text x="${lbl.centered ? 0 : 9}" y="-1" text-anchor="middle"
+       font-size="${lbl.text === '#?' ? 13 : lbl.text.startsWith('#') ? 12 : 11}"
+       font-weight="800" fill="${lbl.color}" font-family="var(--font)">${lbl.text}</text>`;
   g.innerHTML = `
     <rect x="-37" y="-16" width="74" height="38" rx="10" fill="var(--surface)"
           stroke="var(--wire-lit)" stroke-width="2"/>

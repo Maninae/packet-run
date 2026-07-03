@@ -10,6 +10,11 @@ import { randomSeed } from './rng.js';
 import { logRun, deriveAutopsy } from './autopsy.js';
 import { renderMap } from './map.js';
 import { renderParty, renderPartyRow, animateHop, startIdle, stopIdle } from './party.js';
+import { renderRoad } from './road/road-scene.js';
+import {
+  roadAvailable, roadActive, toggleRoad, startRoadIdle, stopRoadIdle,
+  renderRoadParty, animateRoadHop,
+} from './road/road-view.js';
 import { renderMeters, setPrompt, flashPrompt, renderBelt, wireLegend, wireMute } from './hud.js';
 import { showStart, showWin, showLoss, showReward, showEvent } from './screens.js';
 import { buildShareCard, copyShareCard } from './share.js';
@@ -125,14 +130,30 @@ function targetableSet() {
     .map((a) => a.fragment));
 }
 
+// One stage, two renderers: the chase-cam road view (Act 1, landscape,
+// ?view=road) or the top-down map — the toggle keeps both a tap apart.
+const roadOn = () => roadActive(actFor().id, run.phase);
+
+function renderStage(s) {
+  if (roadOn()) renderRoad($('#map-layer'), s);
+  else renderMap($('#map-layer'), s);
+}
+
 function renderAll() {
   document.body.classList.toggle('dueling', run.phase === 'duel');
+  document.body.classList.toggle('road-available', roadAvailable(actFor().id));
+  const toggleBtn = $('#view-toggle');
+  if (toggleBtn) toggleBtn.textContent = roadOn() ? 'Map' : 'Road';
   renderMeters(run);
-  renderMap($('#map-layer'), scene());
+  renderStage(scene());
+  stopIdle();
+  stopRoadIdle();
   if (run.phase !== 'done') {
-    startIdle($('#live-layer'), () => ({ map: run.map, nodeId: run.node, fragments: run.fragments }));
+    if (roadOn()) startRoadIdle($('#live-layer'), () => ({ fragments: run.fragments }));
+    else startIdle($('#live-layer'), () => ({ map: run.map, nodeId: run.node, fragments: run.fragments }));
+  } else if (roadOn()) {
+    renderRoadParty($('#live-layer'), { fragments: [] });
   } else {
-    stopIdle();
     renderParty($('#live-layer'), { map: run.map, nodeId: run.node, fragments: [] });
   }
   renderPartyRow($('#party'), run.fragments, {
@@ -261,7 +282,7 @@ function onGo() {
 
 // --- beat sequencing ---
 
-async function animateBatch(batch) {
+async function animateBatch(batch, pre = {}) {
   const hop = batch.find((e) => e.type === 'hop');
   const impact = batch.find((e) => e.type === 'impact');
   const rejoin = batch.find((e) => e.type === 'rejoin');
@@ -287,9 +308,19 @@ async function animateBatch(batch) {
           : straggled.has(f.id) ? 'straggle'
             : savedIds.includes(f.id) ? 'saved' : 'arrives',
       }));
-    await animateHop($('#live-layer'), { map: run.map, from: hop.from, to: hop.to, racers });
-    // settle into the standing cluster while the notices play
-    renderParty($('#live-layer'), { map: run.map, nodeId: hop.to, fragments: run.fragments });
+    if (roadOn()) {
+      await animateRoadHop($('#live-layer'), {
+        map: run.map,
+        segment: pre.segment ?? run.segment,
+        road: pre.road ?? run.road ?? 'short',
+        racers,
+      });
+      renderRoadParty($('#live-layer'), { fragments: run.fragments });
+    } else {
+      await animateHop($('#live-layer'), { map: run.map, from: hop.from, to: hop.to, racers });
+      // settle into the standing cluster while the notices play
+      renderParty($('#live-layer'), { map: run.map, nodeId: hop.to, fragments: run.fragments });
+    }
   }
 
   await playNotices(run, batch, { recipient: recipientFor(actFor().id) });
@@ -300,7 +331,7 @@ async function animateBatch(batch) {
 async function fillDock() {
   flashPrompt('bolt', 'Slotting in by number — that\'s how the message rebuilds.');
   for (let i = 1; i <= 5; i++) {
-    renderMap($('#map-layer'), { ...scene(), dockFilled: i });
+    renderStage({ ...scene(), dockFilled: i });
     sfx.slot(i - 1);
     await delay(240);
   }
@@ -311,9 +342,11 @@ async function dispatch(action) {
   busy = true;
   renderAll();
   stopIdle();
+  stopRoadIdle();
   const start = run.events.length;
+  const pre = { road: run.road, segment: run.segment }; // where the hop leaves FROM
   act(run, action);
-  await animateBatch(run.events.slice(start));
+  await animateBatch(run.events.slice(start), pre);
   busy = false;
   renderAll();
   if (run.phase === 'event') {
@@ -443,6 +476,11 @@ run = createRun({
 });
 wireLegend();
 wireMute();
+$('#view-toggle')?.addEventListener('click', () => {
+  if (busy) return;
+  toggleRoad();
+  renderAll();
+});
 applyBiome(actFor(), skyFor(initialSeed));
 renderAll();
 // after the first win, the start screen offers the payload choice —
