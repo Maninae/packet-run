@@ -15,9 +15,10 @@ No lectures, no quizzes. You don't read about retransmission — you lose a frag
 - **No unwinnable maps, ever**: every generated map is beaten by a scripted policy inside the generator before it's served. Fairness is structural, not statistical.
 - **Losses teach**: every failure ends in an honest autopsy — what struck, which idea beat you, which tool answers it, and how the real internet handles the same problem.
 - **Wins travel**: a win becomes a text card with an emoji journey and a challenge link — same map, same seed, your friend's moves against yours.
+- **Two ways to see the journey**: the phone-first top-down map, and a 2.5D chase-cam road view where the storm hangs over the road you're about to take. Same forecast language, one toggle apart.
 
 <p align="center">
-  <img src="media/hero-portrait.png" width="300" alt="A junction choice in Act 1: a storm forecast on the short road, the party of five fragments waiting at Home">
+  <img src="media/hero-road.png" width="820" alt="The road view at an Act 1 junction: the short road climbs left through a storm, the long road sweeps right and quiet, both arriving at Grandma's glowing house on the horizon — five numbered fragments and Pip waiting on the road">
 </p>
 
 The world changes as you climb — neon dusk in Backbone City, deep blues on the Ocean Crossing, ochre skies in the Far Reaches:
@@ -35,7 +36,7 @@ python3 -m http.server
 # open http://localhost:8000 — on a phone, use your machine's LAN address
 ```
 
-Portrait phone is the primary target; desktop derives from it.
+Portrait phone is the primary target; a desktop window gets a two-pane layout with the journey flowing west→east. Add `?view=road` on desktop for the chase-cam road view (Act 1 for now — the other biomes' scenes are staged in [`mocks/`](mocks/)).
 
 ## What it teaches
 
@@ -57,8 +58,9 @@ The full table, the accuracy commitments, and co-play guidance live on [the grow
 ```
 createRun / legalActions / act        one headless engine drives everything
         │
-        ├── the browser UI            (SVG map, canvas party, WebAudio sfx — all drawn in code)
-        ├── the full test suite       (node:test + Playwright, portrait & desktop)
+        ├── two view layers           (top-down SVG map ⇄ 2.5D road view — same scene data, zero rules in either)
+        ├── the browser UI            (SVG scenery, canvas party, WebAudio sfx — all drawn in code)
+        ├── the full test suite       (node:test + Playwright, portrait & desktop, reduced AND full motion)
         ├── Monte-Carlo economies     (four player temperaments × 1500 runs — balance is simulated, not guessed)
         └── the map generator          (every candidate map replayed & verified winnable before serving)
 ```
