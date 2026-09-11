@@ -18,6 +18,51 @@
   <link rel="stylesheet" href="css/components.css">
   <link rel="stylesheet" href="css/landscape.css">
   <link rel="stylesheet" href="css/road.css">
+  <style>
+    /* Static content below the game: an about block and a hub footer.
+       Sits below the 100dvh game shell so it never disturbs play; visible
+       to anyone who scrolls, and to crawlers reading raw HTML. Uses the
+       Act-1 tokens so it reads as one page. */
+    .about-block {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 40px 20px 8px;
+      color: var(--ink);
+      font-family: var(--font);
+      line-height: 1.55;
+    }
+    .about-block h1 {
+      font-size: 22px;
+      margin: 0 0 12px;
+      color: var(--ink);
+      letter-spacing: 0.005em;
+    }
+    .about-block p {
+      margin: 8px 0;
+      color: var(--ink-soft);
+      font-size: 15px;
+    }
+    .about-block a {
+      color: var(--road-pick);
+      text-decoration: none;
+      font-weight: 700;
+    }
+    .about-block a:hover { text-decoration: underline; }
+    .hub-footer {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 16px 20px 32px;
+      color: var(--ink-faint);
+      font-family: var(--font);
+      font-size: 13px;
+      text-align: center;
+    }
+    .hub-footer a {
+      color: var(--ink-soft);
+      text-decoration: none;
+    }
+    .hub-footer a:hover { color: var(--road-pick); text-decoration: underline; }
+  </style>
 </head>
 <body>
   <!-- Portrait-first shell (design/08-art.md): meters / map / prompt / party / belt
@@ -58,6 +103,20 @@
     <footer id="belt" aria-label="Toolbelt"><!-- tool buttons (js/hud.js) --></footer>
   </main>
   <div id="overlay"><!-- start / win / loss screens (js/screens.js) --></div>
+
+  <!-- Static content for search engines and no-JS visitors. Renders below
+       the 100dvh game shell; users see it if they scroll past the game. -->
+  <section class="about-block" aria-label="About Packet Run">
+    <h1>Packet Run — a kids' game that teaches how the internet really works</h1>
+    <p>You play the spirit of a message trying to get home. You shatter into five packet-fragments and race across the physical internet — storms, sniffers, jammed pipes, undersea cables — with a toolbelt of real networking verbs. Every hazard is a real phenomenon, every tool a real answer, and losing teaches as much as winning.</p>
+    <p>Made for ages 9–12. One run takes 5–10 minutes on a phone, portrait-first. No accounts, no ads, no tracking.</p>
+    <p><a href="teachers.html">For grown-ups — what it teaches, and how to play it with a kid →</a></p>
+  </section>
+
+  <footer class="hub-footer">
+    A project by <a href="https://maninae.github.io/">Owen Wang</a> · <a href="https://maninae.github.io/projects.html">more projects</a>
+  </footer>
+
   <script type="module" src="js/main.js"></script>
 </body>
 </html>
